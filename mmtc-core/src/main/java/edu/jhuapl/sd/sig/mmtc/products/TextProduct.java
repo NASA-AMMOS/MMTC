@@ -98,7 +98,7 @@ abstract class TextProduct {
      * @return the date/time string
      */
     public String getProductDateTimeIsoUtc() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-D'T'HH:mm:ss.SSS");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-DDD'T'HH:mm:ss.SSS");
         OffsetDateTime utc          = productCreationTimeUtc;
         String newDateTime          = utc.format(formatter);
 
