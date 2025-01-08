@@ -1,0 +1,8 @@
+recordType,sessionId,sessionHost,channelId,dssId,vcid,name,module,ert,scet,sclk,dn,eu,status,dnAlarmState,euAlarmState,realtime,type
+"Eha","11","eurcmachine","TK-0002","0","0","Radio Time Last Frame SCLK Missed Flag","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","0","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","TK-0000","0","0","Radio Time Seconds","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","297150857","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","TK-0001","0","0","Radio Time Subseconds","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","41971","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","TK-0003","0","0","Last Frame VCID","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","5","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","TK-0004","0","0","Last Frame VCFC","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","93","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","TK-0005","0","0","Last Frame Encoding Mode","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","18","","ENC_MODE_TURBO_12_SHORT_RND","NONE","NONE","false","STATUS"
+"Eha","11","eurcmachine","TK-0006","0","0","Last Frame Data Rate (bps)","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","100.0","","","NONE","NONE","false","FLOAT"

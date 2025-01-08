@@ -1,0 +1,3 @@
+recordType,sessionId,sessionHost,channelId,dssId,vcid,name,module,ert,scet,sclk,dn,eu,status,dnAlarmState,euAlarmState,realtime,type
+"Eha","11","eurcmachine","T-10014","0","0","Oscillator Temperature","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","123.4","","","NONE","NONE","false","UNSIGNED_INT"
+

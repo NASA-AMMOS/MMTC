@@ -1,0 +1,34 @@
+#!/bin/bash
+
+MMTC_BIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+set -e
+
+if [[ -z "${JAVA_HOME+x}" ]]
+then
+    echo "JAVA_HOME environment variable not set.  Please set it to a valid JRE/JDK 1.8 installation path."
+    exit 1
+fi
+
+# if MMTC_HOME isn't set, default it to this script's parent directory, which we'd expect to be a valid MMTC installation
+if [[ -z "${MMTC_HOME+x}" ]]
+then
+    curdir=`pwd`
+    cd $MMTC_BIN_DIR/..
+    export MMTC_HOME=`pwd`
+    cd $curdir
+    echo "MMTC_HOME environment variable not set; defaulting to ${MMTC_HOME}"
+fi
+
+# if TK_CONFIG_PATH isn't set, default it to $MMTC_HOME/conf
+if [[ -z "${TK_CONFIG_PATH+x}" ]]
+then
+    export TK_CONFIG_PATH="${MMTC_HOME}/conf"
+    echo "TK_CONFIG_PATH environment variable not set; defaulting to ${TK_CONFIG_PATH}"
+fi
+
+exec ${JAVA_HOME}/bin/java \
+    -jar \
+    -Djava.library.path=${MMTC_HOME}/lib/naif/JNISpice/lib \
+    -Dlog4j2.configurationFile=${MMTC_HOME}/conf/log4j2.xml \
+    ${MMTC_HOME}/lib/mmtc-core-@VERSION@-app.jar "$@"

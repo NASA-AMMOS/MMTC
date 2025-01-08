@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<properties xmlns="mmtc"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="mmtc TimeCorrelationConfigProperties.xsd">
+
+    <comment>Base MMTC configuration file. This file defines keys that are needed in all MMTC configurations,
+        but doesn't necessarily represent a viable MMTC config and additional keys will likely be required in almost all
+        real-world applications. Consult the User Guide for more information.</comment>
+    <entry key="missionName"/>
+    <entry key="missionId"/>
+    <entry key="spacecraftName"/>
+    <entry key="spacecraft.id"/>
+    <entry key="spacecraft.timeDelaySec"/>
+    <entry key="spacecraft.frameErtBitOffsetError"/>
+
+    <entry key="groundStationMap.path"/>
+    <entry key="sclkPartitionMap.path"/>
+
+    <entry key="telemetry.sampleSetBuildingStrategy"/>
+    <entry key="telemetry.samplesPerSet"/>
+    <entry key="telemetry.supplementalSampleOffset"/>
+    <entry key="telemetry.source.name"/>
+    <entry key="telemetry.tkOscTempWindowSec"/>
+    <entry key="telemetry.tkParmWindowSec"/>
+
+    <entry key="spice.naifSpacecraftId"/>
+    <entry key="spice.kernel.sclk.kerneldir"/>
+    <entry key="spice.kernel.sclk.baseName"/>
+    <entry key="spice.kernel.sclk.separator"/>
+
+    <entry key="compute.tdtG.rate.predicted.lookBackDays"/>
+    <entry key="compute.tdtG.rate.predicted.maxLookBackDays"/>
+    <entry key="compute.tdtS.threshold.errorMsecWarning"/>
+
+    <entry key="filter.contact.enabled"/>
+    <entry key="filter.ert.enabled"/>
+    <entry key="filter.sclk.enabled"/>
+    <entry key="filter.minDataRate.enabled"/>
+    <entry key="filter.maxDataRate.enabled"/>
+    <entry key="filter.groundStation.enabled"/>
+    <entry key="filter.validFlag.enabled"/>
+    <entry key="filter.consecutiveFrames.enabled"/>
+    <entry key="filter.consecutiveMasterChannelFrames.enabled"/>
+
+    <entry key="filter.vcid.enabled"/>
+    <entry key="table.runHistoryFile.uri"/>
+    <entry key="table.rawTelemetryTable.uri"/>
+    <entry key="table.rawTelemetryTable.dateTimePattern"/>
+    <entry key="table.summaryTable.uri"/>
+    <entry key="table.timeHistoryFile.uri"/>
+    <entry key="table.timeHistoryFile.scetUtcPrecision"/>
+
+    <entry key="product.sclkScetFile.create"/>
+    <entry key="product.sclkScetFile.source"/>
+    <entry key="product.sclkScetFile.dir"/>
+    <entry key="product.sclkScetFile.baseName"/>
+    <entry key="product.sclkScetFile.separator"/>
+    <entry key="product.sclkScetFile.suffix"/>
+    <entry key="product.sclkScetFile.datasetId"/>
+    <entry key="product.sclkScetFile.producerId"/>
+    <entry key="product.uplinkCmdFile.create"/>
+    <entry key="product.uplinkCmdFile.outputDir"/>
+    <entry key="product.uplinkCmdFile.baseName"/>
+    <entry key="product.sclkScetFile.scetUtcPrecision"/>
+</properties>

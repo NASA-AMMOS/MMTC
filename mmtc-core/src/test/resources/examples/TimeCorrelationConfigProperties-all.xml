@@ -1,0 +1,140 @@
+<?xml version="1.0"?>
+<!DOCTYPE properties SYSTEM "properties.dtd">
+<properties xmlns="mmtc"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="mmtc ../../../main/resources/TimeCorrelationConfigProperties.xsd">
+
+    <comment>Example Time Correlation Configuration Properties for that contains an entry for all possible keys</comment>
+    <entry key="missionName"></entry>
+    <entry key="missionId"></entry>
+    <entry key="spacecraftName"></entry>
+    <entry key="spacecraft.id"></entry>
+    <entry key="spacecraft.timeDelaySec"></entry>
+    <entry key="spacecraft.frameErtBitOffsetError"></entry>
+    <entry key="spacecraft.oscillatorIds"></entry>
+
+    <!-- SCLK modulus used for computing TF Offset in Europa Clipper -->
+    <entry key="spacecraft.sclkModulusOverride"></entry>
+
+    <entry key="groundStationMap.path"></entry>
+    <entry key="sclkPartitionMap.path"></entry>
+
+    <entry key="telemetry.sampleSetBuildingStrategy"></entry>
+    <entry key="telemetry.samplesPerSet"></entry>
+    <entry key="telemetry.supplementalSampleOffset"></entry>
+    <entry key="telemetry.vcfcMaxValue"></entry>
+
+    <entry key="telemetry.source.name"></entry>
+    <entry key="telemetry.source.pluginDirectory"></entry>
+    <entry key="telemetry.source.pluginJarPrefix"></entry>
+
+    <!-- example usage of external telemetry source plugins: -->
+    <!--entry key="telemetry.source.name">AmpcsTlmArchive</entry-->
+    <!--entry key="telemetry.source.pluginDirectory">/opt/local/mmtc/lib/plugins/</entry-->
+    <!--entry key="telemetry.source.pluginJarPrefix">mmtc-plugin-ampcs</entry-->
+
+    <!-- Options for built-in Raw TLM Table telemetry source -->
+    <entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri"></entry>
+    <entry key="telemetry.source.plugin.rawTlmTable.readDownlinkDataRate"></entry>
+
+    <entry key="telemetry.tkOscTempWindowSec"></entry>
+
+    <entry key="telemetry.tkParmWindowSec"></entry>
+
+    <entry key="spice.naifSpacecraftId"></entry>
+
+    <entry key="spice.kernel.sclk.kerneldir"></entry>
+    <entry key="spice.kernel.sclk.baseName"></entry>
+    <entry key="spice.kernel.sclk.separator"></entry>
+    <entry key="spice.kernel.sclk.uniqueKernelCounters"></entry>
+
+    <entry key="spice.kernel.mk.path"></entry>
+    <entry key="spice.kernel.lsk.path"></entry>
+    <entry key="spice.kernel.spk.path"></entry>
+    <entry key="spice.kernel.fk.path"></entry>
+    <entry key="spice.kernel.pck.path"></entry>
+
+    <entry key="compute.tdtG.rate.predicted.lookBackDays"></entry>
+    <entry key="compute.tdtG.rate.predicted.maxLookBackDays"></entry>
+
+    <entry key="compute.tdtS.threshold.errorMsecWarning"></entry>
+
+    <entry key="filter.contact.deltaUpperThreshold"></entry>
+    <entry key="filter.contact.deltaLowerThreshold"></entry>
+
+    <entry key="filter.contact.enabled"></entry>
+    <entry key="filter.ert.enabled"></entry>
+    <entry key="filter.sclk.enabled"></entry>
+    <entry key="filter.minDataRate.enabled"></entry>
+    <entry key="filter.maxDataRate.enabled"></entry>
+    <entry key="filter.groundStation.enabled"></entry>
+    <entry key="filter.validFlag.enabled"></entry>
+    <entry key="filter.consecutiveFrames.enabled"></entry>
+    <entry key="filter.consecutiveMasterChannelFrames.enabled"></entry>
+
+    <entry key="filter.vcid.enabled"></entry>
+    <entry key="filter.vcid.validVcidGroups"></entry>
+
+    <entry key="filter.ert.maxDeltaVarianceSec"></entry>
+    <entry key="filter.sclk.maxDeltaVarianceSec"></entry>
+    <entry key="filter.groundStation.pathIds"></entry>
+    <entry key="filter.dataRate.minDataRateBps"></entry>
+    <entry key="filter.dataRate.maxDataRateBps"></entry>
+
+    <!-- Output Files -->
+    <entry key="table.runHistoryFile.uri"></entry>
+    <entry key="table.rawTelemetryTable.uri"></entry>
+    <entry key="table.rawTelemetryTable.dateTimePattern"></entry>
+    <entry key="table.summaryTable.uri"></entry>
+    <entry key="table.timeHistoryFile.uri"></entry>
+    <entry key="table.timeHistoryFile.excludeColumns"></entry>
+    <entry key="table.timeHistoryFile.scetUtcPrecision"></entry>
+
+    <entry key="product.sclkScetFile.create"></entry>
+    <entry key="product.sclkScetFile.source"></entry>
+    <entry key="product.sclkScetFile.dir"></entry>
+    <entry key="product.sclkScetFile.baseName"></entry>
+    <entry key="product.sclkScetFile.separator"></entry>
+    <entry key="product.sclkScetFile.suffix"></entry>
+    <entry key="product.sclkScetFile.datasetId"></entry>
+    <entry key="product.sclkScetFile.producerId"></entry>
+    <entry key="product.uplinkCmdFile.create"></entry>
+    <entry key="product.uplinkCmdFile.outputDir"></entry>
+    <entry key="product.uplinkCmdFile.baseName"></entry>
+    <entry key="product.sclkScetFile.scetUtcPrecision"></entry>
+
+    <!-- AMPCS configuration keys -->
+    <entry key="telemetry.source.plugin.ampcs.chillTimeoutSec"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkPacket.tkPacketHeaderFineSclkModulus"></entry>
+
+    <!-- timekeeping packet configuration -->
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketSizeBytes"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.apid"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.apidFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.scetFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.ertFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.sclkFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.vcidFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.vcfcFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.dssIdFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.pktLengthFieldName"></entry>
+
+    <!-- channel value configuration -->
+    <entry key="telemetry.source.plugin.ampcs.channel.channelIdFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.channel.channelScetFieldName"></entry>
+    <!-- entry key="telemetry.source.plugin.ampcs.channel.*"></entry-->
+    <entry key="telemetry.source.plugin.ampcs.oscillator.activeOscillatorSelectionMode"></entry>
+    <entry key="telemetry.source.plugin.ampcs.oscillator.fixedActiveOscillatorId"></entry>
+    <!-- entry key="telemetry.source.plugin.ampcs.oscillators.%s.vcids"></entry-->
+    <!-- entry key="telemetry.source.plugin.ampcs.oscillators.%s.temperature"></entry-->
+    <entry key="telemetry.source.plugin.ampcs.activeRadioId"></entry>
+
+    <!-- 'AmpcsTlmWithFrames'-specific configuration -->
+    <entry key="telemetry.source.plugin.ampcs.frameSizeBits"></entry>
+    <entry key="telemetry.source.plugin.ampcs.frame.ertFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.frame.dssIdFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.frame.vcidFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.frame.vcfcFieldName"></entry>
+    <entry key="telemetry.source.plugin.ampcs.frame.maxTkpacketFrameSeparation"></entry>
+</properties>

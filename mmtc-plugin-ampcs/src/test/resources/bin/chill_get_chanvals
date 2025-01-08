@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Simulates outputs from the AMPCS chill_get_chanvals function. The varying session IDs are used to control which
+# file is output.
+
+# https://stackoverflow.com/a/246128
+CHILL_BIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+while getopts ":mK:" opt; do
+  case $opt in
+    m) ;;
+    K) output=${OPTARG}
+        case $output in
+            100) cat $CHILL_BIN_DIR/chill_get_chanvals-m-K11--timeTypeERT--channelIds.out;;
+            101) cat $CHILL_BIN_DIR/chill_get_chanvals-GNC_parms.out;;
+            102) cat $CHILL_BIN_DIR/chill_get_chanvals-oscillator_temperature.out;;
+            *) echo "chill_get_chanvals ERROR";;
+        esac
+  esac
+done

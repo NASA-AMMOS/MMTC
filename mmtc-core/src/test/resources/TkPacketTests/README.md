@@ -1,0 +1,16 @@
+Description of included resources:
+- tkpacket_uintDownlink.dat: 29-byte dummy packet with 32-bit uint downlink meant to be parsed as "100000" (0x000186A0)
+  - 00000000  cf 45 6d 14 00 16 98 a1 51 72 67 6e 92 ec 22 3f
+  - 00000010  c3 9e 86 f3 36 b7 cb 68 ff 00 01 86 a0
+- tkpacket_floatDownlink.dat: 29-byte dummmy packet with 32-bit single float downlink meant to be parsed as "119000.5" (0x47E86C40)
+  - 00000000  cf 45 6d 14 00 16 98 a1 51 72 67 6e 92 ec 22 3f
+  - 00000010  c3 9e 86 f3 36 b7 cb 68 ff 47 e8 6c 40
+- tkpacket_doubleDownlink.dat: 33-byte dummy packet with 64-bit float downlink meant to be parsed as "192168.25" (0x4107754200000000)
+  - 00000000  cf 45 6d 14 00 16 98 a1 51 72 67 6e 92 ec 22 3f
+  - 00000010  c3 9e 86 f3 36 b7 cb 68 ff 41 07 75 42 00 00 00
+  - 00000020  00
+- tkpacket_2_floatDownlinks.dat: 2x29-byte pair of dummy packets with 32-bit downlink rates meant to be parsed as single floats (both equalling "119000.5")
+  - 00000000  cf 45 6d 14 00 16 98 a1  51 72 67 6e 92 ec 22 3f
+  - 00000010  c3 9e 86 f3 36 b7 cb 68  ff 47 e8 6c 40 1e e4 7a
+  - 00000020  d4 00 16 8d 91 e5 2e fa  ff 71 b3 cd 52 07 31 28
+  - 00000030  b6 47 88 5b 69 a7 47 e8  6c 40

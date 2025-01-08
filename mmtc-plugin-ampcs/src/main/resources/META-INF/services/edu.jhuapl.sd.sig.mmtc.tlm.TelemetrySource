@@ -1,0 +1,2 @@
+edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.AmpcsTlmArchive    # AMPCS chill_ telemetry archive
+edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.AmpcsTlmWithFrames # AMPCS chill_ telemetry archive with single frames

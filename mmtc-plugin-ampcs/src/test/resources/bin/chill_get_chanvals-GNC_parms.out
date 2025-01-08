@@ -1,0 +1,6 @@
+recordType,sessionId,sessionHost,channelId,dssId,vcid,name,module,ert,scet,sclk,dn,eu,status,dnAlarmState,euAlarmState,realtime,type
+"Eha","11","eurcmachine","T-10010","0","0","SCLK1","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","0000123456.54321","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","T-10011","0","0","TDT1","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","123456789.123456","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","T-10016","0","0","GNCSCLK","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","98765432.11111","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","T-10012","0","0","TDTS","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","222222222.333333","","","NONE","NONE","false","UNSIGNED_INT"
+"Eha","11","eurcmachine","T-10013","0","0","GNCCLKRATE","","2019-322T21:37:15.133","2010-001T00:03:27.032","0000000207.03159","1.00000001234","","","NONE","NONE","false","UNSIGNED_INT"

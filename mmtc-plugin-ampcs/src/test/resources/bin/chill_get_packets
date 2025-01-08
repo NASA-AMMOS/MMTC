@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Simulates outputs from the AMPCS chill_get_packets function
+
+# https://stackoverflow.com/a/246128
+CHILL_BIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+while getopts "vm:" option; do
+  case "${option}" in
+  v) cat $CHILL_BIN_DIR/chill_get_packets-v.out;;
+  m) cat $CHILL_BIN_DIR/chill_get_packets-K11--packetApid123.out;;
+  *) cat $CHILL_BIN_DIR/chill_get_packets-K11--packetApid123.out;;
+  esac
+done

@@ -1,0 +1,9 @@
+recordType,sessionId,sessionHost,channelId,dssId,vcid,name,module,ert,scet,sclk,dn,eu,status,dnAlarmState,euAlarmState,realtime,type
+"Eha",1,"testhost","ABC-1111","0","0","Channel 1","","2024-031T00:00:00","2024-031T00:00:00","0000000207.03159",11,"0000123456.54321","","NONE","NONE","false","UNSIGNED_INT"
+"Eha",1,"testhost","ABC-2222","0","0","Channel 2","","2024-031T00:00:00","2024-030T23:00:00","0000000207.03159",21,"123456789.123456","","NONE","NONE","false","UNSIGNED_INT"
+"Eha",1,"testhost","ABC-2222","0","0","Channel 2","","2024-031T00:00:00","2024-031T00:00:00","0000000207.03159",22,"123456789.123456","","NONE","NONE","false","UNSIGNED_INT"
+"Eha",1,"testhost","ABC-2222","0","0","Channel 2","","2024-031T00:00:00","2024-031T01:00:00","0000000207.03159",23,"123456789.123456","","NONE","NONE","false","UNSIGNED_INT"
+"Eha",1,"testhost","ABC-3333","0","0","Channel 3","","2024-031T00:00:00","2024-031T00:00:00","0000000207.03159",33,"98765432.11111","","NONE","NONE","false","UNSIGNED_INT"
+"Eha",1,"testhost","ABC-4444","0","0","Channel 4","","2024-031T00:00:00","2024-031T00:00:00","0000000207.03159",44,"222222222.333333","","NONE","NONE","false","UNSIGNED_INT"
+"Eha",1,"testhost","ABC-5555","0","0","Channel 5","","2024-031T00:00:00","2024-031T00:00:00","0000000207.03159",55,"1.00000001234","","NONE","NONE","false","UNSIGNED_INT"
+"Eha",1,"testhost","ABC-6666","0","0","Channel 6","","2024-031T00:00:00","2024-031T00:00:00",0000000207.03159,12345,0000000207.03159,"","NONE","NONE","false","UNSIGNED_INT"

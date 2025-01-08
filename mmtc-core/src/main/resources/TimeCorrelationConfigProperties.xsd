@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Multi-Mission Time Correlation configuration parameters schema -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           targetNamespace="mmtc"
+           xmlns="mmtc">
+  <xs:element name="properties" type="propertiesType"/>
+
+  <xs:simpleType name="pluginEntryKey">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="telemetry\.source\.config\..+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="enumeratedEntryKey">
+    <xs:restriction base="xs:string">
+
+      <!-- Mission and spacecraft IDs -->
+      <xs:enumeration value="missionName"/>
+      <xs:enumeration value="missionId"/>
+      <xs:enumeration value="spacecraftName"/>
+      <xs:enumeration value="spacecraft.id"/>
+
+      <!-- Applicable only for missions where the SCLK01_MODULI_ss field in the input SCLK Kernel differs -->
+      <!-- from the value needed for time conversions.  -->
+      <xs:enumeration value="spacecraft.sclkModulusOverride"/>
+
+      <!-- list of possible oscillator IDs -->
+      <xs:enumeration value="spacecraft.oscillatorIds"/>
+
+      <!-- Additional time delay corrections -->
+      <xs:enumeration value="spacecraft.timeDelaySec"/>
+      <xs:enumeration value="spacecraft.frameErtBitOffsetError"/>
+      <xs:enumeration value="telemetry.vcfcMaxValue"/>
+
+      <!-- spacecraft telemetry configuration -->
+      <xs:enumeration value="telemetry.mcfcMaxValue"/>
+
+      <xs:enumeration value="groundStationMap.path"/>
+      <xs:enumeration value="sclkPartitionMap.path"/>
+
+      <!-- Operating parameters -->
+      <xs:enumeration value="telemetry.source.name"/>
+      <xs:enumeration value="telemetry.source.pluginDirectory"/>
+      <xs:enumeration value="telemetry.source.pluginJarPrefix"/>
+
+      <xs:enumeration value="telemetry.sampleSetBuildingStrategy"/>
+      <xs:enumeration value="telemetry.sampleSetBuildingStrategy.sampling.queryWidthMinutes"/>
+      <xs:enumeration value="telemetry.sampleSetBuildingStrategy.sampling.samplingRateMinutes"/>
+
+      <xs:enumeration value="telemetry.samplesPerSet"/>
+      <xs:enumeration value="telemetry.supplementalSampleOffset"/>
+
+      <!-- The number of seconds +/- surrounding and ERT at which an oscillator temperature TLM point may be found -->
+      <xs:enumeration value="telemetry.tkOscTempWindowSec"/>
+
+      <!-- The window in +/- seconds surrounding an ERT for which G&C or temperature parameters are valid. -->
+      <xs:enumeration value="telemetry.tkParmWindowSec"/>
+
+      <!-- SPICE kernels -->
+      <xs:enumeration value="spice.naifSpacecraftId"/>
+
+      <xs:enumeration value="spice.kernel.sclk.kerneldir"/>
+      <xs:enumeration value="spice.kernel.sclk.inputPathOverride"/>
+      <xs:enumeration value="spice.kernel.sclk.baseName"/>
+      <xs:enumeration value="spice.kernel.sclk.separator"/>
+      <xs:enumeration value="spice.kernel.mk.path"/>
+      <xs:enumeration value="spice.kernel.lsk.path"/>
+      <xs:enumeration value="spice.kernel.spk.path"/>
+      <xs:enumeration value="spice.kernel.fk.path"/>
+      <xs:enumeration value="spice.kernel.pck.path"/>
+      <xs:enumeration value="spice.kernel.sclk.uniqueKernelCounters"/>
+
+      <!-- The default clock change rate method -->
+
+      <!-- The assigned clock change rate preset(s), if method is set to "assign" -->
+      <xs:enumeration value="compute.clkchgrate.assignedValuePresets.[a-zA-Z0-9_]+"/>
+
+      <!-- The number of days to look back in the SCLK Kernel for getting a previous time correlation
+      for computing Predicted CLKRATE. This value is a float and can contain a decimal fraction of day. -->
+      <xs:enumeration value="compute.tdtG.rate.predicted.lookBackDays"/>
+
+      <!-- The maximum number of days to look back in the SCLK Kernel for getting a previous time correlation
+      for computing Predicted CLKRATE before logging a warning in test mode and terminating with an error in
+      operational mode. This value will be converted to whole hours -->
+      <xs:enumeration value="compute.tdtG.rate.predicted.maxLookBackDays"/>
+
+      <!-- Alarm thresholds -->
+      <xs:enumeration value="compute.tdtS.threshold.errorMsecWarning"/>
+
+      <!-- Contact Filter Settings: The enabled setting can be overriden at the command line. Drift threshold values
+      are in milliseconds/day.  -->
+      <xs:enumeration value="filter.contact.enabled"/>
+      <xs:enumeration value="filter.contact.deltaUpperThreshold"/>
+      <xs:enumeration value="filter.contact.deltaLowerThreshold"/>
+
+      <!-- ERT Filter Settings -->
+      <xs:enumeration value="filter.ert.enabled"/>
+      <xs:enumeration value="filter.ert.maxDeltaVarianceSec"/>
+
+      <!-- SCLK Filter Settings -->
+      <xs:enumeration value="filter.sclk.enabled"/>
+      <xs:enumeration value="filter.sclk.maxDeltaVarianceSec"/>
+
+      <!-- Ground Station Filter Settings -->
+      <xs:enumeration value="filter.groundStation.enabled"/>
+      <xs:enumeration value="filter.groundStation.pathIds"/>
+
+      <!-- Downlink Data Rate Filter Settings -->
+      <xs:enumeration value="filter.minDataRate.enabled"/>
+      <xs:enumeration value="filter.dataRate.minDataRateBps"/>
+      <xs:enumeration value="filter.maxDataRate.enabled"/>
+      <xs:enumeration value="filter.dataRate.maxDataRateBps"/>
+
+      <!-- VCID Filter Settings -->
+      <xs:enumeration value="filter.vcid.enabled"/>
+      <xs:enumeration value="filter.vcid.validVcidGroups"/>
+
+      <!-- Valid Flag Filter Settings -->
+      <xs:enumeration value="filter.validFlag.enabled" />
+
+      <!-- Consecutive Frames Filter Settings -->
+      <xs:enumeration value="filter.consecutiveFrames.enabled" />
+
+      <!-- Consecutive Master Channel Frame Filter Settings -->
+      <xs:enumeration value="filter.consecutiveMasterChannelFrames.enabled" />
+
+      <!-- File locations -->
+      <xs:enumeration value="table.runHistoryFile.uri"/>
+      <xs:enumeration value="table.rawTelemetryTable.uri"/>
+      <xs:enumeration value="table.rawTelemetryTable.dateTimePattern"/>
+      <xs:enumeration value="table.summaryTable.uri"/>
+      <xs:enumeration value="table.timeHistoryFile.uri"/>
+      <xs:enumeration value="table.timeHistoryFile.excludeColumns"/>
+      <xs:enumeration value="table.timeHistoryFile.scetUtcPrecision"/>
+      <xs:enumeration value="product.sclkScetFile.create"/>
+      <xs:enumeration value="product.sclkScetFile.source"/>
+      <xs:enumeration value="product.sclkScetFile.dir"/>
+      <xs:enumeration value="product.sclkScetFile.baseName"/>
+      <xs:enumeration value="product.sclkScetFile.separator"/>
+      <xs:enumeration value="product.sclkScetFile.suffix"/>
+      <xs:enumeration value="product.sclkScetFile.scetUtcPrecision"/>
+      <xs:enumeration value="product.sclkScetFile.datasetId"/>
+      <xs:enumeration value="product.sclkScetFile.producerId"/>
+      <xs:enumeration value="product.sclkScetFile.applicableDurationDays"/>
+      <xs:enumeration value="product.sclkScetFile.leapSecondSclkRateMode"/>
+      <xs:enumeration value="product.uplinkCmdFile.create"/>
+      <xs:enumeration value="product.uplinkCmdFile.outputDir"/>
+      <xs:enumeration value="product.uplinkCmdFile.baseName"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="entryKey">
+    <xs:union memberTypes="enumeratedEntryKey pluginEntryKey">
+    </xs:union>
+  </xs:simpleType>
+  <xs:complexType name="entryType">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute type="entryKey" name="key" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="propertiesType">
+    <xs:sequence>
+      <xs:element type="xs:string" name="comment"/>
+      <xs:element type="entryType" name="entry" maxOccurs="unbounded" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

@@ -1,0 +1,2488 @@
+= Multi-Mission Time Correlation User's Guide
+:authors: Robert Seng <robert.seng@jhuapl.edu>, John Lage <john.lage@jhuapl.edu>
+:revdate: TBD 2025
+:revnumber: 1.6.0-SNAPSHOT
+:revremark: Rev G
+:imagesdir: ./images/
+
+:toc: macro
+:toc-title:
+:toclevels: 2
+:sectnums:
+:sectids:
+
+[.text-center]
+image::apl_ses_header.png[pdfwidth=50%,align="center"]
+image::mmtc_cover.png[pdfwidth=66%,align="center"]
+
+[.text-center]
+*{revremark} for MMTC version {revnumber}* +
+MGSS DOC-002610
+
+<<<
+:sectnums!:
+== Changelog
+|===
+|Revision | Submission Date | Affected Sections or Pages | Change Summary
+
+|1.0
+|April 6, 2020
+|All
+|Initial Releases
+
+|1.1
+|May 5, 2020
+|Title Page, Table 1, Table 2
+|Added document numbers
+
+|1.5
+|May 1, 2021
+|Multiple revisions
+|Updated configuration parameters, TimeHistoryFile description, added discussion of clock change rates, other.
+
+|Rev A
+|June 7, 2021
+|Multiple
+|Accompanies MMTC rel 1.1.0.
+
+|Rev B for Rel 1.2.1
+|December 12, 2022
+|Multiple, Table 6 Configuration parameters
+|For MGSS release 1.2.1
+
+|Rev C for Rel 1.3.0
+|August 18, 2023
+|Multiple
+|
+Updated for MMTC rel 1.3.0.
+
+Corrected various descriptions, including the Consecutive Frame Filter and the logging configuration.
+
+Attempted to clarify wording throughout.
+
+|Rev D for Rel 1.4.0
+|Feb 23, 2024
+|Multiple
+|Updated Test Mode descriptions to reflect changed functionality.
+
+Added section on new Master Channel Frame Counter Filter.
+
+Added usage context to the description of configuration key  telemetry.defaultFrameSizeBits.
+
+Updated CLI option table with reference to new –version option.
+
+Clarified SCLK Filter description to reflect corrected behavior.
+
+Updated VCID Filter description to reflect enhanced configurability.
+
+|Rev E for Rel 1.5.0
+|Aug 29, 2024
+|Multiple
+|Added information about new AMPCS packet header SCLK fine tick modulus configuration key.
+
+Removed information on TDT(S) Error Alarm threshold checking and reporting in the Time History File, as the design has been simplified to have threshold (Warning.)
+
+Clarified information on --clkchgrate CLI options.
+
+Added information on new feature to choose sample set building strategy.
+
+|Rev F for Rel 1.5.1.
+|Dec 5, 2024
+|Multiple
+|Clarified and corrected information related to TDT(S) Error and Ep(ms) calculations.  Clarified and corrected information related to leap second inclusion in SCLK-SCET files.  Added new entries for new SCLK-SCET configuration keys.
+|===
+
+
+*Prepared at the Johns Hopkins Applied Physics Laboratory (JHU/APL) by:*
+
+* Robert M. Seng, JHU/APL
+* John A. Lage, JHU/APL
+
+<<<
+
+Point of contact for questions or comments on MMTC or this document:
+
+*Robert Seng* +
+Robert.Seng@jhuapl.edu
+
+*Johns Hopkins Applied Physics Laboratory* +
+11100 Johns Hopkins Rd. +
+Laurel, Maryland 20723
+
+<<<
+
+== Table of Contents
+toc::[]
+:sectnums:
+== Document Overview
+=== Identification
+
+.Item Identification
+[[table1, Table 1: Item Identification]]
+|===
+| Property | Value
+
+|Configuration ID (CI)
+| 635.401
+
+|Element
+|Mission Planning, Sequencing, and Analysis (MPSA)
+
+|Program Set
+|Multi-Mission time Correlation (MMTC)
+
+|Document Number
+|DOC-002610
+
+|Version
+|{revremark} for {revnumber}
+|===
+
+=== Purpose
+The Multi-Mission Time Correlation (MMTC) User’s Guide describes the installation, configuration, and use of the MMTC application. MMTC is intended for inclusion in space mission ground data systems. It is a mission-independent spacecraft time to ground time correlation system. All space missions need to maintain an accurate, and in many cases, an extremely accurate knowledge of time as measured onboard the spacecraft. MMTC provides an automated way of maintaining knowledge of time and produces standard and widely-used time correlation products. This application is normally expected to run in a Mission Operations Center (MOC) or mission support area (MSA.)
+
+=== Overview
+MMTC is a component of NASA’s Advanced Multi-Mission Operations System (AMMOS). It is intended to run in a MOC or MSA as part of the mission’s Ground Data System (GDS). It functions as a stand-alone system which interfaces to a space mission’s telemetry archive. It does not run in real-time and is not dependent on any other applications.
+
+=== Terminology and Notation
+See glossary in <<appendix_I>>.
+
+=== References
+
+
+.Applicable Documents
+[[table2, Table 2: Applicable Documents]]
+[%autowidth]
+|===
+| Title | Revision | Document Number
+
+|AMMOS Technical Standards Profile
+|A
+|DOC-001101
+
+|MGSS Implementation and Maintenance Task Processes
+|B
+|DOC-001638
+
+|MGSS Implementation and Maintenance Task Requirements (External)
+|B
+|DOC-001819
+
+|MMTC Architecture Description Document
+|
+|DOC-002607
+
+|MMTC Concept of Operations
+|
+|DOC-002608
+
+|SCLK – Reference for the SPICE spacecraft clock subsystem and the Spacecraft Clock Kernel (SCLK)
+https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/sclk.html
+|5/27/2010
+|N/A
+
+|Generic SCLK versus SCET Correlation File, Software Interface Specification, Rev. E, January 2012.
+|E
+|DOC-000574
+
+|M. R. Reid and S. B. Cooper, “The Multi-mission Time Correlation System,” 2019 IEEE International Conference on Space Mission Challenges for Information Technology (SMC-IT), Pasadena, CA, USA, 2019, pp. 41-46.  Doi: 10.1109/SMC-IT.2019.00010
+|N/A
+|N/A
+
+|Acton, C.H.; “Ancillary Data Services of NASA’s Navigation and Ancillary Information Facility;” Planetary and Space Science, Vol. 44, No. 1, pp. 65-70, 1996.
+|N/A
+|N/A
+
+|Charles Acton, Nathaniel Bachman, Boris Semenov, Edward Wright; A look toward the future in the handling of space science mission geometry; Planetary and Space Science (2017);
+DOI 10.1016/j.pss.2017.02.013
+https://doi.org/10.1016/j.pss.2017.02.013
+|N/A
+|N/A
+|===
+
+== Quick Start Guide
+For users who wish to experiment with MMTC's behavior and functionality without investing the time to fully configure and
+implement it for a new mission, an MMTC demo is available in the form of a portable installation that comes packaged with
+example telemetry and configuration from the New Horizons spacecraft in a single .zip file.
+
+While this demo can serve as a useful introduction to how MMTC is run and as an example for users writing their own
+configuration files, the demo installation should not be adapted and used as an operational source of time correlation
+information and users ready to adapt MMTC to a particular mission should start with a traditional MMTC installation
+(see <<Installing MMTC>>) and refer to <<Adapting MMTC to a Mission>>.
+
+=== Unpacking the Demo Components
+Note that the MMTC demo has the same system requirements as a normal MMTC RPM installation (RHEL 8/9 and Java 8).
+Once mmtc-{revnumber}-demo.zip has been downloaded, it can be extracted to a directory of one's choosing with
+$`unzip [path to demo .zip] -d [destination path]`. *Note that MMTC will still output its table products to /opt/local/mmtc/output/ regardless of where it is installed or extracted to unless specifically configured otherwise.* See below for more information on configuring MMTC as desired.
+
+=== Adjusting the Configuration File
+While MMTC's demo comes packaged with example telemetry and a complete `TimeCorrelationConfigProperties.xml` file, it
+still must be modified to run in the directory it was extracted to. This can be done simply by running `setup-and-run-demo.sh`, or by performing manual configuration by setting environment variables and adjusting config keys as described elsewhere in this document.
+
+[.underline]#Environment Variables# +
+The MMTC demo requires the same environmental variables as a normal version as discussed in <<Environment Variables>>:
+`$JAVA_PATH` and `$TK_CONFIG_PATH`. These can be set on most systems with the following commands: +
+[source, bash]
+----
+export JAVA_HOME="[path to Java installation root directory]"
+export PATH=$PATH:$JAVA_HOME/bin
+export TK_CONFIG_PATH="[MMTC demo directory]/conf"
+----
+
+[.underline]#Config Keys# +
+MMTC's config must also be updated with the path to the included raw telemetry table
+by modifying the key
+
+[source, xml]
+----
+<entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri">file:///opt/local/mmtc/RawTelemetryTable_NH_reformatted.csv</entry>
+----
+
+to:
+
+[source, xml]
+----
+<entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri">file:///[MMTC Demo directory\]/RawTelemetryTable_NH_reformatted.csv</entry>
+----
+
+
+At this point, one can also update the table product output paths specified in the
+"Output Files" section of `TimeCorrelationConfigProperties.xml` to the desired
+directory if one prefers some output products not end up in /opt/local/mmtc/output/.
+By default, all SCLK kernels, SCLK/SCET files, and Uplink Command files will go to
+the /output/ directory of the demo installation.
+
+
+=== Running the MMTC Demo
+With the MMTC demo directory set as the working directory, MMTC can be invoked with +
+`bin/mmtc 2017-342T00:00:00 2017-342T23:59:59 -F` +
+or any other combination of valid command line arguments as documented in
+<<Arguments and options>>.
+
+=== Demo Output Products
+With the above invocation, MMTC should create six total files: An SCLK kernel
+("new-horizons_1001.tsc"), a SCLKSCET file ("new-horizons_1001.sclkscet"), and tables
+RunHistoryFile.csv, SummaryTable.csv, TimeHistoryFile.csv, and RawTlmTable.csv.
+Note that table products will not output to the same directory as text products
+unless otherwise configured as mentioned earlier.
+
+=== Clearing the Run State
+The MMTC demo's state can be reverted in one of two ways: manually deleting output
+products or using the built-in rollback function.
+
+For the former, deleting all SCLK kernels, SCLKSCET files, UplinkCmd files, and the
+four aforementioned .csv table products will return MMTC to a fresh state allowing
+for the same invocation arguments to be used again and to recreate output products.
+
+Alternatively, running MMTC with "rollback" passed in as the first argument will
+initiate the rollback interface. Note that rollback can only return MMTC to the state it was in after a prior run and therefore can't recreate a completely fresh
+state--only the state after the first recorded run at the earliest. See
+<<Output Product Rollback>> for the full documentation on using rollback.
+
+== Basics of Time Correlation
+
+Time correlation is the association of a time measured onboard the spacecraft with an independently computed ground time and a measurement of the rate that the spacecraft clock (SCLK) has drifted away from ground time.
+
+=== Terminology
+
+==== [.underline]#SCLK#
+Spacecraft clock time (SCLK) is represented as a number of ticks since a defined starting ground time. An SCLK value consists of a coarse and a fine part in the form of unsigned integers. The coarse part of the SCLK is usually approximately one second in length. The fine part is a count of clock oscillations that occur in a cadence of a fraction of second. One can convert the fine part to a decimal fraction of a second by dividing it by the SCLK modulus, which is a fixed value for the clock. The coarse part of the SCLK is often called the “seconds” part and the fine part the “subseconds” part. SCLK can be represented as either a raw floating point number or as an “encoded SCLK.”
+
+The raw form of SCLK is a regular floating point number, given in seconds, and is computed by SCLK~coarse~+(SCLK~fine~/modulus). The modulus is the fractional representation of a tick, also called the “SCLK resolution” or the “tick weight.”
+
+Encoded SCLK is a way of representing SCLK defined for use with the NAIF SPICE library that assures an ever-increasing SCLK value regardless of clock rollovers or interrupts. The raw form of SCLK is written to the SCLK/SCET file. MMTC writes the encoded form to the SCLK Kernel as an unsigned integer.
+
+==== [.underline]#TDT(G)#
+Ground time is measured by reading the Earth Receive Time (ERT) attached to a telemetry frame containing an SCLK by the ground station. One-way light time (OWLT) and some smaller factors are then subtracted from the ground time to make it match the SCLK. The ground stations provide ERT as a UTC value; however, it is converted to Terrestrial Dynamical Time (TDT) for time correlation purposes. This can be given either as a calendar string or as a numeric second of epoch. The TDT representation of correlated ground time is represented in MMTC as TDT(G). TDT(G) is written to the SCLK Kernel in association with an encoded SCLK
+
+==== [.underline]#SCET#
+Spacecraft Event Time (SCET), in the MMTC context, is the UTC equivalent of TDT(G). It is computed independently of the SCLK from the ERT-derived TDT(G). This value represents the correlated ground time given as SCET0 in the SCLK/SCET file.
+
+==== [.underline]#CLKRATE#
+This clock change rate (CLKRATE) can also be thought of as a measurement of much the length of an SCLK “tick” drifts over time due to imprecisions in the onboard clock. The clock rate compares the differences between the latest computation of TDT(G) and one from a previous run with the difference of the associated SCLKs from the current and previous runs. This value goes into both the SCLK Kernel and the SCLK/SCET file.
+
+The SCLK, in either raw or encoded form; the ground time, as either TDT(G) or SCET; and the CLKRATE are the essential parameters needed to perform time correlation. MMTC computes these values during each run. See _Reid & Cooper 2019_ (<<table2>>) for a more detailed and in-depth discussion of time correlation and MMTC.
+
+=== Overview of MMTC workflow
+
+Ground knowledge of the correlation between the spacecraft clock, which we call SCLK, and terrestrial time is determined using the timing of downlink telemetry frames.  In particular, for each run of MMTC, a single “target” frame is identified as the vehicle for providing the information needed for that determination.
+
+The SCLK for the target frame may be included in the target frame itself or may be included in a later frame, which we refer to as the “supplemental” frame.  If included in the target frame, the SCLK is typically packaged in a telemetry packet that is included in the data portion of that frame and we usually refer to that as a Time Correlation Packet or “TK” Packet.
+
+If the SCLK for the target frame is included in a later frame, nominally the next frame downlinked, the SCLK may be packaged in a Time Correlation Packet or in the downlink frame secondary header itself.  Which option is chosen depends on the format of the downlink frame.
+
+Each time MMTC is run, a collection of output products is updated.  MMTC is run over a specified time interval.  For some missions, MMTC will be run once a day over all the data accumulated for the previous day.  For other missions, MMTC will run following each downlink contact between the spacecraft and a ground station to process all the data obtained during that contact.  MMTC processes the newest (most recent) data first.  If that data set does not provide a valid correlation between the spacecraft time and terrestrial time, the software notes that in a log file and looks at an earlier set of data within the specified interval.  The behavior by which MMTC looks through the available data is configurable.
+
+This process continues until a “good” set of data is identified by a set of filters.  That good set is used to determine the correlation between SCLK and Earth time.  All the data used in that determination are assembled into a text record that is appended to the Summary Table.  Each successful run of MMTC results is captured in a single new time record in the Summary Table.  MMTC completes when a good set of data is identified and all the products are produced or updated.
+
+The receiving ground station reports the “Earth Received Time” or ERT of the received downlink frame, typically in terms of UTC.  MMTC combines the SCLK of the supplemental frame with the ERT of the target frame and other data, such as the estimated one-way light time (OWLT) for the frame to travel from the spacecraft to the ground station, to establish the correlation between SCLK and a standard terrestrial time scale.  The standard terrestrial time scale used by MMTC is called Terrestrial Dynamical Time or TDT. See Appendix A. for a description of TDT. Figure 1 below illustrates the data flows involved in time correlation.
+
+.Overview of MMTC processing workflow
+image::mmtc_processing_flow.png[pdfwidth=70%,align="center"]
+
+=== Determining the Clock Change Rate
+As stated above, a time correlation record contains three fundamental components: a spacecraft time, a ground time, and
+a clock change rate. The clock change rate value is part of the basic time correlation record in both the SCLK kernel
+and the SCLK/SCET file; it measures the differential between time as measured by the spacecraft clock as compared to an
+“absolute” time measured on the ground. There are no perfect clocks; therefore, time as measured onboard the spacecraft
+will drift away from that measured on the ground. This measurement of clock change rate is essential for adjusting for
+drift when converting SCLK to a ground time. MMTC produces this value in one of four ways, as specified by command line
+options. In the absence of a command line option, the *--compute-interpolate* option is used (see below).
+
+[.underline]#*Compute Predicted Clock Change Rate*# +
+MMTC computes the predicted clock change rate in TDT seconds per SCLK second using the following formula: +
+_CLKRATE = (TDT(G)~1~ – TDT(G)~0~)/(SCLK~1~ – SCLK~0~)_ +
+Where: +
+
+* *TDT(G)~1~* is the ground time as measured in Terrestrial Dynamical Time (TDT) of the current target sample based on the sample Earth Received Time (ERT) minus one-way light travel time (OWLT) and some other adjustments.
+* *TDT(G)~0~* is the ground time from a previous time correlation measured in TDT obtained from the input SCLK kernel looking back a number of records whose ground times are immediately before a number of hours as indicated in the *compute.tdtG.rate.predicted.lookBackDays*
+* *SCLK~1~* is the spacecraft clock value in ticks (SCLK) relative to a determined epoch of the current target sample as obtained either from a TK packet or transfer frame header.
+* *SCLK~0~* is the SCLK value from the same previous SCLK Kernel record from which TDT~0~ was obtained.
+
+
+Please note that the computation of Predicted CLKRATE depends on there being at least one prior time correlation record
+in the input SCLK Kernel. MMTC subtracts the number of lookback days as given in the
+*compute.tdtG.rate.predicted.lookBackDays* configuration parameters from the time of the current target sample. This is
+the lookback time. It selects the record from the input SCLK Kernel that matches or immediately precedes the lookback
+time for use in computing the CLKRATE. If the next record that precedes the lookback time is earlier than the maximum
+lookback time specified in the *compute.tdtG.rate.predicted.maxLookBackDays*, MMTC will terminate with an error.
+
+[.underline]#*Compute Interpolated Clock Change Rate*# +
+MMTC computes the interpolated clock change rate using the same formula as for the predicted clock change rate, except that
+*TDT~0~* and *SCLK~0~* are the values from the time correlation immediately prior to the current one (i.e., the last record
+in the input SCLK kernel). However, this interpolated clock change rate is written to that prior time correlation record,
+not the current one. The MMTC uses the predicted method to compute the clock change rate for the current time correlation,
+but then overwrites the clock change rate in the previous time correlation record in the SCLK kernel. The next time that
+the MMTC runs with interpolation on, it will overwrite this latest clock change rate in the current time correlation record
+with a new interpolated one. This method has been shown to provide a slightly more accurate value for clock change rate.
+This value is also written to the SummaryTable and the TimeHistoryFile. Since the MMTC creates the SCLK/SCET file from
+the SCLK kernel, the SCLK/SCET file will contain the same interpolated values for all but the very last time correlation,
+but rounded to one less digit of precision. *This is the recommended method of computing the clock change rate and is the
+default if no alternate clock change rate mode is specified with command line arguments* (see <<Arguments and options>>.
+
+[.underline]#*Assign Clock Change Rate*# +
+MMTC allows the user to assign the value for the clock change rate that will be written to the SCLK kernel and SCLK/SCET
+file and the other products. If the *--clkchgrate-assign* option is included in MMTC's invocation command, then the value
+following the option will be used. The *--clkchgrate-assign* option also accepts the names of presets that users
+can specify in the MMTC configuration file in place of numeric values (see <<table6>>).
+
+This option should be used
+when there is a discontinuity in time correlations such as after an oscillator switch, after a radio switch (for mission
+in which the radio provides the SCLK values), or when an anomaly occurred that affected the spacecraft clock. Comparing
+SCLK values across time correlations that are based on different clocks is erroneous. In such cases, a time correlation
+engineer will usually externally estimate the clock change rate by manual computation.
+
+[.underline]#*Set Clock Change Rate to No Drift*# +
+MMTC allows the user to set the clock change rate to indicate that there was no drift between time correlations by
+including the *--clkchgrate-nodrift* command line option. This would indicate a perfect clock, which
+does not exist in reality. This option is equivalent to assigning the clock change rate to 1.00000000000. There are
+circumstances when a time correlation engineer may determine that this is appropriate. The first record in an SCLK
+kernel, which is usually created by hand, normally sets the clock change rate to 1.00000000000.
+
+
+== Installing MMTC
+
+These are the system requirements to build and/or run MMTC:
+
+* RedHat Enterprise Linux (RHEL) 8
+* Java 8 JDK (build) or JRE (run)
+
+A nominal MMTC installation has the following directory structure and contents:
+
+* */bin*
+
+** *mmtc* – this is the script that is run to start the application (see <<Invoking MMTC>>)
+
+* */conf*
+
+** *log4j2.properties* – configuration parameters for the message logger (see <<Log File>>). This file is specified as an option to the java JRE command itself.
+** *properties.dtd* – defines the structure of the XML schema.
+** *TimeCorrelationConfigProperties.xsd* – the XML schema that defines the time correlation parameters.
+** *TimeCorrelationConfigProperties.xml* – the time correlation parameters file.
+** *GroundStationsMap.csv* – the ground station map (see <<Ground Stations Map File>>). This file is indicated in the configuration parameter groundStationMap.path and can thus be named anything and located anywhere in the file system, but it is recommended to place it in this directory.
+** *SclkPartitionMap.csv* – the SCLK partition map (see <<SCLK Partition Map File>>). This file is indicated in the configuration parameter sclkPartitionMap.path and can thus be named anything and located anywhere in the file system, but it is recommended to place it in this directory.
+* */lib*
+** *mmtc-core-{revnumber}-app.jar* – the Java jar file containing the compiled MMTC application.
+** */naif* – the directory where NAIF SPICE (via JNISpice) is bundled for use by MMTC
+** */plugins* – the directory where telemetry source plugins should be placed.
+***	*mmtc-plugin-ampcs-{revnumber}.jar* – a plugin for using AMPCS as the telemetry source.
+* */log*
+** *(mmtc.log)* – the log file created by the MMTC (this file will not exist until the first time the MMTC is run).
+* */output*
+** This is the directory where output files will be written. This directory is indicated in configuration parameters such as *spice.kernel.sclk.kerneldir* and *product.uplinkCmdFile.outputDir* and can thus be located anywhere in the file system.
+** A seed SCLK kernel must also be placed here before the first time the MMTC is run.
+
+=== Installing from the RPM
+
+MMTC is distributed as an RPM for RHEL 8. This is the preferred way of installing MMTC.
+
+The MMTC RPM is a relocatable RPM; by default, it will install MMTC into /opt/local/mmtc, but this can be overridden with the rpm command’s --prefix flag when installing the RPM.  Installing the RPM produces the aforementioned directory structure and contents at this path.
+
+Note that the MMTC RPM currently does not have special handling for configuration files. [.red]#If configuration files already exist in the conf folder inside the destination directory, the RPM installation will overwrite them.# Before installing the RPM over an existing directory, be sure to back up any custom, modified configurations files (such as TimeCorrelationConfigProperties.xml and log4j2.properties).
+
+If a user named “mmtc” does not already exist, the RPM installation will also create the mmtc user and group. All files installed by the RPM are world-readable; however, only the mmtc user and members of the mmtc group can modify configuration files and add or create files (such as new log files or additional telemetry source plugins) in the conf, log, and lib/plugins directories.
+
+After installing the RPM, do the following steps as needed:
+
+* Add users to the mmtc group.
+* To use a telemetry source other than AMPCS, add an appropriate telemetry source plugin to the lib/plugins folder.
+* Update the configuration files, in particular TimeCorrelationConfigProperties.xml, in the conf folder to suit the mission.
+* Place a seed SCLK kernel file in the output folder.
+
+MMTC can then be invoked from the command line. Change the working directory to the MMTC installation directory (`/opt/local/mmtc` by default), and then run:
+
+[source, bash]
+----
+bin/mmtc [options] <start-time> <stop-time>
+----
+
+See the rest of the User’s Guide for detailed command syntax.
+
+=== Installing from the tar.gz distribution archive
+
+MMTC is also distributed as a .tar.gz archive file. This method of installation can be used when RPM installation is not desired or possible.
+
+Extracting the archive file produces the aforementioned directory structure and contents.
+
+After the archive file is extracted, some folders and files can be moved elsewhere in the filesystem to suit the mission:
+
+* The conf folder can be relocated anywhere; in fact, it does not need to be used at all, and most files inside it can be relocated anywhere. The exceptions are TimeCorrelationConfigProperties.xml, TimeCorrelationConfigProperties.xsd, and properties.dtd, all three of which must be placed in the same folder. After relocating the folder or any files, simply modify the following:
+** Ensure that TimeCorrelationConfigProperties.xml, TimeCorrelationConfigProperties.xsd, and properties.dtd are located in the same folder. Set the *$TK_CONFIG_PATH* environment variable to the path of that folder.
+** In the TimeCorrelationConfigProperties.xml file, set the *groundStationMap.path* and *sclkPartitionMap.path* properties to specify the paths to GroundStationsMap.csv and SclkPartitionMap.csv, respectively.
+** In the `bin/mmtc` script, modify the line
+“-Dlog4j.configurationFile=${MMTC_HOME}/conf/log4j2.properties \”
+with the correct path to log4j2.properties.
+* The `lib/plugins` folder can be relocated anywhere; simply modify the TimeCorrelationConfigProperties.xml file’s *telemetry.source.pluginDirectory* property to specify the path to the folder.
+* The log folder can be located anywhere; simply modify the log4j2.properties file’s *property.basedir* property to specify the path to the folder.
+* There is no requirement for all output products to be written to the same output folder. Simply ensure that the various output path properties in TimeCorrelationConfigProperties.xml point to the desired output paths.
+
+MMTC can then be invoked from the command line. Change the working directory to where the archive file was extracted, and then run:
+
+[source, bash]
+----
+bin/mmtc [options] <start-time> <stop-time>
+----
+
+See the rest of the User’s Guide for detailed command syntax.
+
+=== Building from source
+
+MMTC can also be built from source. The MMTC release includes a source distribution bundle that contains a Gradle project to build the MMTC application, as well as sample configuration files and test data.
+
+To build MMTC:
+
+1. `tar xzf mmtc-{revnumber}.tar.gz`
+2. `cd mmtc-{revnumber}`
+3. `./gradlew clean build`
+
+To build the MMTC RPM, additionally run:
+
+1.	`./gradlew mmtcRpm`
+
+The build automatically produces a Javadoc jar file as well. To examine the Javadoc, extract the jar contents:
+
+1. `mkdir javadoc`
+2. `cd javadoc`
+3. `jar -xf ../target/mmtc-{revnumber}-javadoc.jar`
+4. `cd ..`
+
+Then browse the resulting Javadoc HTML files in the javadoc folder.
+
+In order to run MMTC after it has been built, set up the runtime environment:
+
+1. Create configuration and output directories at your desired location
+2. Set environment variables:
+
+** Set *$MMTC_HOME* to the path to `./build/mmtc-dist-tmp`
+** Set *$TK_CONFIG_PATH* to the path of the configuration directory from the prior step
+*** Populate this directory with a valid copy of TimeCorrelationConfigProperties.xml, GroundStationMap.csv, and SclkPartitionMap.csv.  Refer to test files within `mmtc-core/src/test/resources` as necessary.
+*** Update the contents of these files as necessary with mission-specific details, and ensure the output paths are referring to the directory you created in step 1.
+
+[.red]#Please note that MMTC cannot interpolate environment variables within  TimeCorrelationConfigProperties.xml.#
+
+Once the environment has been configured, MMTC can be invoked from the command line.  Change the working directory to `./build/mmtc-dist-tmp`, and run the following:
+
+[source, bash]
+----
+bin/mmtc [options] <start-time> <stop-time>
+----
+
+See the rest of the User’s Guide for detailed command syntax.
+
+== Adapting MMTC to a Mission
+
+This section describes how to adapt MMTC for a particular mission. MMTC is highly configurable and every effort is made to expose mission-specific aspects via either configuration or plugins.
+
+=== Configuring MMTC
+
+MMTC's behavior is customized via its configuration files:
+
+** *TimeCorrelationConfigProperties.xml* - the main MMTC configuration file (see section <<Time Correlation Config Properties>>)
+** *GroundStationsMap.csv* – the ground station map (see section 8.5)
+** *SclkPartitionMap.csv* – the SCLK partition map (see section 8.4)
+
+=== Selecting a Telemetry Source
+
+It is intended that the 'core' implementation of MMTC remains resuable, adaptable, and configurable to meet the requirements of multiple missions. To help achieve this goal, MMTC relies on so-called 'Telemetry Sources' to interface with a mission's telemetry archive and to provide telemetry to be used for correlation and related analysis.  These Telemetry Sources are provided by plugins to MMTC.
+
+A mission must choose a certain Telemetry Source implementation to use, either reusing an existing MMTC Telemetry Source plugin or developing and using a custom implementation.
+
+MMTC includes the following Telemetry Source plugin implementations:
+
+* a 'Raw Telemetry Table' Telemetry Source implementation (which reads time correlation telemetry from a CSV file)
+* two AMPCS Telemetry Sources (which retrieve telemetry from a local AMPCS installation)
+
+The Telemetry Source is chosen and configured by configuration supplied in TimeCorrelationConfigProperties.xml.  For example, to use the built-in Raw Telemetry Table plugin, the following configuration might be used:
+
+[source, xml]
+----
+<entry key="telemetry.source.name">rawTlmTable</entry>
+<entry key="telemetry.source.pluginDirectory"></entry>
+<entry key="telemetry.source.pluginJarPrefix"></entry>
+----
+
+To use a Telemetry Source from the included AMPCS plugin, the following configuration might be used:
+
+[source, xml, subs="attributes+"]
+----
+<entry key="telemetry.source.name">AmpcsTlmArchive</entry>
+<entry key="telemetry.source.pluginDirectory">/opt/local/mmtc/lib/plugins/</entry>
+<entry key="telemetry.source.pluginJarPrefix">mmtc-plugin-ampcs-{revnumber}</entry>
+----
+
+Telemetry source plugins usually require additional configuration, which are supplied within the same TimeCorrelationConfigProperties.xml file, and which by convention have configuration key names that begin with *telemetry.source.plugin.<plugin name>*.
+
+Please see Section 7 for more information about telemetry source plugins, including a guide to creating a new Telemetry Source plugin for use with MMTC.
+
+=== Invoking MMTC
+
+The `./bin/mmtc` Bash wrapper script is used to invoke MMTC. Along with running the application JAR and passing along command line arguments, it sets certain Java system properties based on environment variables described above, namely the location of the SPICE library and the location of the log4j2.properties file that controls MMTC logging. A user might need to edit this script for their particular use.
+
+.MMTC start-up script contents
+[source, bash]
+----
+include::../mmtc-core/bin/mmtc[]
+----
+
+The code block above gives the MMTC start-up Bash script. If possible, missions and users should use this script to launch MMTC (or take it as the basis for a custom script to launch MMTC, if needed.) Note that the script depends upon the standard *$JAVA_HOME* environment variable being already set; on the other hand, if the custom *$MMTC_HOME* and *$TK_CONFIG_PATH* environment variables are not already set, it will derive values for them relative to the current working directory. (As a consequence, users should navigate to the MMTC installation directory, not to the MMTC `bin` directory, before running MMTC.) Also note that the script specifies to look for the log4j2 logging configuration file at `$MMTC_HOME/conf/log4j2.properties`; however, as with the rest of the script, this can be edited as needed.
+
+== Running MMTC
+
+MMTC is invoked by running the startup script described in <<Invoking MMTC>>. There is no GUI; MMTC is operated by its command-line interface only.
+
+=== Arguments and options
+
+MMTC takes two required arguments, a start time and a stop time in Earth Received Time (ERT) for the data to query from its telemetry source. These are calendar string values in UTC and in ISO of the format:
+
+_yyyy-mm-ddThh:mm:ss.nnn_
+
+(or) +
+
+_yyyy-doyThh:mm:ss.nnn_
+
+...where:
+
+* _yyyy_ is the year
+* _mm_ is the month
+* _dd_ is the day of the month
+* _doy_ is the day of the year (1-366)
+* _hh_ is the hour of the day
+* _mm_ is the minutes of the hour
+* _ss_ is the seconds of the minute
+* _n_ is the fraction of a second
+
+All times are given in the 24-hour clock. Besides the two required arguments, MMTC also accepts additional options described in Table 4. MMTC is started as follows:
+
+[source, bash]
+----
+bin/mmtc <start-time> <stop-time> [options]
+----
+or
+[source, bash]
+----
+bin/mmtc [options] <start-time> <stop-time>
+----
+
+For example, assuming the following commands were run using an AMPCS telemetry source:
+
+[source, bash]
+----
+bin/mmtc 2017-04-03T00:00:00.0 2017-04-04T00:00:00.0 --clkchgrate-compute i --generate-cmd-file -K 11
+----
+
+The above example queries AMPCS session ID 11 for 24 hours of telemetry over the entirety of April 3, 2017. It will compute a predicted clock change rate for the newest time correlation and replace the previous time correlation with an interpolated clock change rate. It will generate an uplink command file from the newly-computed time correlation.
+
+[source, bash]
+----
+bin/mmtc 2019-183T02:14:00.0 2019-183T04:16:00.0 --clkchgrate-compute p -K 16
+----
+
+The above example queries 2 hours and 2 minutes of telemetry beginning on July 2, 2019 (doy 183, non-leap year) at 02:14 UTC from AMPCS session ID 16. It will compute the clock change rate for the new time correlation, but will not overwrite the previous one with a new interpolated value. It will not create an uplink command file.
+
+[source, bash]
+----
+bin/mmtc 2019-183T02:14:00.0 2019-183T04:16:00.0 --clkchgrate-assign 1.00000000000
+----
+
+The above example queries all AMPCS sessions for 2 hours and 2 minutes of telemetry beginning on July 2, 2019 (doy 183) at 02:14 UTC. It will assign the clock change rate of the new time correlation to 1.00000000000. The particular value in this example indicates no drift and is equivalent to providing *--clkchgrate-nodrift* with no value.
+
+*Note*: If you get an error message suggesting that SPICE kernels are missing, it could be due to not all required kernels having been provided, but it could also be due to the spacecraft ephemeris SPK kernel not covering the start and stop times provided to MMTC. If this is the case, MMTC cannot compute the essential one-way light travel time (OWLT) and will fail.
+
+.MMTC Command Line Options
+[[table4, Table 4: MMTC Command Line Options]]
+[%autowidth]
+|===
+|Short Option |Long Option |Value(s) |Description
+
+|-c
+|--generate-cmd-file
+|N/A
+|Generate an Uplink Command File. Overrides the corresponding configuration parameter. This file will be generated only if this option is provided.
+
+|
+|--clkchgrate-assign
+|A floating-point number (e.g., 1.00000001234) or a string (e.g., *preset1*) corresponding to the name of a preset value
+specified in the configuration file (see Chapter 8, Table 6).
+|In a testing environment and in certain operational scenarios, it can be necessary to have the MMTC assign the clock
+change rate of the new time correlation to a value specified by the user rather than computing it. Also, if this option
+is selected, MMTC will not replace the existing clock change rate in the SCLK kernel with an interpolated value. This
+value will appear in the new (latest) time correlation record in the SCLK kernel and SCLK/SCET file.
+
+This option and any other *--clkchgrate-** options are mutually exclusive.
+
+|
+|--clkchgrate-compute
+|i or p
+|i : Directs MMTC to compute a predicted clock drift rate AND overwrite the previous time correlation record with an interpolated clock change rate. This is the default MMTC behavior.
+
+p : Directs MMTC to compute a predicted clock drift rate, but does NOT overwrite the previous time correlation record.
+This option and any other *--clkchgrate-** options are mutually exclusive.
+
+|
+|--clkchgrate-nodrift
+|N/A
+|In a testing environment and in certain operational scenarios, it can be necessary to have MMTC assign the clock change rate of the new time correlation to 1.0, indicating no clock drift, rather than computing it. Also, if this option is selected,  MMTC will not replace the existing clock change rate in the SCLK kernel with an interpolated value. The value 1.00000000000 will appear in the new (latest) time correlation record in the SCLK kernel and SCLK/SCET file. This option and any other *--clkchgrate-** options are mutually exclusive.
+
+|-F
+|--disable-contact-filter
+|N/A
+|Turns off the Contact Filter. Overrides the Contact Filter enabled feature in the configuration parameters (filter.contact.enabled). If the Contact Filter is not enabled in the configuration parameters, this option does nothing. It may be desirable to turn off the Contact Filter for a single run in test environments and in some operational scenarios such as when there is a discontinuity of telemetry data, a switch between onboard oscillators, or a new clock partition is declared.
+
+|-T
+|--test-mode-owlt
+|A floating point value of units seconds (e.g., 12.413)
+|This option is for use ONLY in I&T environments. It directs the MMTC to use the provided value for the One-way Light Time (OWLT) rather than compute it from ephemeris.  This option is strictly for testing and should NEVER be used operationally.
+
+|-K
+|--ampcs-session-id
+|Positive integer
+|The AMPCS session ID to query packet and frame data from. This option is only applicable when using the AMPCS telemetry source plugin.
+
+|-n
+|--connection-parms
+|Free-format String
+|Any values, such as AMPCS database connection parameters, that need to be specified in AMPCS queries. This is unparsed and added to the chill_get_* command calls. This option is only applicable when using the AMPCS telemetry source plugin.
+
+|-h
+|--help
+|N/A
+|Prints out a short summary of the command line usage and these options. If this option is specified, the MMTC will not perform time correlation.
+
+|-v
+|--version
+|N/A
+|Prints out the version number of MMTC being accessed. If this option is specified, the MMTC will not perform time correlation as it supersedes all other options except --help
+|===
+
+== Inputs
+
+Though SPICE SCLK kernel files are one of the primary output products of the MMTC (see <<Output Products>> for details about outputs), MMTC also requires a seed SPICE SCLK kernel file or other previously generated SPICE SCLK kernel file as an input in order to run. It requires other inputs and writes to some other files as well. Upon start-up, the MMTC loads a set of configuration parameters read from a configuration file. It then loads a set of SPICE kernels, which are specified in the configuration parameters. In the course of its processing, it reads and writes to a cumulative Summary Table, and writes to a cumulative Raw Telemetry Table and a cumulative Time History File.
+
+=== Input types
+
+==== Configuration Parameters
+
+Upon start-up, MMTC reads an XML-formatted file containing a large set of configuration parameters (*$TK_CONFIG_PATH/TimeCorrelationConfigProperties.xml*). These parameters tell the application where its inputs and outputs are and direct most of its processing. The configuration parameters are described in detail in <<Configuration Files>>. They must be set for each mission and each instance of MMTC.
+
+MMTC also reads a file that configures logging (see <<Log File>>). Telemetry sources, including the AMPCS telemetry sources, may also read additional configuration such as the format of a Time Correlation (TK) packet (see <<TK Packet Description File>>).
+
+==== SPICE Kernels
+
+The MMTC uses the NAIF SPICE library to do many of its internal computations. SPICE “kernels” are actually specially-formatted parameter and data files that an application loads into SPICE. The kernels that one must load depend on the calculations to be performed. The MMTC uses SPICE to convert between types of time measurement, to compute one-way light travel time (OWLT), distances between the spacecraft and Earth, distances between the spacecraft and the Sun, the Earth-Sun distance, the velocity of the spacecraft relative to the Earth, the velocity of the spacecraft relative to the Solar System barycenter, and the velocity of the Earth relative to the Solar System barycenter. The SPICE kernels needed are discussed in detail in <<Input SPICE Kernels>>. In particular, see  <<Input SCLK kernel>> for a discussion of the input SCLK kernels and the incrementing of versions.
+
+==== Telemetry Archive
+
+MMTC assumes that an archive of mission telemetry is made available via a telemetry source implementation, and that it contains a store of all telemetry frames and packets received from the spacecraft. The TK packets that are the primary input to MMTC reside in the archive. MMTC queries data from the telemetry archive by ERT in order to obtain time correlation information. The AMPCS database and its interfaces are an example of such a telemetry archive. A Raw Telemetry Table generated from a previous run of MMTC can also be used as a telemetry source if there is a desire to reprocess previously computed time correlations. Telemetry source configuration is explained in detail in <<Telemetry Sources>>.
+
+=== Environment Variables
+
+MMTC may use the following environment variables defined in the host environment.
+
+.MMTC Environment Variables
+[[table5, Table 5: MMTC Environment Variables]]
+[%autowidth]
+|===
+|Name |Required |Description
+
+|JAVA_HOME |Yes |This must be set to the path of the JRE or JDK. It is required in order to launch MMTC.
+|MMTC_HOME |No |This can be set to the path where MMTC is installed. If it is not set, it defaults to the base installation path of the currently-executing MMTC program.
+|TK_CONFIG_PATH |No |This can be set to the directory path containing the TimeCorrelationConfigProperties.xml configuration file. If it is not set, it defaults to $MMTC_HOME/conf.
+|CHILL_GDS |Conditional |The standard AMPCS environment variable that gives the location of the AMPCS chill* interface programs. Required if and only if using an AMPCS telemetry source.
+|===
+
+== Telemetry Sources
+
+MMTC runs when invoked by an automated process or a human; it is not designed to run continuously on streaming data. It interfaces with received telemetry repositories. It can accept telemetry from a variety of built-in sources, including from a Raw Telemetry Table that it itself created (or that is of the same format that it creates) as well as an AMPCS telemetry archive using the AMPCS telemetry source plugin that it ships with.  It can also leverage custom-built telemetry source plugins.
+
+Taking input from Raw Telemetry Tables is generally not intended for operational use; it is intended to be used in I&T environments or when there is a desire to reprocess time correlations from previous runs.
+
+MMTC is invoked the same way regardless of the telemetry source. The configuration parameters *telemetry.source.name*, *telemetry.source.pluginDirectory*, and *telemetry.source.pluginJarPrefix* determine which telemetry source is used: if *telemetry.source.name* is set to `rawTlmTable`, then the MMTC will read telemetry from a Raw Telemetry Table; otherwise, it looks for a plugin jar file with the basename specified by *telemetry.source.pluginJarPrefix* inside the plugin directory specified by *telemetry.source.pluginDirectory*, and then it looks for the class specified by *telemetry.source.name* within the jar file.
+
+To run MMTC with an AMPCS telemetry source, use the AMPCS plugin by setting *telemetry.source.pluginJarPrefix* to `mmtc-plugin-ampcs` and *telemetry.source.name* to either `AmpcsTlmArchive` or `AmpcsTlmWithFrames`, as described in <<AMPCS Telemetry Sources>>.
+
+Plugins that aren't included with MMTC and which are obtained from other sources should include instructions on what value to use for *telemetry.source.name*.
+
+=== Raw Telemetry Table Telemetry Source
+
+MMTC creates and writes to a cumulative output file called the Raw Telemetry Table. The Raw Telemetry Table stores a record of the raw time correlation data that were used to perform all previous time correlations. MMTC appends to it each time it runs. This file can also serve as an input, thus allowing time correlation computations to be rerun. This is useful in I&T environments where TK packets are not available or when there is a need to reprocess time correlations. This need can arise due to errors having occurred in the previous runs or when an improved spacecraft ephemeris is available that will provide for more accuracy.
+
+When the *telemetry.source.name* configuration parameter is set to `rawTlmTable`, MMTC will read its input from the Raw Telemetry Table indicated in the *telemetry.source.plugin.rawTlmTable.tableFile.uri* configuration parameter. The fields in the Time History File that would normally contain ancillary data from telemetry will be empty.
+
+=== AMPCS Telemetry Sources
+
+MMTC includes a plugin to use AMPCS as the telemetry source. It integrates with the AMPCS telemetry archive using AMPCS’s _chill_get_packets_, _chill_get_frames_, and/or  _chill_get_chanvals_ programs. It assumes that time correlation (TK) packets are in the archive. It queries for all TK packets based on APID within the interval specified by the user and captures the essential metadata associated with each packet (e.g., ERT, VCID, VCFC, etc.). It then reads and decommutates the binary files containing the individual TK packets, extracting the SCLK and associated information from each. The resulting data comprises the input to the time correlation computations.
+
+MMTC queries separately for the temperature of the active oscillator, as this is important in assessing the health of the oscillator. It also queries for the current SCLK, ground time in Terrestrial Dynamical Time (TDT), and clock change rate values that flight software typically uses for computing time. These values are uploaded to the spacecraft and are already known on the ground, but it is important to assure that they have not been corrupted.
+
+To use AMPCS as a telemetry source with MMTC, MMTC must be invoked on a host system that also has AMPCS installed.  An AMPCS database must be accessible and must contain TK packets that can be queried by ERT. It should also contain the ancillary data described in <<Channelized Time Correlation Parameters>> that can be queried by SCET. The AMPCS chill* CLI programs must be available, and the AMPCS standard environment variable *$CHILL_GDS* must be defined in the environment. The AMPCS plugin calls chill* commands by spawning subprocesses and capturing their output.
+
+==== Description of behavior
+
+When querying telemetry from AMPCS, MMTC uses the `chill_get_packets` and `chill_get_chanvals` programs. To get the time correlation data, it invokes:
+
+[source, bash]
+----
+chill_get_packets -m -K <sessionId> --packetApid <TKPKTAPID> --timeType ERT –beginTime <begin time> --endTime <end time> --report –filename <pktFilespec>
+----
+
+This command queries AMPCS for the time correlation packets in the _begin time_ to _end time_ ERT interval, as specified by _TKPKTAPID_ which is the APID of the time correlation packet read from configuration parameters. _sessionID_ is the AMPCS session ID number. A file containing the binary packets is written to the file _/tmp/pktFilespec_ in the system temporary directory. _pktFilespec_ is a generated unique filename with the file suffix .tkpkt. MMTC then reads this file and decommutates the packets inside, extracting the time correlation information. Once it has done this, the packet file is no longer needed and will be deleted by the operating system whenever it routinely clears out its /tmp directory. MMTC also captures the metadata associated with each of the packets and extracts from it some essential information, such as ERT.
+
+Some of the ancillary data that goes into the TimeHistoryFile is read from telemetry channels that are specified in the configuration parameters. These include the oscillator temperature and the time correlations computed onboard the spacecraft (TDT(S), onboard SCLK, and onboard clock change rate). The channel IDs of all of these parameters are specified in configuration parameters (TimeCorrelationConfigProperties.xml).  To retrieve this ancillary data, MMTC invokes a subprocess such as:
+
+[source, bash]
+----
+chill_get_chanvals -m -K sessionId –timeType SCET –-channelIds GNCSCLK,TDTS,SCLK1,TDT1,CLKGCHRATE1 –beginTime <begin time> --endTime <end time>
+----
+
+The active oscillator's temperature value is also queried from channelized telemetry.  MMTC configuration parameters define the configuration by which MMTC queries AMPCS for this information and are detailed later in this section.
+
+The MMTC AMPCS plugin has two available 'Telemetry Source' implementations.  The implementation that most closely matches the characteristics of the spacecraft's telemetry should be selected.  The selection is made by setting the *telemetry.source.name* configuration parameter.  The available choices are:
+
+[.underline]#AmpcsTlmArchive#
+
+If *telemetry.source.name* is set to `AmpcsTlmArchive`, MMTC will assume that a set of consecutive TK packets are available in the query interval from which it can construct a sample set. It will then select one of these as the source of the time correlation data. It will assume that one of the preceding TK packets, usually the immediate predecessor as indicated by VCFC, comes from the target frame and will use its ERT for computations. Again, there must be a set of TK packets delivered in consecutive frames, as MMTC will look back a fixed number of packets to find the one with the associated ERT. By "consecutive," we mean that their frame VCFCs, as provided in the AMPCS metadata, are exactly 1 greater than the preceding TK packet. The target TK packet needs to always precede the one selected from the sample by a fixed number. This is usually 1, but can be any fixed number as specified in the *telemetry.supplementalSampleOffset* configuration parameter.
+
+[.underline]#AmpcsTlmWithFrames#
+If *telemetry.source.name* is set to `AmpcsTlmWithFrames`, MMTC will not try to associate the SCLK values given in the selected TK packet with a frame by looking back a fixed number of packets. Instead, it will query for it using _chill_get_frames_ and the VCID and VCFC provided in the data portion of the selected TK packet. This way, it will not need packets from consecutive frames in order to process. Note that, as a result, the ERT, SCLK, Consecutive Frames, and VCID filters are not applicable and cannot be used. Always set the *telemetry.samplesPerSet* configuration parameter to 1 and the *filter.ert.enabled*, *filter.sclk.enabled*, *filter.consecutiveFrames.enabled*, and *filter.vcid.enabled* parameters to *false* when running in this mode. When running in this mode, the time correlation packets MUST contain a downlink data rate. The downlink data rate cannot be computed if frames or packets are non-consecutive.
+
+==== Assumptions
+
+[.underline]#Time Correlation Packets#
+
+The spacecraft flight system creates Time Correlation (TK) packets that contain the SCLK at which a preceding frame was created and radiated. (We refer to these as “TK” packets rather than “TC” so that they will not be confused with “telecommand” packets.) The TK packets are stored in the AMPCS telemetry archive and can be queried using the _chill_get_packets_ command. The MMTC requires that there be at least one more TK packet in the contact interval than the size of the sample set given in the configuration parameter *telemetry.samplesPerSet*. In other words, if *telemetry.samplesPerSet*=10, there must be at least 11 consecutive TK packets in the interval. If there are not a sufficient number of TK packets within the specified query interval to form a sample set, the MMTC will terminate with an error.
+
+[.underline]#Active Oscillator#
+
+Some spacecraft have multiple oscillators (i.e., clocks). Only one of these oscillators is active at a given time and is the one that is supplying SCLK values to the TK packets or the frame headers. The TimeHistoryFile indicates which oscillator is currently active in the *Oscillator* field. This value is mission-specific. When the active oscillator changes, it is advisable to set the clock change rate method to ‘Assign’ with an externally computed value or to ‘No Drift’, since computing the clock change rate between oscillators is not meaningful.
+
+[.underline]#Oscillator Temperature#
+
+The temperature of the active oscillator (i.e., the spacecraft oscillator that is reporting SCLK counts) is downlinked in channelized telemetry and is queried by SCET using the `chill_get_chanvals` command. This information can be included in any channelized packet, so long as it has an assigned Channel ID defined in the flight software dictionary. The data is included in the Time History File. If the data item is not available in a given query interval, MMTC will continue without it and will write a dash (‘-‘), indicating an empty value, to its field in the Time History File.
+
+[.underline]#Switching Oscillators#
+
+Some missions will have two or more oscillators. Others will have only one. When there is an oscillator switch, the clock change rate compute method should be set to either ‘Assign’ or ‘No Drift’ for the next MMTC run. A meaningful clock change rate cannot be computed from data from different oscillators. Depending on the thresholds set, the new change rate might fail the Contact Filter. If so, the user should turn off that filter in the configuration parameters for that run (or possibly for the next several runs) depending on the setting of configuration parameter *compute.tdtG.rate.predicted.lookBackDays*.  The clock change rate method can then be set back to Predicted or Interpolate for subsequent runs.
+
+[.underline]#Onboard Time Correlation Data#
+
+The SCLK, TDT(S), and clock change rate values that the flight system uses to compute absolute time from SCLK values are available in channelized telemetry and are queried by SCET using the _chill_get_chanvals_ command. This information can be included in any channelized packet, so long as they have assigned Channel IDs defined in the flight software dictionary. The data is included in the Time History File. If the data is not available in a given query interval, MMTC will continue without them and will write a dash (‘-‘), indicating an empty value, to the Time History File. The associated Channel IDs are included in Table 3.
+
+==== The Time Correlation Packet
+
+A set of Time Correlation (TK) packets received from spacecraft telemetry is the primary input to the MMTC and contains the fundamental data needed to perform time correlation. At minimum, each packet contains the coarse SCLK and fine SCLK of a previous (target) frame and the VCID and VCFC of the target frame. The frame carrying the TK packet from which SCLK is read is called the supplemental frame. The SCLK is actually associated with a previous frame called the target frame. The supplemental frame usually, but not always, immediately follows the target frame in the telemetry sequence. In other words, its VCFC is one greater than that of the target frame. However, since this is not always the case, the number of frames that separate the target and supplemental frames may be specified in configuration parameter *telemetry.supplementalSampleOffset*.
+
+As in the case of the Europa Clipper mission, the TK packet may also contain a validity flag, the frame encoding method, and the downlink data rate.
+
+The structure of the TK packet is defined in the TK Packet Description file. This is an XML file that conforms to the *tk_packet.xsd* schema (see section 8.3). This packet defines the bit offsets from the beginning of the packet of each field, their lengths in bits, and their expected type. Type for all fields is expected to be UNSIGNED_INT except for DownlinkDataRate which can be UNSIGNED_INT, SINGLE_FLOAT, or DOUBLE_FLOAT. This file must be customized for each mission. The name and location of this file is given in *telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri* within the configuration parameters.
+
+==== Channelized Time Correlation Parameters
+
+Please reference the configuration section for the full configuration key names that specify the channel value querying configuration for these parameters.
+
+.Received channelized telemetry values
+[%autowidth]
+|===
+|Item |Data Type |Description
+
+| SCLK1
+| Float
+| The current SCLK that the flight software onboard the spacecraft uses to derive ground time in TDT from SCLK values. This value is periodically uploaded to the spacecraft from the ground.
+
+| TDT1
+| Float
+| The ground time in TDT corresponding to TDT1. This value is periodically uploaded to the spacecraft from the ground.
+
+| CLKCHG1
+| Float
+| The clock change rate in SCLK seconds/TDT seconds that corresponds to SCLK1 and TDT1.
+
+| GNC SCLK
+| Float
+| The latest SCLK from which an onboard time correlation was computed within the query interval.
+
+| TDT(S)
+| Float
+| The ground time as computed onboard the spacecraft in TDT, calculated using a corresponding GNC SCLK value.
+
+| Oscillator Temperature
+| Float
+| The temperature of the oscillator(s).
+
+|===
+
+=== Developing and Using a New Telemetry Source
+
+The overall process for implementing a new Telemetry Source plugin and providing it to MMTC for usage is:
+
+1. Writing a new Java implementation of its _TelemetrySource_ interface
+2. Building and packaging it into a Java .jar file according to the Java service convention
+3. Placing the jar file in a location accessible to MMTC and supplying matching configuration in TimeCorrelationConfigProperties.xml.
+
+==== Quick Start
+
+MMTC includes an example standalone Gradle project that builds a functional example Telemetry Source plugin that can be immediately used with MMTC, and which can serve as a basis for new Telemetry Source plugins.
+
+The directory structure of the example Telemetry Source project is as follows:
+
+[source, subs="attributes"]
+----
+├── build.gradle.kts
+├── docs
+│   └── MMTC_Users_Guide.pdf
+├── gradle
+│   └── wrapper
+│       ├── gradle-wrapper.jar
+│       └── gradle-wrapper.properties
+├── gradlew
+├── lib
+│   └── edu
+│       └── jhuapl
+│           └── sd
+│               └── sig
+│                   └── mmtc-core
+│                       └── {revnumber}
+│                           ├── mmtc-core-{revnumber}.jar
+│                           ├── mmtc-core-{revnumber}.pom
+│                           ├── mmtc-core-{revnumber}-javadoc.jar
+│                           └── mmtc-core-{revnumber}-sources.jar
+├── settings.gradle.kts
+└── src
+    └── main
+        ├── java
+        │   └── edu
+        │       └── jhuapl
+        │           └── sd
+        │               └── sig
+        │                   └── mmtc
+        │                       └── tlmplugin
+        │                           └── example
+        │                               └── ExampleTelemetrySource.java
+        └── resources
+            └── META-INF
+                └── services
+                    └── edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource
+----
+
+To build and use the plugin:
+
+1. Acquire the SDK artifact `mmtc-{revnumber}-tlm-source-plugin-sdk.zip`, either from a release or by building from the MMTC repository: `./gradlew :mmtc-tlm-source-plugin-sdk:createSdkDist`
+2. Unzip the archive, which will create the file structure illustrated above.
+3. From the root of the SDK's Gradle project, run `./gradlew build`
+4. Configure your MMTC deployment as follows (assuming your MMTC installation is located at `/opt/local/mmtc`):
+- Copy the resulting `build/libs/mmtc-plugin-example-1.0.0-SNAPSHOT.jar` file into `/opt/local/mmtc/lib/plugins`
+- Apply the following configuration in `/opt/local/mmtc/conf/TimeCorrelationConfigProperties.xml`:
+
+    <entry key="telemetry.source.name">ExampleTelemetrySource</entry>
+    <entry key="telemetry.source.pluginDirectory">/opt/local/mmtc/lib/plugins/</entry>
+    <entry key="telemetry.source.pluginJarPrefix">mmtc-plugin-example</entry>
+
+5. Run MMTC:
+
+    bin/mmtc 2017-342T00:00:00 2017-342T23:59:59 -F --clkchgrate-compute p
+
+6. View the output products in `output/`, and the log file in `log/`.
+
+==== Writing a new _TelemetrySource_ Implementation
+
+To develop a new plugin, a developer needs to implement the _TelemetrySource_ interface.  Among other responsibilities, an implementation of _TelemetrySource_ provides MMTC instances of _FrameSample_ objects that contain information about the mission's timekeeping telemetry.  In particular, before and during implementation of a new Telemetry Source plugin, please read and understand the Javadoc and comments in the MMTC source for at least the following classes:
+
+* edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource
+* edu.jhuapl.sd.sig.mmtc.tlm.FrameSample
+
+This implementation and all other supporting classes and/or libraries must be packaged in a jar file, along with a `META-INF/services` directory containing a service provider configuration file that identifies the class(es) that implement the TelemetrySource.  Please reference the above sample project for an example of a compliant implementation.
+
+For MMTC to load a _TelemetrySource_ at runtime, the following configuration keys and values need to be set within MMTC’s TimeCorrelationConfigProperties.xml configuration file appropriately:
+
+* the *telemetry.source.pluginDirectory* configuration parameter must specify the path of the plugins directory (usually `/opt/local/mmtc/lib/plugins/`)
+* the *telemetry.source.pluginJarPrefix* configuration parameter must uniquely specify the start of the plugin jar file’s name within the above directory
+* the *telemetry.source.name* configuration parameter must specify the name of the desired _TelemetrySource_ implementation
+
+Please note that a single plugin jar may include more than one _TelemetrySource_ implementation.
+
+
+== Configuration Files
+
+=== Time Correlation Config Properties
+
+The MMTC Configuration file is an XML file that conforms to the schema TimeCorrelationConfigProperties.xsd, provided
+with the distribution. Table 6 describes the MMTC configuration parameters.
+
+This file is an XML properties file and contains a set of key/value pairs. Some of these parameters in this file
+are always required and others are only required in certain configurations (see below). Note that not all of the parameters are
+applicable to all missions.
+
+[.underline]#Configuration File Validation#
+
+On initialization, MMTC checks the active configuration file (found at the path specified by the *$TK_CONFIG_PATH*
+environment variable) for the presence of all keys listed in */conf/examples/TimeCorrelationConfigProperties-base.xml*.
+These keys represent the parameters required by all possible configurations of MMTC, but their presence alone does
+not guarantee a valid MMTC configuration file--additional configuration parameters are required for any real-world application (see Table 6 below
+for a full list of conditionally required keys) and this check only verifies the presence of keys that MMTC will
+never run without.
+
+Telemetry source plugins may also require additional configuration parameters, and these parameters should be included
+in *$TK_CONFIG_PATH/TimeCorrelationConfigProperties.xml*. By convention, plugin-specific parameters have names that
+begin with `telemetry.source.plugin.<plugin-name>.`. Table 7 describes the configuration parameters that are
+specific to the AMPCS telemetry source plugin that ships with MMTC. If a different telemetry source is used, the
+provider of the telemetry source plugin should include instructions about relevant configuration parameters.
+
+=== General configuration parameters
+
+The parameters in the table below are generally applicable cross-mission, though not every mission will need to specify every argument.
+
+.Configuration Parameters
+[[table6, Table 6: Configuration Parameters]]
+[%autowidth]
+|===
+|Name |Required |Type |Description
+
+|missionName
+|REQUIRED
+|STR
+|The name of the mission, e.g., “Europa Clipper”.
+
+|missionId
+|REQUIRED
+|INT
+|The Mission ID to be included in SCLK/SCET files.
+
+|spacecraftName
+|REQUIRED
+|STR
+|The name of the spacecraft, e.g., “Europa Clipper”.
+
+|spacecraft.id
+|REQUIRED
+|INT
+|The DSN-assigned Spacecraft ID (SCID). (Not to be confused with the CCSDS/SANA ID).
+
+|compute.clkchgrate.assignedValuePresets.{_preset name_}
+|OPTIONAL
+|DBL
+|User-defined keys that can be referenced by name when using the *--clkchgrate-assign* command line option.
+Users can specify as many or as few as desired in the configuration file, but names must be unique and alphanumeric.
+An example key and corresponding command line employment of that key:
+
+`<entry key="compute.clkchgrate.assignedValuePresets.preset1">0.9</entry>`
+
+$ `bin/mmtc 2017-343T00:00:00 2017-343T23:59:59 -F --clkchgrate-assign preset1`
+
+
+|spacecraft.timeDelaySec
+|REQUIRED
+|DBL
+|TDSC: Time Delay-Spacecraft. The number of seconds (usually a fraction of a second) delay in the spacecraft systems that affects a frame radiation SCLK. This is the time delay from the SCLK reported by the spacecraft to when the related downlink frame leaves the spacecraft antenna.  With careful spacecraft design, this can be ~ 0 at all downlink bit rates.  TDSC is useful during Mission Simulations prior to launch to bias TDT(G) to a future time, but that is an “off-label” application of this parameter that is not done in flight.
+
+|spacecraft.frameErtBitOffsetError
+|REQUIRED
+|DBL
+|Frame offset from ERT stamp.  An adjustment to be used in the bit-rate dependent time error due to a mismatch between frame times reported by the spacecraft and the receiving ground station; TDBE = 0 when there is no mismatch. This value will often be 0. This value divided by the measured downlink data rate in bps will be subtracted from the computation of ground time (TDT(G)).
+
+|spacecraft.sclkModulusOverride
+|OPTIONAL
+|INT
+|Overrides the modulus of the SCLK fine time (i.e., subseconds) given in the second field of the SCLK Kernel variable SCLK01_MODULI_*. If this parameter is not provided, the MMTC uses the value in the SCLK Kernel to convert SCLK fine time to decimal fraction of a second. If provided, it uses the value in this parameter. This is necessary for missions where the SCLK in the TK packets or frame header is coming from a system other than the GNC or avionics (e.g., a radio) that has a different fine time modulus.
+
+|spacecraft.oscillatorIds
+|REQUIRED
+|STR[]
+|Specifies the identifiers (comma-separated strings) of all oscillators on board the spacecraft that can are involved with the production of time correlation telemetry.  Examples values for this key may be `1,2`, `a,b`, or `prime,backup`.
+
+|groundStationMap.path
+|REQUIRED
+|STR
+|The fully qualified path to the Ground Stations Map file.
+
+|sclkPartitionMap.path
+|REQUIRED
+|STR
+|The fully qualified path to the SCLK Partition Map file.
+
+|telemetry.samplesPerSet
+|REQUIRED
+|INT
+|The number of consecutive samples (e.g., frames or TK packets) needed to perform time correlation.
+Set this value to 1 if using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode.
+
+|telemetry.supplementalSampleOffset
+|REQUIRED
+|INT
+|The number of frames that separate the target and supplemental frame (i.e., the frame containing the SCLK value). This will be 1 if the supplemental frame immediately follows the target frame based on VCFC.
+Set this value to 1 if using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode.
+
+|telemetry.sampleSetBuildingStrategy
+|REQUIRED
+|STR
+|The strategy that MMTC will use to query the chosen telemetry source and build candidate sample sets. MMTC will use the selected strategy to continue to build sample sets from progressively older telemetry, passing them through the configured data quality filters until one passes or the available telemetry within the input time range is exhausted.
+
+The available sample set building strategies are:
+
+• `SEPARATE_CONSECUTIVE_WINDOWS`: queries the telemetry source for the entire input time range in ERT, and starting with the most recent frames in the sample set, builds separate, consecutive, non-overlapping windows of candidate sample sets.
+
+• `SLIDING_WINDOW`: queries the telemetry source for the entire input time range in ERT, and starting with the most recent frames in the sample set, builds partially-overlapping candidate sample sets (each next sample set adding the next oldest frame and removing the youngest frame as compared to the previously-attempted set).  This strategy may take marginally longer than `SEPARATE_CONSECUTIVE_WINDOWS` but can help MMTC correctly skip over areas of noncontiguous telemetry and eventually build a candidate sample set that is aligned on a contiguous run of frames.
+
+• `SAMPLING`: issues incrementally older queries to the telemetry source over sub-ranges within the wider input time range.  It builds a candidate sample set from the latest frames returned from each query.  This strategy can allow for more efficient seeking through large volumes of candidate time correlation telemetry.
+
+|telemetry.sampleSetBuildingStrategy.sampling.samplingRateMinutes
+|OPTIONAL
+|STR
+|Required if *telemetry.sampleSetBuildingStrategy* is set to `SAMPLING`.  This is the period, in minutes, between the start times of each query made to the chosen telemetry source, bounded by the input ERT time range to MMTC.
+
+|telemetry.sampleSetBuildingStrategy.sampling.queryWidthMinutes
+|OPTIONAL
+|STR
+|Required if *telemetry.sampleSetBuildingStrategy* is set to `SAMPLING`.  This is the width, in minutes, of each query made to the chosen telemetry source within the input ERT time range to MMTC.
+
+|telemetry.mcfcMaxValue
+|CONDITIONAL
+|INT
+|Specifies the maximum Master Channel Frame Counter (MCFC) value for telemetry that includes such a value.  Only necessary if using the Consecutive Master Channel Frame Counter filter.
+If this filter is enabled, this value must be set to a positive integer.
+
+|telemetry.vcfcMaxValue
+|CONDITIONAL
+|INT
+|The mission’s maximum VCFC value that will be generated before the counter rolls over back to zero. The ConsecutiveFrameFilter uses this to know when to expect the next “consecutive” VCFC to be lower than the current VCFC.
+If the ConsecutiveFrameFilter is enabled, this must be set to a specific positive integer.
+
+|telemetry.source.name
+|REQUIRED
+|STR
+|Indicates which telemetry source to use. A value of "rawTlmTable" causes MMTC to use the Raw Telemetry Table specified by telemetry.source.plugin.
+rawTlmTable.tableFile.uri; this would generally only be useful in test venues or if a previous run needs to be reprocessed. Otherwise, valid values depend on the telemetry source plugin specified by telemetry.source.pluginDirectory and telemetry.
+source.pluginJarPrefix; consult the plugin provider for instructions.
+When using the AMPCS plugin that ships with MMTC, valid values for telemetry.source.name are “AmpcsTlmArchive” and “AmpcsTlmWithFrames”:
+
+• AmpcsTlmArchive: Query all information from TK packets from the AMPCS TLM archive. Use if consecutive TK packets are available to build a sample set.
+
+• AmpcsTlmWithFrames: Query supplemental sample information from a TK packet. Query the target sample information from the frame referenced from within the TK packet. Use if consecutive TK packets are not available. NOTE: In this mode, the TK packets must contain the downlink data rate in bps.
+
+
+|telemetry.source.plugin.rawTlmTable.tableFile.uri
+|CONDITIONAL
+|STR
+|The fully qualified path to the input Raw Telemetry Table file. This parameter is ignored if telemetry.
+source.name is not set to rawTlmTable.
+
+|telemetry.source.pluginDirectory
+|CONDITIONAL
+|STR
+|The path to the directory containing the telemetry source plugin that should be used. This parameter is ignored if telemetry.source.name is rawTlmTable.
+
+|telemetry.source.pluginJarPrefix
+|CONDITIONAL
+|STR
+|The basename of the telemetry source plugin jar file that should be used. This parameter is ignored if telemetry.source.name is rawTlmTable.
+
+|telemetry.tkOscTempWindowSec
+|REQUIRED
+|INT
+|The number of seconds +/- at which the oscillator temperature is to be queried by SCET (around the SCET of the time correlation target frame.) This allows for the SCET of the queried channel to be approximate.
+
+|telemetry.tkParmWindowSec
+|REQUIRED
+|INT
+|The maximum number of seconds after the time correlation target frame SCET for which to query GNC telemetry (SCLK/TDT(S)) values. This allows for the SCET of the queried channel to be approximate. The GNC TDT(S) and SCLK (for TDT(S)) values) are expected to have an identical SCET and the TDT(S) value is expected to be at or after the time correlation target frame's TDT(G).
+
+|compute.tdtG.rate.predicted.lookBackDays
+|REQUIRED
+|FLT
+|The number of days to look back into previous contacts to get SCLK and TDT values when computing the predicted clock change rate. This value is a float type and will be converted to truncated integer whole hours internally. If there is no time correlation record that corresponds to this time between this time and the maxLookBackDays parameter below, it is an error.
+
+|compute.tdtG.rate.predicted.maxLookBackDays
+|REQUIRED
+|FLT
+|The maximum number of days to look back into previous contacts to get SCLK and TDT values when computing the predicted clock change rate. This value is a float type and will be converted to truncated integer whole hours internally. If there is no time correlation record in the input SCLK Kernel within this amount of time prior to the current sample time, the MMTC will terminate with an error.
+
+|compute.tdtS.threshold.errorMsecWarning
+|REQUIRED
+|DBL
+|The threshold in milliseconds above which a computed error in TDT(S) calculations will indicate a warning as recorded in the Time History File.
+
+4+^|*The following parameters relate to SPICE kernels*
+
+|spice.naifSpacecraftId
+|ALL
+|INT
+|The spacecraft ID assigned by NAIF. Normally, this is the negative of the DSN SCID.
+
+|spice.kernel.sclk.kerneldir
+|REQUIRED
+|STR
+|The directory in which the SCLK kernels reside. The MMTC will search this directory for the SCLK kernel with the highest version number. Since this kernel will be input to the next run, this directory is also the directory to which the new SCLK Kernel will be written.
+
+|spice.kernel.sclk.inputPathOverride
+|Testing Only
+|STR
+|The fully qualified path of an SCLK kernel that the MMTC is to use as the input SCLK. Overrides the default behavior of searching the sclk.kerneldir for the latest SCLK kernel. This is intended for use in testing only and should not be used operationally. This can cause failures in succeeding runs due to duplicate filenames.
+
+|spice.kernel.sclk.baseName
+|REQUIRED
+|STR
+|The basename of the SCLK kernel. For example, given “europaclipper_00000.tsc”, “europaclipper” is the basename.
+
+|spice.kernel.sclk.separator
+|REQUIRED
+|STR
+|The separator between the basename and the version number of the SCLK kernel. For example, given “europaclipper_00000.tsc”, “_” (underscore) is the separator.
+
+|spice.kernel.sclk.uniqueKernelCounters
+|REQUIRED
+|BOOL
+|Setting this value to true instructs MMTC to never use the same SCLK/SCLKSCET
+counter twice in its output product creation. This is only relevant after rollbacks have been executed and subsequent
+runs of MMTC would create SCLK kernels with counters/filenames that previously existed. For example, if the latest SCLK
+kernel was named "mission-name_1002.tsc" and a rollback deleted that kernel and left "mission-name_1001.tsc" as the
+latest kernel, the next MMTC run with this setting set to true would produce "mission-name_1003.tsc" instead of
+"mission-name_1002.tsc" again as would be the case with the setting set to false.
+
+|spice.kernel.mk.path
+|OPTIONAL
+|STR
+|The fully qualified path to the metakernel to load. This parameter is optional.
+
+|spice.kernel.lsk.path
+|OPTIONAL
+|STR
+|The fully qualified path to the leap seconds kernel (LSK) to load. This parameter is optional and should not be provided if the LSK is included in a metakernel.
+
+|spice.kernel.spk.path
+|OPTIONAL
+|STR[]
+|The fully qualified path(s) to the ephemeris kernels (SPK) to load. This parameter is optional and should only be provided for SPKs that are not included in a metakernel.
+Multiple values are separated by commas.
+
+|spice.kernel.fk.path
+|REQUIRED
+|STR[]
+|The fully qualified path(s) to the frame kernels (FK) to load. This parameter is optional and should only be provided for FKs that are not included in a metakernel.
+Multiple values are separated by commas.
+
+|spice.kernel.pck.path
+|REQUIRED
+|STR[]
+|The fully qualified path(s) to the planetary constants kernels (PCK) to load. This parameter is optional and should only be provided for PCKs that are not included in a metakernel.
+Multiple values are separated by commas.
+
+4+^|*The following parameters relate to data quality filters*
+
+|filter.contact.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the contact filter on, or false to turn it off.  Overridden by the -F command line option, if present.
+
+|filter.contact.deltaLowerThreshold
+|CONDITIONAL
+|DBL
+|The lower threshold in milliseconds per day above which a data sample will fail the Contact Filter. This parameter is ignored if filter.contact.enabled is false.
+
+|filter.contact.deltaUpperThreshold
+|CONDITIONAL
+|DBL
+|The upper threshold in milliseconds per day below which a data sample will fail the Contact Filter. This parameter is ignored if filter.contact.enabled is false.
+
+|filter.ert.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the ERT filter on, or false to turn it off.
+Always set this value to false if using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode.
+
+|filter.ert.maxDeltaVarianceSec
+|CONDITIONAL
+|DBL
+|The allowed variance, in seconds, between the ERTs associated with subsequent frames in a sample set.  This is evaluated against the difference in ERT between the first two frame samples in a prospective sample set.  If the variance in ERT between subsequent frame samples is larger than this configured value, the ERT Filter will reject the sample set. This parameter is ignored if filter.ert.enabled is false.
+
+|filter.sclk.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the SCLK filter on, or false to turn it off.
+Always set this value to false if using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode.
+
+|filter.sclk.maxDeltaVarianceSec
+|CONDITIONAL
+|DBL
+|The allowed variance, in seconds, between the coarse SCLK values associated with subsequent frames in a sample set.  This is evaluated against the difference in SCLK between the first two frame samples in a prospective sample set.  If the variance in SCLK between subsequent frame samples is larger than this configured value, the SCLK Filter will reject the sample set. This parameter is ignored if filter.sclk.enabled is false.
+
+|filter.groundStation.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the stations filter on, or false to turn it off.
+
+|filter.groundStation.pathIds
+|CONDITIONAL
+|INT
+|A comma-separated list of ground station path IDs that the MMTC can receive data from. This parameter is ignored if filter.groundStation.enabled is false.
+
+|filter.minDataRate.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the minimum data rate filter on, or false to turn it off.
+
+|filter.dataRate.minDataRateBps
+|CONDITIONAL
+|INT
+|The downlink data rate in bits per second below which time correlation sample data will be rejected. This parameter is ignored if filter.minDataRate.enabled is false.
+
+|filter.maxDataRate.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the maximum data rate filter on, or false to turn it off.
+
+|filter.dataRate.maxDataRateBps
+|CONDITIONAL
+|INT
+|The downlink data rate in bits per second above which time correlation sample data will be rejected. This parameter is ignored if filter.maxDataRate.
+enabled is false.
+
+|filter.validFlag.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the valid sample filter on, or false to turn it off.
+
+|filter.consecutiveFrames.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the consecutive frames filter on, or false to turn it off.
+Always set this value to false if using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode.
+
+|filter.vcid.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the VCID filter on, or false to turn it off.
+Always set this value to false if using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode.
+
+|filter.vcid.validVcidGroups
+|CONDITIONAL
+|STR
+|Lists the allowed groupings of frame virtual channel IDs that MMTC will allow for possible selection as the chosen sample set for time correlation.
+This only affects the time correlation TK packets or frames. It does not affect the ancillary information (e.g., oscillator temperature, TDT(S), etc.) This parameter is ignored if filter.vcid.enabled is false.
+If filter.vcid.enabled is set to true, at least one nonempty group must be specified.  Multiple groups are separated by semicolons, and multiple VCIDs within a group a separated by backslash-escaped commas.
+For example, the string “0 \, 1 \, 2; 3” would indicate two groups of VCIDs this filter would check for: the first group consists of VCIDs 0, 1, and 2; and the second group contains only VCID 3.  Any given sample set would have to consist of VCIDs entirely within at least one group, and not spanning groups.
+
+|filter.consecutiveMasterChannelFrames.enabled
+|REQUIRED
+|BOOL
+|Set this value to true to turn the Consecutive Master Channel Frame Filter on, or false to turn it off.
+Always set this value to false if using the AMPCS telemetry source plugin’s AmpcsTlmArchive or AmpcsTlmWithFrames modes.
+
+4+^|*The following parameters relate to the location and contents of MMTC output products*
+
+|table.rawTelemetryTable.uri
+|REQUIRED
+|STR
+|The desired URI of the output Raw Telemetry Table file. This file and the Summary Table are commonly co-located.
+
+|table.rawTelemetryTable.dateTimePattern
+|REQUIRED
+|STR
+|The pattern that is used to parse ERTs from query metadata and to write ERT to the RawTlmTable in calendar string date/time form (e.g., ISO DOY format: “yyyy-DDD’T’HH:mm:ss.SSSSSS”).
+
+|table.summaryTable.uri
+|REQUIRED
+|STR
+|The desired URI of the output Summary Table file. This file and the Raw Telemetry Table are commonly co-located.
+
+|table.timeHistoryFile.uri
+|REQUIRED
+|STR
+|The desired URI of the output Time History File.
+
+|table.timeHistoryFile.excludeColumns
+|OPTIONAL
+|STR[]
+|A comma-separated list of the names of columns that should be excluded from the Time History File. Valid values in the list are any of the names of the Time History File. This parameter is optional; if not specified, all columns will be included. +
+
+|table.timeHistoryFile.scetUtcPrecision
+|REQUIRED
+|INT
+|The number of digits to which the SCET fraction of second is to be written in the Time History File.
+
+|product.sclkScetFile.create
+|REQUIRED
+|BOOL
+|Activates creation of SCLK/SCET files. Set to true if a SCLK/SCET file is to be created. Valid values are “true” or “false”.
+
+|product.sclkScetFile.dir
+|REQUIRED
+|STR
+|The directory to which the SCLK/SCET files are written.
+
+|product.sclkScetFile.baseName
+|REQUIRED
+|STR
+|The basename of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “europaclipper” is the basename. Applicable only if product.sclkScetFile.create=true.
+
+|product.sclkScetFile.separator
+|REQUIRED
+|STR
+|The separator between the basename and the version number of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “_” (underscore) is the separator. Applicable only if product.sclkScetFile.create=true.
+
+|product.sclkScetFile.suffix
+|REQUIRED
+|STR
+|The file suffix of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “coeff” is the suffix. Applicable only if product.sclkScetFile.create=true.
+
+|product.sclkScetFile.scetUtcPrecision
+|REQUIRED
+|INT
+|The number of digits to which the SCET fraction of second is to be written in an SCLK/SCET file. Applicable only if product.sclkScetFile.create=true.
+
+|product.sclkScetFile.datasetId
+|REQUIRED
+|STR
+|The value for the DATA_SET_ID field in the header of the SCLK/SCET file. Applicable only if product.sclkScetFile.create=true.
+
+|product.sclkScetFile.producerId
+|REQUIRED
+|STR
+|The value for the PRODUCER_ID field in the header of the SCLK/SCET file. Applicable only if product.sclkScetFile.create=true.
+
+|product.sclkScetFile.applicableDurationDays
+|OPTIONAL
+|INT
+|The number of days past the last correlation record inserted for which the newly-created SCLK-SCET file will be valid.  If not set, the default value of 0 will be used.
+
+|product.sclkScetFile.leapSecondSclkRateMode
+|OPTIONAL
+|STR
+|Valid values for this key are 'PRIOR_RATE' or 'ONE'.  MMTC inserts two records for each leap second (specified via a SPICE leap second kernel via MMTC configuration) into each SCLK-SCET file. The first record in each pair sets the time the leap second effectively 'begins' (adjusted to a whole SCLK coarse tick) with either a very low (0.001) or high (2.000) SCLKRATE (depending on whether it is encoding an added leap second or a removed second (i.e. negative leap second),) respectively.  The second entry sets the end of the leap second with a SCLKRATE of either 1.0 (if the value for this key is 'ONE') or that of the correlation record just prior to the leap second (if the value for this key is 'PRIOR_RATE'.)  If not set, the default value of 'PRIOR_RATE' is used.
+
+|product.uplinkCmdFile.create
+|REQUIRED
+|STR
+|Activates creation of Uplink Command Files. Set to true if an Uplink Command File is to be created. Valid values are “true” or “false”.
+
+|product.uplinkCmdFile.outputDir
+|REQUIRED
+|STR
+|The path to the directory where Uplink Command Files are to be written.
+
+|product.uplinkCmdFile.baseName
+|REQUIRED
+|STR
+|The basename of the Uplink Command File. For example, given the filename “uplinkCmd1577130458.csv”, “uplinkCmd” is the basename. Applicable only if product.uplinkCmdFile.create=true.
+
+
+|===
+
+==== AMPCS-specific configuration parameters
+
+The parameters in the table below are only applicable to missions using AMPCS which have configured MMTC to use one of the available AMPCS Telemetry Sources. Not every mission will need to specify every argument.
+
+
+.AMPCS Telemetry Source Plugin Configuration Parameters
+[[table7, Table 7: AMPCS Telemetry Source Plugin Configuration Parameters]]
+[%autowidth]
+|===
+|Name |Required |Type |Description
+
+|telemetry.source.plugin.ampcs.frameSizeBits
+|CONDITIONAL
+|INT
+|The default size of a mission telemetry frame containing time correlation data in bits. This value is used for calculating downlink data rates if the packet parser configuration is not set to read downlink data rates from packets.  This is the entire ‘physical’ size of the transfer frame, including headers, and taking into account encoding schemes.  Also used for reporting.  Must be a positive integer.
+
+|telemetry.source.plugin.ampcs.chillTimeoutSec
+|REQUIRED
+|INT
+|The number of seconds to wait for each AMPCS chill_get_* query to complete. If a query takes longer, MMTC will terminate and log an error message.
+
+|telemetry.source.plugin.ampcs.tkpacket.apid
+|REQUIRED
+|INT
+|The APID of the TK packet.
+
+|telemetry.source.plugin.ampcs.tkPacket.tkPacketHeaderFineSclkModulus
+|CONDITIONAL
+|INT
+|Positive integer containing the size of the TK packet header’s SCLK fine tick modulus.  Required if telemetry.source.name is set to AmpcsTlmArchive.
+
+|telemetry.source.plugin.ampcs.tkpacket.tkPacketSizeBytes
+|REQUIRED
+|INT
+|The size in bytes of the TK packet, excluding the primary packet header minus 1. In other words, the size of the data portion of the packet, which includes the secondary header, minus 1.
+
+|telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri
+|REQUIRED
+|STR
+|The path to the XML file that describes the TK packet.
+
+|telemetry.source.plugin.ampcs.frame.ertFieldName
+|CONDITIONAL
+|STR
+|The name of the CSV field output by chill_get_frames that contains the target frame ERT. Applicable only it telemetry.source.name is set to AmpcsTlmWithFrames.
+
+|telemetry.source.plugin.ampcs.frame.dssIdFieldName
+|CONDITIONAL
+|STR
+|The name of the CSV field output by chill_get_frames that contains the target frame ground station identifier. Applicable only it telemetry.source.name is set to AmpcsTlmWithFrames.
+
+|telemetry.source.plugin.ampcs.frame.vcfcFieldName
+|CONDITIONAL
+|STR
+|The name of the CSV field output by chill_get_frames that contains the target frame Virtual Channel Frame Count (VCFC). Applicable only if telemetry.source.name is set to AmpcsTlmWithFrames.
+
+|telemetry.source.plugin.ampcs.frame.vcidFieldName
+|CONDITIONAL
+|STR
+|The name of the CSV field output by chill_get_frames that contains the target frame Virtual Channel ID (VCID). Applicable only if telemetry.source.name is set to AmpcsTlmWithFrames.
+
+|telemetry.source.plugin.ampcs.frame.maxTkpacketFrameSeparation
+|CONDITIONAL
+|STR
+|When searching for the target frame corresponding to a timekeeping packet, the maximum number of seconds that a frame is allowed to precede the packet and still be considered a candidate. Applicable only if telemetry.source.name is set to AmpcsTlmWithFrames.
+
+|telemetry.source.plugin.ampcs.tkpacket.apidFieldName
+|REQUIRED
+|STR
+|The name of the CSV field output by chill_get_packets that contains the APID. This value is currently always set to “apid”.
+
+|telemetry.source.plugin.ampcs.tkpacket.scetFieldName
+|REQUIRED
+|STR
+|The name of the CSV field output by chill_get_packets that contains the SCET. This value is currently always set to “scet”.
+
+|telemetry.source.plugin.ampcs.tkpacket.ertFieldName
+|REQUIRED
+|STR
+|The name of the CSV field output by chill_get_packets that contains the ERT. This value is currently always set to “ert”.
+
+|telemetry.source.plugin.ampcs.tkpacket.sclkFieldName
+|REQUIRED
+|STR
+|The name of the CSV field output by chill_get_packets that contains the SCLK. This value is currently always set to “sclk”.
+
+|telemetry.source.plugin.ampcs.tkpacket.vcidFieldName
+|REQUIRED
+|STR
+|The name of the CSV field output by chill_get_packets that contains the VCID. This value is currently always set to “vcid”.
+
+|telemetry.source.plugin.ampcs.tkpacket.vcfcFieldName
+|REQUIRED
+|STR
+|The name of the CSV field output by chill_get_packets that contains the VCFC. This value is currently always set to “sourceVcfcs”.
+
+|telemetry.source.plugin.ampcs.tkpacket.dssIdFieldName
+|REQUIRED
+|STR
+|The name of the CSV field output by chill_get_packets that contains the DSS ID. This value is currently always set to “dssId”.
+
+|telemetry.source.plugin.ampcs.tkpacket.pktLengthFieldName
+|REQUIRED
+|STR
+|The name of the CSV field output by chill_get_packets that contains the packet length.
+
+|telemetry.source.plugin.ampcs.channel.channelIdFieldName
+|REQUIRED
+|STR
+|The name of the field in the CSV metadata output from a chill_get* command that contains the identifier of the channel (Channel ID) that was returned from a query.
+
+|telemetry.source.plugin.ampcs.channel.channelScetFieldName
+|REQUIRED
+|STR
+|The name of the field in the CSV metadata output from a chill_get* command that contains the SCET associated with a channel returned by a query.
+
+|telemetry.source.plugin.ampcs.channel.sclk1.channelId
+|OPTIONAL
+|STR
+|The channel ID of the SCLK1 value.
+
+|telemetry.source.plugin.ampcs.channel.sclk1.readField
+|OPTIONAL
+|STR
+|The field (`dn` or `eu`) of the SCLK1 channel to read.
+
+|telemetry.source.plugin.ampcs.channel.tdt1.channelId
+|OPTIONAL
+|STR
+|The channel ID of the TDT1 value.
+
+|telemetry.source.plugin.ampcs.channel.tdt1.readField
+|OPTIONAL
+|STR
+|The field (`dn` or `eu`) of the TDT1 channel to read.
+
+|telemetry.source.plugin.ampcs.channel.gncsclk.channelId
+|OPTIONAL
+|STR
+|The channel ID of the SCLK used to compute TDT(S) onboard the spacecraft.
+
+|telemetry.source.plugin.ampcs.channel.gncsclk.readField
+|OPTIONAL
+|STR
+|The field (`dn` or `eu`) of the 'GNCSCLK' channel above to read.
+
+|telemetry.source.plugin.ampcs.channel.tdts.channelId
+|OPTIONAL
+|STR
+|The channel ID of the TDT(S) computed onboard the spacecraft.
+
+|telemetry.source.plugin.ampcs.channel.tdts.readField
+|OPTIONAL
+|STR
+|The field (`dn` or `eu`) of the TDT(S) channel to read.
+
+|telemetry.source.plugin.ampcs.channel.tdtChgRate.channelId
+|OPTIONAL
+|STR
+|The channel ID of the clock change rate computed onboard the spacecraft and associated with TDT(S).
+
+|telemetry.source.plugin.ampcs.channel.tdtChgRate.readField
+|OPTIONAL
+|STR
+|The field (`dn` or `eu`) of the 'tdtChgRate' channel to read.
+
+|telemetry.source.plugin.ampcs.oscillator.activeOscillatorSelectionMode
+|REQUIRED
+|STR
+|This key should hold only one of the following values, which will enable the described behavior:
+
+• `none`: MMTC will not set an active oscillator for the run, leaving the oscillator ID and temperature columns in the Time History File empty
+
+• `by_vcid`: MMTC will use the VCID of the target frame/packet to relate it to the oscillator which was involved in its production.  When this value is set, entries for each *telemetry.source.plugin.ampcs.oscillators.[oscillator id].vcids* configuration key must also be defined.
+
+• `fixed`: MMTC will use the oscillator ID defined by the key *telemetry.source.plugin.ampcs.oscillator.fixedActiveOscillatorId* as the active oscillator, writing its value and its temperature (if retrievable) to the Time History File.
+
+|telemetry.source.plugin.ampcs.oscillator.fixedActiveOscillatorId
+|OPTIONAL
+|STR
+|This key is only required if *telemetry.source.plugin.ampcs.oscillator.activeOscillatorSelectionMode* is set to `fixed`, and must match an oscillator ID named in *spacecraft.oscillatorIds*.
+
+|telemetry.source.plugin.ampcs.oscillators.[oscillator id].vcids
+|OPTIONAL
+|STR[]
+|This key can be defined once per named oscillator (specified by *spacecraft.oscillatorIds*). This key will only be read if *telemetry.source.plugin.ampcs.oscillator.activeOscillatorSelectionMode* is set to `by_vcid`.  If that key is set as such, the single VCID (or multiple comma-separated VCIDs) defined by this configuration key will be used to identify the active oscillator that was involved with the time correlation target frame used for the current correlation run.
+
+|telemetry.source.plugin.ampcs.oscillators.[oscillator id].temperature.channelId
+|OPTIONAL
+|STR
+|This key can be defined once per named oscillator (specified by *spacecraft.oscillatorIds*). The value should be the channel ID that should be queried for the measured temperature in degrees Celsius of the given oscillator, if available.  If not specified, MMTC will not attempt to retrieve this oscillator's temperature.
+
+|telemetry.source.plugin.ampcs.oscillators.[oscillator id].temperature.readField
+|OPTIONAL
+|STR
+|This key can be defined once per named oscillator (specified by *spacecraft.oscillatorIds*). The value should be the channel's field to read (`dn` or `eu`) for the measured temperature in degrees Celsius of the given oscillator, if available.  If not specified, MMTC will not attempt to retrieve this oscillator's temperature.
+
+|telemetry.source.plugin.ampcs.activeRadioId
+|OPTIONAL
+|STR
+|A string that identifies the active Radio. This parameter is optional and applies only to missions that use a radio clock to set the SCLK values for time correlation and may be omitted for those that do not. If not provided, the Radio ID will default to “-“. If the active radio changes, it is incumbent upon a user to change this parameter accordingly, if desired.
+
+|===
+
+=== Input SPICE Kernels
+
+MMTC uses the Navigation and Ancillary Information Facility (NAIF) SPICE toolkit, which requires a set of SPICE 'kernels' to operate.  These include generic NAIF SPICE kernels, such as planetary ephemerides as well as mission spacecraft ephemeris kernels.  The specific SPICE kernels that the MMTC needs will vary greatly depending on the mission and even the phase of the mission. In short, MMTC needs all of the kernels that SPICE needs in order to compute OWLT between the spacecraft and any receiving ground station, and that it needs to compute distance and velocity of the spacecraft relative to the Earth and Sun.
+
+Consult the NAIF documentation (https://naif.jpl.nasa.gov/naif/tutorials.html) and the mission navigation team to determine which kernels are needed for a specific mission.
+
+==== Generic Kernels
+
+Generic SPICE kernels are provided by NAIF, located at JPL. These are used on multiple missions and other astrometric applications. These are available from https://naif.jpl.nasa.gov/pub/naif/generic_kernels.
+
+[.underline]#Leap Seconds Kernel (LSK)# +
+This kernel is specified in *spice.kernel.lsk.path* in the configuration parameters.
+
+* naif00<nn>.tls
+
+[.underline]#Frame Kernels (FK)# +
+The FK kernels are provided in the configuration parameters as a list of comma-separated entries within the *spice.kernel.fk.path* configuration parameter.
+
+* earth_topo_<nnnnnn>.tf
+* dss_<?>.tf – various station frame kernels depending on the mission
+
+[.underline]#Planetary Constants Kernels (PCK)#
+
+The PCK kernels are provided in the configuration parameters as a list of comma-separated entries within the *spice.kernel.pck.path* configuration parameter.
+
+* pck00<nnn>.tpc
+* earth_<nnnnnn>_<nnnnnn>_predict.bpc
+
+[.underline]#Ephemeris Kernels (SPK)#
+
+The SPK kernels are provided in the configuration parameters as a list of comma-separated entries within the *spice.kernel.spk.path* configuration parameter.
+
+* earthstns_fx_<nnnnnn>.bsp
+* dss<?>.bsp – various station ephemeris kernels depending on the mission
+* de<nnn>.bsp – a planetary ephemeris that may or may not be needed depending on the mission
+
+==== Mission Kernels
+
+The mission kernels are specific to a given mission. MMTC will require, at minimum, a spacecraft ephemeris. The spacecraft ephemeris kernels used by MMTC are the same short-term predicted spacecraft ephemeris kernels that are typically uploaded to the spacecraft to enable the spacecraft to know its location in space.  The ephemeris kernels enable MMTC to compute the one-way light time (OWLT) for a downlink frame to travel from the spacecraft to the receiving ground station, and to compute distances and velocities for the Time History File. SPKs containing ephemerides of other bodies might be required as well, depending on the mission. The mission SPKs should be included in the list within the *spice.kernel.spk.path* configuration parameter. Mission-specific FK and PCK kernels should be included within the *spice.kernel.fk.path* and *spice.kernel.pck.path* configuration parameters respectively.
+
+==== Metakernel
+
+Metakernels (MK) are a special type of SPICE kernel that contains a list of other SPICE kernels. Instead of listing the kernels individually in configuration parameters, as described above, one may simply list them in a metakernel specified in *spice.kernel.mk.path*. Only the SCLK kernel needs to be listed separately. One can include all or some of the other required kernels in the metakernel. If for any reason one does not wish to list all of the kernels in the metakernel (e.g., some ephemeris files get updated frequently), one can just list some of them in the metakernel and include the remainder in the individual configuration parameters described above. Using metakernels is convenient and highly recommended. Be aware that the order in which kernels are loaded into SPICE matters. If there is overlap between them, such as two SPKs with overlapping ephemeris for the same planetary body or spacecraft, the latter loaded kernel values will override those of the prior. As stated above, DO NOT include the SCLK kernel in the metakernel. See below.
+
+==== Input SCLK kernel
+
+The Input SCLK kernel is the SCLK kernel that the MMTC created the previous time that it ran. Each time the MMTC runs, it creates a new SCLK kernel that contains all of the contents of the previous one with a new time correlation record added to it. This new SCLK kernel is the input SCLK kernel for the next run. When the MMTC runs, it looks for SCLK kernels in the directory indicated in the *spice.kernel.sclk.kerneldir* configuration parameter that match the naming patterns given in the *spice.kernel.sclk.baseName*, *spice.kernel.sclk.separator*, and *spice.kernel.sclk.suffix* configuration parameters (<basename><separator><nnnnn>.<suffix>) where nnnnn is an integer version number. By SPICE conventions, SCLK kernel filenames should have a suffix of “.tsc”. The MMTC selects the matching kernel file with the highest version number. It assumes that this is the one from the previous run and loads it. The new kernel that it produces will have this name, but with the version number incremented.
+
+Because the SCLK kernel is created with every run and the input SCLK kernel is different for every run, this kernel should not be included in the metakernel.
+
+A manually created “seed” SCLK kernel with at least one time correlation record must exist the very first time that the MMTC runs. See the NAIF document _SCLK – Reference for the SPICE spacecraft clock subsystem and the Spacecraft Clock Kernel (SCLK)_ (Table 2) for what this file contains and how it must be formatted. The MMTC currently requires that the ground time of the time correlation record be given in TDT time and as a calendar string. [.underline]#Numeric seconds of epoch TDT values, although allowed by SPICE, are not currently supported in the SCLK kernel#. The time correlation record will typically define SCLK=0. The “seed” kernel will also contain standard information about the spacecraft clock and the first clock partition. See Appendix I. for an example of a seed SCLK Kernel.
+
+Since the SCLK kernel is both an input and an output of MMTC, the input SCLK kernel must be in the same directory to which the new SCLK kernel will be written, which is the location indicated in the *spice.kernel.sclk.kerneldir* configuration parameter. MMTC reads the latest SCLK kernel upon startup and creates a new one at the end of its run with one new time correlation record appended to the end and an incremented version number in the filename. The time correlation records in an SCLK kernel must always move forward in time. In other words, the ground time in each time correlation record must be later than that in the one before it. If one runs MMTC with a start time that is earlier than the ground time in the last time correlation record in the SCLK kernel, it will terminate with an error (e.g., _ERROR: TDT(G) of the last record in SCLK kernel is later than the input data sample._)
+
+If running in a test environment where the same input data is being run over and over (e.g., the same start/stop times) it will be necessary to remove the SCLK kernels from previous test runs whose time correlation records are later than the start time of the test. For example, if the MMTC is run with the sole SCLK kernel _PSYC255SCLK_00000.tsc_ in the directory indicated in *spice.kernel.sclk.kerneldir*, it will produce a new SCLK kernel _PSYC255SCLK_00001.tsc_ and possibly more kernels depending on how many successive time intervals are run. If MMTC is to be run again with the same start/stop time, it will be necessary to first remove _PSYC255SCLK_00001.tsc_ and any later SCLK kernels from the output directory. This situation should occur only in test venues, never operationally, unless data are being rerun to correct for an anomaly. Note that new SCLK kernels will be assigned progressively higher IDs even if any or all previous kernels are deleted when the config key `spice.kernel.sclk.uniqueKernelCounters` is set to TRUE. If you do not wish for the counters of new SCLK counters to persistently iterate despite deletions, either set this key to FALSE or use <<Output Product Rollback>>.
+
+=== TK Packet Description File
+
+For AMPCS-based missions, the AMPCS telemetry source plugin reads the SCLK values and other related information from the time correlation (TK) packets received from the spacecraft and archived in the telemetry archive.
+
+At a minimum, the TK packet must contain a coarse SCLK value and a fine SCLK value. It might also contain the VCID and VCFC of the target frame, the target frame encoding method (e.g., turbo encoding), and the downlink data rate. The coarse and fine SCLK values are assumed to be in raw counts. These and all of the other values in the TK packet are assumed to be unsigned integers.
+
+The user is reminded that the SCLK Coarse and SCLK Fine values are associated with the target frame, NOT the frame containing the TK packet. The target frame is usually, but not always, the frame that immediately precedes the supplemental frame (i.e., the one containing the TK packet) in the telemetry sequence. In other words, the VCFC of the target frame is a set number of counts (usually just 1) less than that of the supplemental frame. The number of frames that the supplemental frame follows the target frame is specified in the *telemetry.supplementalSampleOffset* configuration parameter.
+
+The structure of TK packets is mission-specific. Each mission must describe its TK packets using a TK Packet Description XML file that implements the *tk_packet.xsd* schema provided with the MMTC distribution. The full path to the TK Packet Description file is indicated in the *telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri* configuration parameter. Not all of the fields are applicable for all missions; however all missions must provide at minimum the SCLK Coarse and SCLK Fine fields in order to process. See Appendix H. for an example of a TK Packet Description file.
+
+The primary purpose of the definition file is to specify the locations and bit lengths of these fields within the packet so that the MMTC can decom them. Each field given in the definition file is identified by a name, the offset from the beginning of the packet (normally the first bit of the primary packet header), and the length of the field in bits.
+
+This file must be customized for every mission based on the structure of its TK packets. All field offsets are given in bits from the beginning of the packet and all field lengths are in bits.
+
+=== SCLK Partition Map File
+
+The SCLK Partition Map File indicates to the MMTC when SCLK partitions have occurred. These correspond to partitions provided in the SCLK kernels. Consult the SPICE documentation (https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/sclk.html) for an explanation of spacecraft clock partitions. This file is a simple CSV formatted text file that contains two items per line, a number and a date/time in UTC. The numbers begin at 1 and increment with each line for however many partitions are defined. These correspond to the *SCLK_PARTITION_START_<scid>* fields in the SCLK Kernel. The sample SCLK Partition Map file given below contains three clock partitions. The first begins at the start of the epoch used for SCLK=0 for the given mission, in this case January 01, 2010 at 00:00h. There were two clock jumps or resets in July and November of 2010. This file is created and updated manually.
+
+Clock partitions are mainly an artifact from the time when onboard spacecraft clock registers were small and would numerically roll over after a certain length of time producing an invalid SCLK count. With most modern spacecraft having larger clock registers, this is usually no longer an issue. Occasionally, there can be clock resets due to an anomaly requiring the definition of a new SCLK partition. The SPICE library handles SCLK clock partitions as defined in the SCLK Kernel. Many missions may complete their entire “lives” with only a single clock partition. Other missions might go for years before a new partition is needed. Still others might have many clock partitions. The path to this file is specified in the *sclkPartitionMap.path* configuration parameter. Raw SPICE SCLK values can be written `<partition>/<coarse>:<fine>`, where the first value is the partition number, the second value the SCLK coarse time (e.g., seconds), and the third value the SCLK fine time (i.e., subseconds); e.g. `1/876545321:3456`. MMTC uses the partition map file to associate a ground time with the beginning of a partition.
+
+.Sample SCLK Partition Map File
+----
+Partition Number, Date
+1,2010-01-01T00:00:00Z
+2,2010-07-02T20:00:00Z
+3,2010-11-01T00:00:00Z
+----
+
+=== Ground Stations Map File
+
+The Ground Stations Map File contains a mapping of ground station antenna identifiers that are indicated in frame ground receipt headers to corresponding ground station identifiers known to SPICE through the NAIF generic ground stations ephemeris kernel (earthstns_fx_<nnnnnn>.bsp). Every DSN ground station antenna has a NAIF ID. The MMTC uses the information in this file to obtain the NAIF ID of a receiving ground station when computing OWLT.
+
+This file is a CSV formatted text file. Each row contains three fields, a Path ID, a Station ID, and a Station Name. The *Path ID* is provided by the DSN or ground simulators with each received telemetry frame. It is the value given in the *dssId* field in AMPCS metadata. The *Station ID* is the DSN identifier of the station that can be passed to a SPICE function to get the SPICE identifier for the station. The *Station Name* is a more human-readable name for the station. A default file is provided with the MMTC distribution and will only need to be edited if the DSN adds or changes a station or for simulation equipment. The path to this file is indicated in the *groundStationMap.path* configuration parameter. The code block below contains a portion of the Ground Stations Map file as an example; this is not the full file.
+
+.Sample Ground Stations Map File
+----
+Path ID, Station ID, Station Name
+14,dss-14,Goldstone_70M
+15,dss-15,Goldstone_34HEF
+24,dss-24,Goldstone_34B1
+25,dss-25,Goldstone_34B2
+26,dss-26,Goldstone_34B3
+34,dss-34,Canberra_34B1
+35,dss-35,Canberra_34B2
+36,dss-36,Canberra_34B3
+43,dss-43,Canberra_70M
+45,dss-45,Canberra_34HEF
+46,dss-46,Canberra_26M
+54,dss-54,Madrid_34B1
+55,dss-55,Madrid_34B2
+63,dss-63,Madrid_70M
+65,dss-65,Madrid_34HEF
+----
+
+== Time Correlation Data Tables
+
+The MMTC creates data tables the first time it runs and appends to them each time it runs thereafter, so they must be preserved. If over the course of a mission, they become inconveniently large, the records created from runs from more than ten contacts prior or so can be deleted. The files can also be deleted, in which case MMTC will recreate them; however, after this is done the Contact Filter must be turned off before the next MMTC run. It is recommended that a copy of the intact original files be stored somewhere for future use.
+
+=== Raw Telemetry Table
+
+The Raw Telemetry Table contains the unprocessed data extracted from telemetry used in time correlation. It contains the basic SCLK, ERT, and virtual channel information. The data contained in this table, along with the associated SPICE kernels and configuration parameters, contain the information needed to run the Time Correlation application and, when necessary, to reproduce the results of a previous time correlation and its output products (SCLK kernel, SCLK/SCET file, command uplink file) without having to connect to the telemetry archive again. This is a comma separated value (CSV) formatted text file. It is useful for analysis and for later reprocessing if needed. It contains records of all frames/TK Packets in the sample set and is appended to each time the application runs. The fields in the table are described in Table 9 in the Appendix.
+
+=== Summary Table
+
+The SCLK Summary Table contains record of the processed time correlation, containing the computed values and inputs. The telemetry data that are extracted from the telemetry archive passes through several filtering steps within MMTC to select a suitable set of telemetry to use for time correlation.  The set of telemetry data that is selected for time correlation is saved in the SCLK Summary Tables.  As the data is processed, all computed values are saved in the SCLK Summary Tables. It is needed for the Contact Filter as well as for analysis and is a CSV-formatted text file. One record is appended to this table each time the MMTC runs and this record contains information on the Target and Supplemental frame/packet used in the time correlation computations. If this file is deleted, the application will generate a new one and run although the Contact Filter should be turned off in the configuration file for the next few runs. This table is described in Appendix G.
+
+== Output Products
+
+=== Output SCLK Kernel
+
+Each time the MMTC runs, it creates a new SCLK kernel. SCLK kernels follow the NAIF specifications _(SCLK – Reference for the SPICE spacecraft clock subsystem and the Spacecraft Clock Kernel (SCLK))_ and is a primary output product. Each new SCLK kernel contains the entire contents of the previous SCLK kernel that MMTC read as input, but has one new time correlation record appended to the end. In addition, if the user has selected interpolated clock change rate computation (the default), the clock change rate of the last record of the previous kernel will be overwritten with a new and more accurate value. The new kernel will have the same name as the preceding one, except that the version number in the name will have been incremented.
+
+MMTC names the SCLK kernel files according to the pattern _<basename><sep><nnnn>.<suffix>_, where: +
+
+* _basename_ is indicated in the *spice.kernel.sclk.baseName* parameter in configuration data. This is often the mission name.
+* _sep_ is indicated in the *spice.kernel.sclk.separator* parameter in configuration data. This is typically a hyphen or underscore.
+* _nnnn_ is the integer version number that is incremented with each run.
+* _suffix_ is indicated in the *spice.kernel.sclk.suffix* parameter in configuration data. Normally, this value will be “tsc” per NAIF conventions.
+
+For example, setting _basename_ to “europaclipper”, _sep_ to “_”, and _suffix_ to “tsc” in the configuration parameters would produce the SCLK kernel *“europaclipper_00123.tsc”*, if the previous version was 122.
+
+MMTC writes the SCLK kernels to the directory indicated in *spice.kernel.sclk.kerneldir*. The existing input SCLK Kernel must reside in this directory and the new output SCLK kernel will be written to it.
+
+==== 10.1.1 Input SCLK Kernel Override
+
+MMTC provides a configuration parameter *spice.kernel.sclk.inputPathOverride* that directs it to read the source (current) SCLK Kernel not from the normal *spice.kernel.sclk.kerneldir* from which it normally derives its input SCLK kernel, but from an alternate SCLK Kernel. This is intended for use only in test venues. On occasion, it is convenient when testing to read an SCLK kernel other than the one resident in the directory that the new one will be written to. This can cause versioning problems and duplicate SCLK Kernel filename errors in successive runs. Therefore, this option is only for certain test situations and should never be used operationally. To use this, set *spice.kernel.sclk.inputPathOverride* to the fully qualified path of the alternate SCLK Kernel. Remove it before running again. Successive runs will likely fail if this parameter is not removed after the first run.
+
+=== SCLK/SCET File
+
+Each time MMTC runs, it optionally creates a new SCLK/SCET file. SCLK/SCET files follow the NAIF specifications _(Generic SCLK versus SCET Correlation File, Software Interface Specification, Rev. E, January 2012)_. This is a primary output product. The new SCLK/SCET file contains the entire contents of the previous SCLK/SCET file, but has one new time correlation record appended to the end. The version number of the file is incremented each time a new one is produced. MMTC creates the new SCLK/SCET file from the new SCLK kernel; however, in order to conform with specifications and for accurate conversions, it adds two records at every point in time where a leap second was added to world timekeeping.  For each leap second, two records will be inserted that encode the leap second at the next-higher coarse SCLK tick to the actual occurrence of the leap second.  MMTC supports both added (positive) leap seconds and removed (negative) leap seconds.
+
+The new SCLK/SCET file will have the same name as the preceding one, except that the version number in the name will have been incremented.
+
+MMTC will create SCLK/SCET files if the *product.sclkScetFile.create* configuration parameter is set to `true`. It writes them to the directory specified in *product.sclkScetFile.dir*.
+
+MMTC names the SCLK/SCET files by `<basename><sep><nnnn>.<suffix>`, where:
+
+* _basename_ is indicated in the *product.sclkScetFile.baseName* parameter in configuration data. This is often the mission name.
+* _sep_ is indicated in the *product.sclkScetFile.separator* parameter in configuration data. This is typically a hyphen or underscore.
+* _nnnn_ is the integer version number that is incremented with each run.
+* _suffix_ is indicated in the *product.sclkScetFile.suffix* parameter in configuration data.
+
+For example, setting _basename_ to “europaclipper”, _sep_ to “_”, and _suffix_ to “coeff” in the configuration parameters would produce the SCLK kernel *“europaclipper_00123.coeff”*, if the previous version was 122.
+
+=== Uplink Command File
+
+The Uplink Command File is an optional operations product that can be used to uplink time correlation data to the spacecraft. It is a simple CSV formatted text file with a single line in it. It contains five values: SCLK coarse, ground time in ephemeris time in seconds of epoch (ET also called TDB), ground time in TDT in seconds of epoch, the identical ground time TDT as a calendar string, and the clock change rate. The fine time SCLK (i.e., subseconds) is not included in this file because the corresponding ground time is adjusted, by an amount equal to the fine time, to a whole tick SCLK coarse time; in other words, the subseconds are subtracted from the TDB and TDT ground times. The SCLK1, TDT1, and CLKCHGRATE1 values which the flight software uses to compute ground time from SCLK derive from these. It is left to other elements of the space mission ground system to convert the values in this file to the necessary format and load them into a command for uplink. For missions that use this product, it is left to the mission’s GDS to take this file and form its contents into a command that can be uplinked. See Appendix D. for a sample of this file.
+
+This file is produced if the *product.uplinkCmdFile.create* configuration parameter is set to `true`, or if the `--generate-cmd-file` or `-c` option is provided at the command line. If the command line option is provided, it will override the configuration parameter.
+
+=== Time History File
+
+The Time History File is a cumulative product that is updated with a single record appended to its end each time the MMTC runs. It is a CSV format text file that contains information useful in assessing the state of the onboard clock. This file is intended for analysis purposes. Table 8 in Appendix E describes the fields in this file.
+
+=== Run History File
+The Run History File is another cumulative product that records information about each successful MMTC run that is executed. While it can be useful to users for tracking things such as: the state of output products before and
+after each MMTC run; the system user responsible for each run; the time a run was executed; and more, its primary purpose is to enable output product rollback (discussed later) and therefore should never be manually modified due to risk of interfering with or preventing successful rollback in the future.
+
+== Output Product Rollback
+MMTC 1.5.0 and later provides a simple system for users to revert all of MMTC's output products back to an earlier state. Rollback makes use of the Run History File to determine which output products and
+records should and shouldn't be present after rolling back to the state MMTC's products were in after a prior run. Rollback is irreversible and should only be used when backup copies have been made of all relevant files.
+
+=== Executing Rollback
+MMTC enters the rollback interface any time "rollback" is provided as the very first argument when invoking MMTC regardless of subsequent flags or arguments, i.e. `bin/mmtc rollback`. Users will immediately be provided with
+a list of the last 10 successful MMTC runs with Run IDs, dates/times, and resulting SCLK kernels for each. Users will first be asked to specify a Run ID to select--this can include any valid Run ID in the Run History File and
+isn't limited to the 10 most recent runs listed by MMTC--by entering the corresponding ID including leading zeroes.
+
+After selecting a valid Run ID, MMTC will describe the changes that will occur if the user proceeds with rolling back to the specified run by listing the
+output files that will be deleted (SCLK kernels, SCLKSCET files, and/or Uplink Command Files) and the number of lines that will be truncated from each data table (Summary Table, Time History File, and/or the Raw Telemetry Table).
+After listing the effects of rollback, MMTC will ask users for Y/N confirmation to proceed. This marks the "point of no return" after which files will potentially be permanently deleted, so users are again reminded to make backups
+of *all* output products before initiating a rollback.
+
+After positive confirmation is received (only a "y" or "Y" is considered confirmation), MMTC will delete or truncate any output files necessary to return its products to the state they had after the specified prior run.
+MMTC will print out the names of all files modified (or potentially files that failed to be modified) and MMTC will exit with status code 0 if rollback was successful.
+
+Prior runs that were rolled back are not deleted from the Run History File but are flagged as previously involved in rollback and will be ignored by any future rollbacks.
+
+Insufficient system permissions to remove relevant files are the most likely source of rollback failures, so it is recommended that users verify that they have the requisite permissions to modify MMTC output products prior to initiating rollback.
+
+== Filters
+
+MMTC includes a variety of data filters that ensure the quality of processed time correlation data. They are intended to protect the integrity of the cumulative SCLK Kernel and SCLK/SCET file by rejecting TK data from packets or frames that are corrupted or that should otherwise not be used for time correlation computations. These filters can be turned on and configured, as appropriate for the mission, in the configuration parameters. When a data sample fails any one of these filters, it will be rejected, and earlier sample sets will be evaluated. If MMTC can find no sample sets within the queried range of telemetry, it will exit with a fatal error.
+
+In I&T environments, it will often be necessary to turn off some or all of the filters, since the input time correlation data might not be of sufficient quality to pass them.
+
+=== Contact Filter
+
+The Contact Filter compares the clock drift rate from the previous contact with that computed for the current contact in ∆SCLK/∆ERT seconds. It computes a drift rate using the formula:
+
+`driftRate = (∆SCLK/∆TDT(G) – 1) * milliseconds_per_day`
+
+If the drift rate falls outside the bounds specified in the configuration parameters, the sample set is rejected.  Please note that if the drift rate is outside the specified thresholds, human investigation is probably called for.
+
+The Contact Filter is turned on or off by setting the *filter.contact.enabled* configuration parameter to `true` or `false` and the upper and lower bounding failure thresholds are set in floating point units of ms/day in the *filter.contact.deltaLowerThreshold* and *filter.contact.deltaUpperThreshold* configuration parameters.
+
+=== SCLK Filter
+
+The SCLK Filter ensures that a candidate sample set consists only of supplemental frames that have a consistent difference in coarse SCLK values, as evaluated by a configurable threshold. For each sample set, the difference in SCLK values between the first two samples are taken.  If the difference between the SCLKs of any pair of subsequent samples in the set varies from this by more than a configured amount, the filter fails and the sample set is rejected.
+
+This filter is turned on or off by the *filter.sclk.enabled* configuration parameter, and the allowable variance threshold is set by the *filter.sclk.maxDeltaVarianceSec* configuration parameter. The threshold value is in seconds.
+
+The SCLK values compared are the same as used in the time correlation calculations, i.e. not necessarily the same as other SCLK values associated with frame or packet creation time.
+
+NOTE: This filter is not applicable and should be turned off when using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode. This is because the target and supplemental samples do not follow each other in a regular order.
+
+=== ERT Filter
+
+The ERT Filter ensures that a candidate sample set consists only of supplemental frames that have a consistent difference in ERT values, as evaluated by a configurable threshold. For each sample set, the difference in ERT between the first two samples are taken.  If the difference between the ERTs of any pair of subsequent samples in the set varies from this by more than a configured amount, the filter fails and the sample set is rejected.
+
+This filter is turned on or off by the *filter.ert.enabled* configuration parameter, and the allowable variance threshold is set by the *filter.ert.maxDeltaVarianceSec* configuration parameter. The threshold value is in seconds.
+
+NOTE: This filter is not applicable and should be turned off when using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode. This is because the target and supplemental samples do not follow each other in a regular order.
+
+=== Data Rate Filters
+
+Very slow data rates can adversely affect the accuracy of ERT values attached to received frames. In the case of some missions, time correlation accuracy can also be affected by excessively high data rates. The Minimum Data Rate Filter and Maximum Data Rate Filter set downlink data rate thresholds within which time correlation data will be processed. The filters are turned on or off by setting the *filter.minDataRate.enabled* and *filter.maxDataRate.enabled* configuration parameters to `true` or `false`. (Note that each filter can be turned on or off independently of the other.) The failure thresholds are set in the *filter.dataRate.minDataRateBps* and *filter.dataRate.maxDataRateBps* configuration parameters. The threshold values are specified in integer units of bits per second and are inclusive; for example, if the Maximum Data Rate Filter is enabled, a sample whose downlink data rate exactly equals *filter.dataRate.maxDataRateBps* will not fail the filter and will be accepted.
+
+=== Stations Filter
+
+The Stations Filter specifies the ground stations from which the MMTC may use time correlation data. This filter can be turned on or off by the *filter.groundStation.enabled* configuration parameter. A list of ground station Path IDs is provided in the *filter.groundStation.pathIds* configuration parameter. If this filter is enabled and a received time correlation sample was received by a ground station or specific antenna (Path) not in this list, it will be rejected. For various reasons, one might want to receive data only from certain ground stations.
+
+=== Valid Sample Filter
+
+The Valid Sample Filter applies only to missions where time correlation data are being obtained from TK packets and a validity or quality flag is provided in the packets. It checks a validity flag that might be in the packet based on the Packet Definition File (sec. 8.3). If this filter is enabled by setting the *filter.validFlag.enabled* configuration parameter to true, the MMTC will reject samples where the valid flag value is set to 1 indicating that the packet is bad. Missions that do not use TK packets or whose packets do not contain such a quality flag should disable this filter.
+
+=== Consecutive Frames Filter
+
+The Consecutive Frames Filter performs the 5 checks described below. If any check fails, the filter rejects the samples.
+
+* The filter checks that all samples in the set have the same VCID. If not, the check fails.
+* The filter checks that all samples in the sample set have consecutive VCFCs. If not, the filter logs a warning message, but this is not considered a failed check. In other words, despite any warning message, this check never causes the filter to reject samples.
+* If supplemental sample VCIDs are available, the filter checks that each sample’s VCID matches its supplemental sample’s VCID. If not, the check fails. If supplemental sample VCIDs are not available, the filter logs a warning message, but it is not considered a failed check.
+* If sample and supplemental sample VCFCs are available, the filter checks that each sample’s VCFC is behind (meaning it is less than) its supplemental sample’s VCFC by exactly the number specified in the *telemetry.supplementalSampleOffset* configuration parameter (with the exception of VCFC rollover cases when the *telemetry.vcfcMaxValue* is reached). If not, the check fails. If sample and supplemental sample VCFCs are not available, the filter logs a warning message, but it is not considered a failed check.
+* If sample VCFCs are available, the filter checks that each sample’s VCID and VCFC matches its supplemental sample’s “TK” or target frame VCID and VCFC, respectively. If not, the check fails. If sample VCFCs are not available, the filter logs a warning, and it still checks sample VCIDs and supplemental sample TK VCIDs.
+
+This filter can be turned on or off using the *filter.consecutiveFrames.enabled* configuration parameter. In operational venues, this filter should be enabled.
+
+NOTE: This filter is not applicable and should be turned off when using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode. This is because the target and supplemental samples do not follow each other in a regular order.
+
+=== VCID Filter
+
+The Virtual Channel ID Filter verifies that time correlation data are used only from specified groupings of virtual channels. This filter checks both the frame VCID as well as the timekeeping (TK) VCID, if specified.
+
+For example:
+
+* a particular mission might specify that only time correlation data contained on frames received from VCID 0 and VCID 32 may be used for time correlation
+* another particular mission might specify that only time correlation data contained on frames received from VCIDs 0, 1, and 2 may be used, OR VCID 3, but not intermingled
+
+If enabled, the MMTC will reject any sample data that has VCIDs which do not match the allowable groupings of VCIDs. The valid time correlation virtual channel groups are listed in configuration parameter *filter.vcid.validVcidGroups*; please see the configuration the description of this parameter above for the expected syntax. This filter may be turned on or off by the *filter.vcid.enabled* parameter set to `true` or `false`.
+
+NOTE: This filter is not applicable and should be turned off when using the AMPCS telemetry source plugin’s AmpcsTlmWithFrames mode. This is because the target and supplemental samples do not follow each other in a regular order.
+
+=== Consecutive Master Channel Frame Filter
+
+The Consecutive Master Channel Frame Filter verifies that time correlation data are received only from pairs of frames which have Master Channel Frame Counter (MCFC) values that are separated by exactly the configured supplemental sample offset magnitude.  For example, for cases where supplemental samples directly follow their target samples (and thus the supplemental sample offset is 1), this filter checks that the target and supplemental samples have directly sequential MCFC values.  This filter accounts for MCFC rollover.  This filter may be turned on or off by setting the *filter.consecutiveMasterChannelFrames.enabled* parameter to `true` or `false`.  When this filter is enabled, the parameter *spacecraft.mcfcMaxValue* must be set to a positive integer that reflects the spacecraft’s maximum MCFC value, after which point the MCFC counter will rollover (reset) to 0 and begin incrementing again.
+
+NOTE: This filter is not applicable and should be turned off when using the AMPCS telemetry source plugin’s AmpcsTlmArchive or AmpcsTlmWithFrames modes. MCFC values are not currently read from AMPCS telemetry sources.
+
+== Log File
+
+The MMTC writes processing status messages to a log file, nominally named mmtc.log. Logging is implemented using the Apache Java log4j2 system, which recognizes six levels of logging: FATAL, ERROR, WARNING, INFO, DEBUG, and TRACE. A FATAL or ERROR message indicates that something is seriously wrong. This will usually precede MMTC terminating with a non-zero exit code. A WARNING message does not necessarily indicate a problem, but that something unusual happened and an operator should investigate. INFO messages are normal processing messages. DEBUG and TRACE messages are used for debugging.
+
+The *log4j2.properties* file, which is specified in an option to the MMTC Java invocation (see <<Invoking MMTC>>), configures logging. MMTC ships with a log4j2.properties file that sets the log level to DEBUG; in normal operational venues, missions may wish to change this by setting the *rootLogger.level* property to “info” or higher since the DEBUG log level may produce excessive output. The log4j2.properties file that MMTC ships with also causes log messages to be appended to mmtc.log each time the MMTC is executed, to “roll over” the log file to a new file when it reaches 100MB in size or when a week has elapsed since the log file was started, and to delete the oldest files when there are 5 or more rollover files. For more information about how to customize this rollover behavior and other aspects of logging, consult the Apache Log4j 2 documentation (https://logging.apache.org/log4j/2.x/).
+
+NOTE: [.red]#Log messages may contain information that missions or users consider sensitive, such as hostnames, filesystem paths, even database credentials passed through to telemetry sources using the --connection-parms command line option, etc.# If log files are being submitted for MMTC troubleshooting, be sure to first remove any sensitive information before sending to others.
+
+== Operating Environment
+
+MMTC is tested and validated using a standard Java JRE 1.8 running on the commercial Red Hat Linux 8 operating system hosted on Intel-based hardware.  It does not rely on any specialized hardware or software beyond NAIF SPICE.
+
+== Support Concept
+
+The Johns Hopkins Applied Physics Laboratory, Space Exploration Sector (SES) owns and maintains the MMTC and provides it to the AMMOS catalog. APL can provide support based upon a supporting contract.
+
+:sectnums!:
+== Appendix
+
+=== A. Description of Time
+[[appendix_A, Appendix A: Description of Time]]
+
+[.underline]#Terrestrial Dynamical Time#
+
+MMTC uses the terrestrial time scale Terrestrial Dynamical Time (TDT), which is in common use for space mission timekeeping including within JPL/NAIF SPICE kernels. TDT is an atomic time based on the International System (SI) second and referenced to the Earth. This time form is also called “Terrestrial Time” or “TT,” but that acronym is ambiguous as it sometimes refers to another time scale, so we use the term “TDT.”  MMTC correlates the spacecraft clock (SCLK) with TDT exclusively.
+
+Many people are familiar with UTC, which is a practical time scale that includes leap seconds and estimates of UTC are distributed throughout the world. The relationship between UTC and TDT is given below.
+
+_UTC = TDT – leap seconds – 32.184 seconds_
+
+Both UTC and TDT are defined relative to another nominally atomic time scale called International Atomic Time (TAI).
+
+By definition, _UTC = TAI – leap seconds_, exactly.
+
+At the instant 1977 January 1, 0h 0m 0s TAI, TDT = TAI + 32.184 seconds exactly, but TAI and TDT have diverged since by a small amount due to imperfections in atomic time standards. The 32.184 seconds offset of TDT from TAI is a c
+onstant defined by the International Astronomical Union (IAU).
+
+TDT(G) is the TDT computed on the ground.
+
+TDT(S) is the TDT computed onboard the spacecraft.
+
+[.underline]#Ephemeris Time#
+
+Ephemeris Time (ET) is the same as Barycentric Dynamical Time (TDB by its French acronym). This is similar to TDT, but is a theoretical value referenced to the Solar System Barycenter. In other words, if one imagines a hypothetical atomic clock located at the Solar System Barycenter, this is the time it would measure. ET and TDT will differ slightly due to relativistic effects based upon where the Earth is in its orbit around the Sun. However, ET and TDT are so close together that TDT may be used in place of ET for ephemeris mapping. The MMTC uses ET internally, but its time correlations are given in TDT and UTC.
+
+=== B. Sample SCLK Kernel
+[[appendix_B, Appendix B: Sample SCLK Kernel]]
+
+A snippet of encoded SCLK Kernel 'triplets':
+
+----
+Encoded SCLK            Earth Time (TDT)       			Clock Rate
+      18727147700000     @02-DEC-2017-17:51:44.940590     1.00000001423
+      18727326900000     @02-DEC-2017-18:51:28.940641     1.00000001129
+      18734707450000     @04-DEC-2017-11:51:39.942308     1.00000001132
+      18739028600000     @05-DEC-2017-11:52:02.943286     1.00000001191
+      18748746550000     @07-DEC-2017-17:51:21.945601     1.00000001106
+      18752526200000     @08-DEC-2017-14:51:14.946437     1.00000001153
+      18757387200000     @09-DEC-2017-17:51:34.947558     1.00000001119
+      18761704650000     @10-DEC-2017-17:50:43.948524     1.00000001113
+      18764764600000     @11-DEC-2017-10:50:42.949205     1.00000001138
+      18769084150000     @12-DEC-2017-10:50:33.950188     1.00000001136
+      18774672100000     @13-DEC-2017-17:53:12.951458     1.00000001079
+      18777182700000     @14-DEC-2017-07:50:04.952000     1.00000001132
+      18782043000000     @15-DEC-2017-10:50:10.953100     1.00000001127
+      18787622700000     @16-DEC-2017-17:50:04.954358     1.00000001119
+      18791942050000     @17-DEC-2017-17:49:51.955325     1.00000001122
+      18796261750000     @18-DEC-2017-17:49:45.956294     1.00000001055
+      18798422900000     @19-DEC-2017-05:50:08.956750     1.00000001121
+
+----
+
+This is an example from New Horizons. An SCLK kernel also contains information describing the spacecraft clock and time partitions.
+
+The SCLK Kernel Clock Rate is in TDT seconds per SCLK second.
+
+=== C. Sample SCLK/SCET File
+[[appendix_C, Appendix C: Sample SCLK/SCET File]]
+
+----
+CCSD3ZS00001$$sclk$$NJPL3KS0L015$$scet$$
+MISSION_NAME=New Horizons;
+SPACECRAFT_NAME=New Horizons;
+DATA_SET_ID=SCLK_SCET;
+FILE_NAME=new-horizons_1004.sclkscet;
+PRODUCT_CREATION_TIME=2024-291T22:18:39.796;
+PRODUCT_VERSION_ID=1004;
+PRODUCER_ID=MMTC;
+APPLICABLE_START_TIME=2006-019T18:08:00.000;
+APPLICABLE_STOP_TIME=2017-345T08:49:19.770;
+MISSION_ID=98;
+SPACECRAFT_ID=98;
+CCSD3RE00000$$scet$$NJPL3IS00613$$data$$
+*____SCLK0_______  ____SCET0____________ _DUT__ _SCLKRATE___
+ 000000000000.000  2006-019T18:08:00.000 65.184 1.0000000000
+ 000000055325.000  2006-020T09:30:07.300 65.184 1.0000000091
+ 000000103927.000  2006-020T23:00:09.300 65.184 1.0000000093
+ 000000192133.000  2006-021T23:30:15.301 65.184 1.0000000094
+ ...
+ 000375288078.000  2017-345T08:49:19.770 69.184 1.0000000178
+CCSD3RE00000$$data$$CCSD3RE00000$$sclk$$
+----
+
+=== D. Sample Uplink Command File
+[[appendix_D, Appendix D: Sample Uplink Command File]]
+
+An example of an Uplink Command File as described in <<Uplink Command File>> created from New Horizons data. The values in order are: (1) SCLK coarse, (2) corresponding ephemeris time (TDB), (3) corresponding ground time in TDT, (4) corresponding ground time in TDT calendar string, (5) clock change rate in TDT seconds/SCLK second. This file will contain only a single record.
+
+----
+398916214,714492283.860548,714492283.861766,23-AUG-2022-02:04:43.861766,1.00000000922
+----
+
+=== E. Time History File Fields
+[[appendix_E, Appendix E: Time History File Fields]]
+
+.Time History File Fields
+[[table8, Table 8: Time History File Fields]]
+[%autowidth]
+|===
+| Name | Typical Value | Remarks
+
+|Enc_SCLK
+|Positive integer – the number of SCLK ticks since the epoch for SCLK = 0
+|Encoded SCLK.
+
+|Int_SCLK
+|positive integer < 232 seconds = 4,294,967,296 seconds
+|Integer SCLK.
+
+|TDT(G)
+|X.Y, in units of 10-6 second
+|Terrestrial Dynamical Time – Ground. Numeric value in seconds of epoch. The ground time corresponding to the SCLK in TDT.
+
+|TDT(G)_Calendar
+|10-MAR-2018-05:56:23.825936 (example)
+|Terrestrial Dynamical Time – Ground. Calendar string representation used in SCLK Kernels. The ground time corresponding to the SCLK in TDT.
+
+|TDB(G)
+|X.Y, in units of 10-6 second
+|Barycentric Dynamical Time (a.k.a. Ephemeris Time) – Ground equivalent. Numeric value in seconds of epoch. Time corresponding to the SCLK measured in Barycentric Dynamical Time (TDB). This is similar to TDT except that it is measured from the Solar System barycenter rather than from Earth.
+NOTE: In the MMTC code, this value is given as “ET” in order to match how it is used in SPICE. The term “ET” is otherwise ambiguous. For the MMTC, ET is always a synonym for TDB.
+
+|ClkChgRate(s/s)
+|X.Y, where X is “0” or “1” and Y is in units of second/second
+|Predicted clock Change Rate in TDT seconds/SCLK seconds. No change would be 1.000.
+
+|Osc_Temp(degC)
+|X.Y in units of ℃
+|Active Oscillator temperature.
+
+|Ep(ms)
+|X.Y in units of ms
+|Error in TDT as predicted by the prior SCLK kernel for the current SCLK.  Calculated by using the prior SCLK kernel with the current SCLK to 'predict' a TDT value, and subtracting the actual TDT value for the current correlation.
+
+|abs(Ep/dt)(ms/day)
+|X.Y in units of ms/day
+|Magnitude of the above Ep(ms) term, normalized over a day.
+
+|Interval(days)
+|X.Y in units of days
+|Number of days between the current and last time correlation.
+
+|ChgRateMode
+|“P”, “I”, “N”, or “A”
+|Clock change rate mode.
+• P : Compute predicted
+• I : Compute interpolate (recompute previous run value)
+• N : No drift (set to 1.000000000)
+• A : Assigned (set by config parm or user option)
+
+|ChgRateInterv(days)
+|X.Y in units of days
+|Clock change rate interval (i.e., the number of days to look back into previous time correlations to get a previous TDT(G) and SCLK for clock change rate computations. This is the value from the compute.tdtG.rate.predicted.lookBackDays configuration parameter converted to days.
+
+|SCLK_Drift(ms/day)
+|X.Y in units of ms/day
+|Similar to clock change rate, but given in drift in SCLK per day in milliseconds/day. No drift would be 0.0 ms/day.
+
+|Oscillator
+|Typically 1 or 2, etc.
+|Active Oscillator. Applicable when there are two or more timekeeping (“precision”) oscillators.
+
+|SCLK_Partition
+|Positive Integer
+|SCLK clock partition defined in SCLK kernel.
+
+|RF_Encoding
+|“T” or “C”
+|The frame encoding method. Typically “T” for turbo or “C” for convolutional encoding; other encodings may be deployed in the future.
+
+|GroundStation
+|DSN-xx if a DSN station, where xx is the DSN station number
+|Receiving ground station. Often, but not always a DSN station.
+
+|OWLT(sec)
+|X.Y in units of seconds
+|One-Way Light (travel) Time.
+
+|SpaccraftSunDistance(AU)
+|X.Y in units of AU
+|Spacecraft to Sun distance at TDT(G) in Astronomical Units.
+
+|SpaccraftSunDistance(km)
+|X.Y in units of km
+|Spacecraft to Sun distance at TDT(G) in kilometers.
+
+|SpacecraftEarthDistance(km)
+|X.Y in units of km
+|Spacecraft to Earth distance at TDT(G) in kilometers.
+
+|EarthSunDistance(AU)
+|X.Y in units AU
+|The Earth-Sun distance at TDT(G) in Astronomical Units.
+
+|EarthSunDistance(km)
+|X.Y in units of km
+|The Earth-Sun distance at TDT(G) in kilometers.
+
+|SpacecraftVelocity(SSB_km/s)
+|X.Y in units of km/sec
+|Velocity of spacecraft with respect to the Solar System Barycenter at TDT(G).
+
+|EarthVelocity(SSB_km/s)
+|X.Y in units of km/sec
+|Velocity of Earth with respect to the Solar System Barycenter at TDT(G).
+
+|SpacecraftVelocity(Earth_km/s)
+|X.Y in units of km/sec
+|Velocity of spacecraft with respect to the Earth at TDT(G).
+
+|The Active Radio
+|Typically 1 or 2, etc.
+|The active radio. Applicable only when an oscillator on a radio sets the SCLK values used for time correlation. Otherwise, defaults to “-”.
+
+|DataRate(bps)
+|Positive integer in units of bps
+|Transfer frame downlink rate in bits per second.
+
+|SCET
+|Spacecraft Event Time in UTC
+|UTC ISO calendar string YYYY-DOYThh:mm:ss.sss. This is the correlated UTC time equivalent of TDT(G). This is the value that is written to the SCET0 field in the SCLK/SCET file.
+
+|TDT(S)
+|X.Y, with precision of 10-6 seconds
+|Terrestrial Dynamical Time as known onboard the spacecraft in numeric seconds of epoch format.
+
+|TDT(S)_Calendar
+|10-MAR-2018-05:56:23.825936 (example)
+|Terrestrial Dynamical Time as known onboard the spacecraft in calendar string format.
+
+|TDT(S)_Error(ms)
+|X.Y with precision of of 10-3 ms
+|Error in TDT(S), measured in milliseconds.
+
+|SCLK_for_TDT(S)
+|positive integer < 232 seconds
+|SCLK corresponding to TDT(S).
+
+|ClockChangeRateForTDT(S)
+|Floating point number
+|The clock change rate used onboard the spacecraft for computing ground time from SCLK in seconds/second.
+
+|TDT(S)ErrorWarningThreshold(ms)
+|positive integer in units of ms
+|Error warning threshold, in milliseconds, on the magnitude of the TDT(S) error read from configuration parameter.  When exceeded, the time correlation onboard the spacecraft needs to be updated.
+
+|SCLK1
+|X.Y, with precision of 10-6 second
+|SCLK1 from spacecraft used to compute TDT(S).
+
+|TDT1
+|X.Y, with precision of 10-6 second
+|TDT1 from spacecraft used to compute TDT(S).
+
+|TDT1_Calendar
+|The TDT1 as a calendar string
+|TDT1 from spacecraft used to compute TDT(S) in a calendar string form dd-mon-yyyy-hh:mm:ss.ssssss.
+
+|RunTime
+|2018-086T19:29:48 (example)
+|System time in UTC in ISO format when MMTC was run.
+
+|Warning
+|Plain text content detailing the warning.
+|Typically blank. Contains a message if the TDT(S) Error Warning threshold is exceeded.
+|===
+
+=== F. Raw Telemetry Table Fields
+[[appendix_F, Appendix F: Raw Telemetry Table Fields]]
+
+.Raw Telemetry Table Fields
+[[table9, Table 9: Raw Telemetry Table Fields]]
+[%autowidth]
+|===
+| Name | Typical Value | Remarks
+
+|Run Time
+|ISO Calendar Time String
+|The system time in UTC when the MMTC was run.
+
+|Path ID
+|Integer
+|Code for the ground station or testbed front end from which the TLM were received.
+
+|Target Frame ERT
+|CDS Time Code
+|The ERT of the target frame. Used in computing TDT(G).
+
+|Target Secondary Hdr SCLK Coarse
+|Unsigned Integer
+|The SCLK coarse value contained within either the Target Frame secondary header or the target frame packet secondary header. This value is not used in time correlation calculations and is NOT to be confused with the Supplemental Frame/Packet SCLK which is.
+
+|Target Secondary Hdr SCLK Fine
+|Unsigned Integer
+|The SCLK fine value contained within either the Target Frame secondary header or the target frame packet secondary header. This value is not used in time correlation calculations and is NOT to be confused with the Supplemental Frame/Packet SCLK which is.
+
+|Supp SCLK Coarse
+|Unsigned Integer
+|Time SCLK coarse value used for time correlation. Depending on the mission, this is either the SCLK contained in the supplemental frame secondary header or in the selected time correlation packet.
+
+|Supp SCLK Fine
+|Unsigned Integer
+|Time SCLK fine value used for time correlation. Depending on the mission, this is either the SCLK contained in the Supplemental Frame secondary header or in the selected time correlation packet.
+
+|Supp Frame ERT
+|CDS Time Code
+|The ERT of the Supplemental Frame or the frame containing the selected time correlation packet. This value is not used in any calculations.
+
+|Encoding Type
+|Unsigned Integer
+|The mission-specific code for the type of encoding used for the frames. This is usually Turbo, Convolutional, or No Encoding.
+
+|MCFC
+|Unsigned Integer
+|The Master Channel Frame Count of the Target Frame. This is used only on missions which uses traditional transfer frames to do time correlation. Can be null “-“.
+
+|VCID
+|Unsigned Integer
+|The Virtual Channel ID of the Target Frame.
+
+|VCFC
+|Unsigned Integer
+|The Virtual Channel Frame Count of the Target Frame.
+
+|Target ERT String
+|DOY Time String
+|The ERT in day-of-year calendar string form of the Target Frame.
+
+|Data Rate BPS
+|Unsigned Integer
+|The downlink data at which the Target Frame was received in bits per second.
+
+|===
+
+=== G. Summary Table Fields
+[[appendix_G, Appendix G: Summary Table Fields]]
+
+.Summary Table Fields
+[[table10, Table 10: Summary Table Fields]]
+[%autowidth]
+|===
+| Name | Typical Value | Remarks
+
+
+| Run Time
+| ISO Calendar Time String
+| The system time in UTC when the MMTC was run.
+
+| Ground Station
+| String
+| The ground station at which the Target Frame was received.
+
+| Target Frame ERT
+| CDS Time Code
+| The ERT of the Target Frame. Used in computing TDT(G).
+
+| Target Frame UTC
+| ISO Calendar Time String
+| The ERT of the Target Frame as a calendar string. Used in computing TDT(G).
+
+| Target Frame VCID
+| Unsigned Integer
+| The Virtual Channel ID of the Target Frame.
+
+| Target Frame VCFC
+| Unsigned Integer
+| The Virtual Channel Frame Count of the Target Frame.
+
+| TK Encoded SCLK
+| Unsigned Integer
+| The SCLK coarse value in SPICE encoded SCLK used in time correlation computations. It is obtained from the body of the time correlation packet and is associated with the preceding target frame.
+
+| SCLK Partition
+| Unsigned Integer
+| The SCLK partition currently in use.
+
+| Predicted Clk Change Rate
+| Double
+| The Predicted CLKRATE. This value is written to the latest record of the SCLK Kernel and SCLK/SCET files. If the next run is in Interpolate mode, this record will be overwritten in the next SCLK Kernel and SCLK/SCET file with an updated value.
+
+| Interpolated Clk Change Rate
+| Double
+| The Interpolated CLKRATE. This value is written to the last record of the SCLK Kernel and SCLK/SCET from the previous run. If the current run is in Interpolate mode. This value replaces the CLKRATE from the previous run. The SCLK Kernel and SCLK/SCET files from the previous run are not changed. The second to the last record in the new files are.
+
+| OWLT
+| Double
+| The one-way light travel time from the spacecraft to the receiving ground station.
+
+| TDT(G)
+| Double
+| The ground time in TDT written to the SCLK Kernel and used to compute the CLKRATE.
+
+| TD SC (sec)
+| Double
+| The spacecraft time delay in seconds. This is a constant value set in configuration parameters (spacecraft.timeDelaySec) that is subtracted from the computation of TDT(G). It is the time delay from the SCLK reported by the spacecraft to when the related downlink frame leaves the spacecraft antenna. With careful spacecraft design, this value can be effectively 0 at all downlink bit rates. TD SC can be useful during mission simulations prior to launch to bias TDT(G) to a future time. This value is usually only a fraction of a second and is often set to 0.
+
+| TD BE (sec)
+| Double
+| The bitrate error. This is an adjustment for the bitrate-dependent time error due to a mismatch between frame times reported by the spacecraft and the receiving ground station. This value is divided by the downlink data rate and subtracted from the TDT(G) computation. It is typically only a fraction of a second and is often set to zero.
+
+| TF Offset
+| Double
+| This value adjusts the TDT(G) value to align with the whole second SCLK value. It is computed by dividing the SCLK fine time from the supplemental frame or selected TK packet by the subseconds modulus to convert it to decimal fraction of a second and then subtracting it from the TDT(G). This simplifies time correlations with no loss in accuracy. The subseconds modulus is read from the configuration parameter spacecraft.sclkModulusOverride if provided. If it is not provided, the value is read from the second stage of the SCLK01_MODULI_<nnn> field in the SCLK Kernel.
+
+| Data Rate
+| Unsigned Integer
+| The downlink data rate at which the Target Frame was received in bits per second.
+
+| Frame size (bits)
+| Unsigned Integer
+| The size in bits of a transfer frame used for time correlation or of a frame which can contain a TK packet. This is a constant set in configuration parameters (telemetry.frameSizeBits).
+
+
+|===
+
+=== H. References
+[[appendix_H, Appendix H: References]]
+
+1. S. B. Cooper, _“From Mercury to Pluto: A common approach to timekeeping”_, IEEE Aerospace and Electronic Systems Magazine, vol. 21, issue 10, October 2006.
+2. S.B. Cooper, J. R. Jensen, and G. L. Weaver, _“MESSENGER onboard timekeeping accuracy during the first year in orbit at Mercury”_, Proceedings of the 44th Annual Precise Time and Interval (PTTI) Systems and Applications Meeting, Reston, Virginia, November 2012, pp. 361-370.
+3. M. R. Reid & S. B. Cooper, _“The multi-mission time correlation system”_, Proceedings of IEEE Space Mission Challenges in Information Technology (SMC-IT 2019), Caltech, Pasadena, California, July 2019.
+
+
+=== I. Acronyms and Glossary
+[[appendix_I,Appendix I: Acronyms and Glossary]]
+
+.Acronyms and Glossary
+[%autowidth]
+|===
+| Term | Definition
+
+
+| 1 PPS
+| “1-pulse-per-second” signal occurring at 1 Hz rate
+
+| AMMOS
+| Advanced Multi-Mission Operations System
+
+| AMPCS
+| AMMOS Mission Data Processing and Control System
+
+| APL
+| (Johns Hopkins) Applied Physics Laboratory (also “JHU/APL”)
+
+| AU
+| Astronomical Unit, roughly 150,000,000 kilometers
+
+| Avionics
+| C&DH electronics or, sometimes, C&DH electronics and software
+
+| C&DH
+| Command and Data Handling Subsystem
+
+| CDS
+| CCSDS Day Segmented Time (days::ms of day::microsecond time code used by the DSN)
+
+| CLKRATE
+| See “clock change rate” – This can refer to the (predicted) CLKRATE used by the onboard G&C processor, to the predicted CLKRATE in the SCLK kernel, or to the interpolated CLKRATE in the SCLK kernel (measured in TDT seconds/SCLK second)
+
+| Clock change rate
+| The number of UTC or TDT seconds per SCLK second
+
+| DSN
+| NASA’s Deep Space Network
+
+| encoded SCLK
+| Continuous mission timeline in the SCLK kernel, mapped from possibly discontinuous SCLK
+
+| ERT
+| Earth Received Time, the time at which a downlink frame reference edge is received at a DSN station
+
+| ET
+| Ephemeris Time, equivalent to Barycentric Dynamical Time (TDB)
+
+| FGICD
+| Flight Ground Interface Control Document
+
+| G&C
+| Guidance and Control Subsystem
+
+| GDS
+| Ground Data System
+
+| GNC
+| Guidance, Navigation, and Control
+
+| I&T
+| Integration and Test
+
+| IAU
+| International Astronomical Union
+
+| int-SCLK
+| Integer seconds component of SCLK
+
+| iSCLK
+| Although not used in this document, this sometimes refers to an instrument clock
+
+| JDK
+| Java Development Kit
+
+| JHU/APL
+| Johns Hopkins Applied Physics Laboratory
+
+| JPL
+| Jet Propulsion Laboratory
+
+| JRE
+| Java Runtime Environment
+
+| Kbps
+| Thousands of bits (not bytes) per second
+
+| Mbps
+| Millions of bits (not bytes) per second
+
+| MGSS
+| Multi-mission Ground Systems and Support (Program Office)
+
+| MMTC
+| Multi-Mission Time Correlation
+
+| MOC
+| Mission Operations Center (also called an MSA)
+
+| MSA
+| Mission Support Area (also called a MOC)
+
+| NAIF
+| Navigation and Ancillary Information Facility (at JPL)
+
+| OWLT
+| One-way light time, used in this memo to refer to the time for a frame to travel from a spacecraft to a receiving ground station; SPICE provides this in a solar barycentric frame of reference
+
+| PPS
+| Same as 1 PPS
+
+| RHEL
+| Red Hat Enterprise Linux
+
+| SC ID
+| Spacecraft Identifier (assigned by the DSN)
+
+| SCLK
+| The spacecraft clock; typically refers to a hardware clock
+
+| SCLK kernel
+| Spacecraft clock data file containing correlations between encoded SCLK and TDT(G)
+
+| SPICE
+| “Spacecraft Planet Instrument C-Matrix Events” system of software tools developed by the JPL NAIF
+
+| T&C
+| Telemetry and Commanding
+
+| TDB
+| Terrestrial Barycentric Time (acronym is in French), an absolute time measured from the Solar System Barycenter reference frame, equivalent to ephemeris Time. For MMTC, this is the same as ET.
+
+| TDT
+| Terrestrial Dynamical Time (also called Terrestrial Time or TT), measured from an Earth reference frame
+
+| TDT(G)
+| Ground estimate of the TDT of the 1 PPS reference edge
+
+| TDT(S)
+| Onboard estimate of the TDT of the 1 PPS reference edge
+
+| TK
+| Time Correlation (“TK” so as not to be confused with Telecommand.)
+
+| TLM
+| Telemetry
+
+| URI
+| Uniform Resource Identifier
+
+| UTC
+| Coordinated Universal Time
+
+| v-SCLK
+| “Vernier” or sub-seconds component of SCLK
+
+|===

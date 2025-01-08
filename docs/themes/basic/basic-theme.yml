@@ -1,0 +1,6 @@
+extends: default
+base:
+  font-size: 9
+  text-align: left
+code:
+  font-size: 8

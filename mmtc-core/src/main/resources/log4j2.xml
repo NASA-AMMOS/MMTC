@@ -1,0 +1,27 @@
+<Configuration status="ERROR">
+    <Loggers>
+        <Root level="debug">
+            <AppenderRef ref="mmtcConsole"/>
+            <AppenderRef ref="mmtcLogFile"/>
+        </Root>
+        <Logger name="org.apache.commons.beanutils" level="WARN" />
+    </Loggers>
+
+    <Appenders>
+        <Console name="mmtcConsole">
+            <PatternLayout pattern="%m%n"/>
+            <Filters>
+                <MarkerFilter marker="USER_NOTICE" onMatch="ACCEPT" onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </Console>
+        <RollingFile name="mmtcLogFile" fileName="${env:MMTC_HOME}/log/mmtc.log" filePattern="${env:MMTC_HOME}/log/mmtc-%d{MM-dd-yy}-%i.log.gz">
+            <PatternLayout pattern="%d{ISO8601}{UTC}Z %p [%c{1}] %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="7" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="5"/>
+        </RollingFile>
+    </Appenders>
+</Configuration>

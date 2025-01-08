@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<!DOCTYPE properties SYSTEM "properties.dtd">
+<properties xmlns="mmtc"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="mmtc TimeCorrelationConfigProperties.xsd">
+
+    <comment>Time correlation configuration properties for test with NH Raw TLM File data</comment>
+    <entry key="missionName">New Horizons</entry>
+    <entry key="missionId">98</entry>
+    <entry key="spacecraftName">New Horizons</entry>
+    <entry key="spacecraft.id">98</entry>
+    <entry key="spacecraft.timeDelaySec">0</entry>
+    <entry key="spacecraft.frameErtBitOffsetError">0</entry>
+
+
+    <entry key="spacecraft.sclkModulusOverride">12345</entry>
+
+    <entry key="groundStationMap.path">./src/test/resources/GroundStationMap.csv</entry>
+    <entry key="sclkPartitionMap.path">./src/test/resources/SclkPartitionMap.csv</entry>
+
+    <entry key="telemetry.samplesPerSet">5</entry>
+    <entry key="telemetry.supplementalSampleOffset">1</entry>
+    <entry key="telemetry.vcfcMaxValue">16777215</entry>
+
+    <entry key="telemetry.source.name">rawTlmTable</entry>
+    <entry key="telemetry.source.pluginDirectory"></entry>
+    <entry key="telemetry.source.pluginJarPrefix"></entry>
+
+    <!-- example usage of external telemetry source plugins: -->
+    <!--entry key="telemetry.source.name">AmpcsTlmArchive</entry-->
+    <!--entry key="telemetry.source.pluginDirectory">/opt/local/mmtc/lib/plugins/</entry-->
+    <!--entry key="telemetry.source.pluginJarPrefix">mmtc-plugin-ampcs</entry-->
+
+    <!-- Options for built-in Raw TLM Table telemetry source -->
+    <entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri">file:///absolute/path/to/RawTelemetryTable_NH_reformatted.csv</entry>
+    <entry key="telemetry.source.plugin.rawTlmTable.readDownlinkDataRate">true</entry>
+
+    <entry key="telemetry.tkOscTempWindowSec">60</entry>
+
+    <entry key="telemetry.tkParmWindowSec">60</entry>
+
+    <entry key="spice.naifSpacecraftId">-98</entry>
+
+    <entry key="spice.kernel.sclk.kerneldir">./output/sclk</entry>
+    <entry key="spice.kernel.sclk.baseName">new-horizons</entry>
+    <entry key="spice.kernel.sclk.separator">_</entry>
+  <entry key="spice.kernel.sclk.uniqueKernelCounters">true</entry>
+
+    <entry key="spice.kernel.lsk.path">./src/test/resources/nh_kernels/lsk/naif0012.tls</entry>
+
+    <!-- eliding jup260.bsp here due to size -->
+    <entry key="spice.kernel.spk.path">
+        ./src/test/resources/nh_kernels/spk/dss_35_36_prelim_fx_140620.bsp,
+        ./src/test/resources/nh_kernels/spk/earthstns_fx_050714.bsp,
+        ./src/test/resources/nh_kernels/spk/NavPE_de433_od123.bsp,
+        ./src/test/resources/nh_kernels/spk/NavSE_plu047_od123.bsp,
+        ./src/test/resources/nh_kernels/spk/nh_pred_20150801_20190301_od124.bsp,
+        ./src/test/resources/nh_kernels/spk/nh_recon_pluto_od122_v01.bsp,
+        ./src/test/resources/nh_kernels/spk/sb-2014mu69-20150903_s6.bsp
+    </entry>
+
+    <entry key="spice.kernel.fk.path">
+        ./src/test/resources/nh_kernels/fk/dss_35_36_prelim_itrf93_140620.tf,
+        ./src/test/resources/nh_kernels/fk/earth_fixed.tf,
+        ./src/test/resources/nh_kernels/fk/earth_topo_050714.tf
+    </entry>
+    <entry key="spice.kernel.pck.path">
+        ./src/test/resources/nh_kernels/pck/pck00010.tpc,
+        ./src/test/resources/nh_kernels/pck/earth_070425_370426_predict.bpc
+    </entry>
+        <entry key="compute.tdtG.rate.predicted.lookBackDays">7.00</entry>
+    <entry key="compute.tdtG.rate.predicted.maxLookBackDays">9.00</entry>
+
+    <entry key="compute.tdtS.threshold.errorMsecWarning">1500</entry>
+
+    <entry key="filter.contact.deltaUpperThreshold">90.0</entry>
+    <entry key="filter.contact.deltaLowerThreshold">-90.0</entry>
+
+    <entry key="filter.contact.enabled">true</entry>
+    <entry key="filter.ert.enabled">false</entry>
+    <entry key="filter.sclk.enabled">false</entry>
+    <entry key="filter.minDataRate.enabled">true</entry>
+    <entry key="filter.maxDataRate.enabled">true</entry>
+    <entry key="filter.groundStation.enabled">false</entry>
+    <entry key="filter.validFlag.enabled">false</entry>
+    <entry key="filter.consecutiveFrames.enabled">false</entry>
+    <entry key="filter.consecutiveMasterChannelFrames.enabled">false</entry>
+
+    <entry key="filter.vcid.enabled">false</entry>
+    <entry key="filter.vcid.validVcidGroups">0 \, 6 \, 7; 5</entry>
+
+    <entry key="filter.ert.maxDeltaVarianceSec">120.</entry>
+    <entry key="filter.sclk.maxDeltaVarianceSec">120.</entry>
+    <entry key="filter.groundStation.pathIds">14, 24, 26, 34, 36, 43, 54, 55, 63, 65</entry>
+    <entry key="filter.dataRate.minDataRateBps">100</entry>
+    <entry key="filter.dataRate.maxDataRateBps">1000000</entry>
+
+    <!-- Output Files -->
+    <entry key="table.rawTelemetryTable.uri">file:///opt/local/mmtc/output/RawTlmTable.csv</entry>
+    <entry key="table.rawTelemetryTable.dateTimePattern">yyyy-DDD'T'HH:mm:ss.SSSSSS</entry>
+    <entry key="table.summaryTable.uri">file:///opt/local/mmtc/output/SummaryTable.csv</entry>
+    <entry key="table.timeHistoryFile.uri">file:///opt/local/mmtc/output/TimeHistoryFile.csv</entry>
+    <entry key="table.timeHistoryFile.excludeColumns"></entry>
+    <entry key="table.timeHistoryFile.scetUtcPrecision">6</entry>
+
+    <entry key="product.sclkScetFile.create">true</entry>
+    <entry key="product.sclkScetFile.source">SCLK_KERNEL</entry>
+    <entry key="product.sclkScetFile.dir">./output</entry>
+    <entry key="product.sclkScetFile.baseName">new-horizons</entry>
+    <entry key="product.sclkScetFile.separator">_</entry>
+    <entry key="product.sclkScetFile.suffix">.sclkscet</entry>
+    <entry key="product.sclkScetFile.datasetId">SCLK_SCET</entry>
+    <entry key="product.sclkScetFile.producerId">MMTC</entry>
+    <entry key="product.uplinkCmdFile.create">true</entry>
+    <entry key="product.uplinkCmdFile.outputDir">./output</entry>
+    <entry key="product.uplinkCmdFile.baseName">uplinkCmd</entry>
+    <entry key="product.sclkScetFile.scetUtcPrecision">6</entry>
+</properties>

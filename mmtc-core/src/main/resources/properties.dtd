@@ -1,0 +1,16 @@
+<!-- Copied from https://docs.oracle.com/javase/8/docs/api/java/util/Properties.html -->
+
+<!-- DTD used for validation of the TimeCorrelationConfigProperties.xml file. -->
+
+<!ELEMENT properties ( comment?, entry* ) >
+
+<!ATTLIST properties version CDATA #FIXED "1.0"
+	xmlns CDATA #FIXED "mmtc"
+	xmlns:xsi CDATA #FIXED "http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation CDATA #FIXED "mmtc TimeCorrelationConfigProperties.xsd">
+
+<!ELEMENT comment (#PCDATA) >
+
+<!ELEMENT entry (#PCDATA) >
+
+<!ATTLIST entry key CDATA #REQUIRED>

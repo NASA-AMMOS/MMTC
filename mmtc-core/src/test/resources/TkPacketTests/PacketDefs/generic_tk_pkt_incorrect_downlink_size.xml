@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+
+<!--
+Definition of a generic MMTC Time Correlation Packet.
+
+This definition is not based on any real mission's telemetry packets and exists purely for the purpose of
+testing MMTC's packet parsing behavior.
+
+All offsets are in bits from the beginning (bit 0) of the packet. All lengths are in bits. All data
+types must be UNSIGNED_INT except for DownlinkDataRate which can be UNSIGNED_INT, SINGLE_FLOAT, or DOUBLE_FLOAT
+-->
+
+<Packet_Definition
+        xmlns="mmtc"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="mmtc tk_packet.xsd">
+
+    <!-- CCSDS Primary Header's Packet Length, one less than the number of bytes in the packet after the primary header -->
+    <TelemetryPoint>
+        <name>CCSDSPacketLength</name>
+        <offset>32</offset>
+        <length>16</length>
+        <type>UNSIGNED_INT</type>
+    </TelemetryPoint>
+
+    <!-- Bit 0 Timestamp (seconds), Coarse part of SCLK associated with the target frame, but contained in the current frame -->
+    <TelemetryPoint>
+        <name>SclkCoarse</name>
+        <offset>96</offset>
+        <length>32</length>
+        <type>UNSIGNED_INT</type>
+    </TelemetryPoint>
+
+    <!-- Bit 0 Timestamp (subseconds), Fine part of SCLK associated with the target frame, but contained in the current frame -->
+    <TelemetryPoint>
+        <name>SclkFine</name>
+        <offset>128</offset>
+        <length>24</length>
+        <type>UNSIGNED_INT</type>
+    </TelemetryPoint>
+
+    <!-- Last SCLK Missed Flag (Indicates invalid data if bit is set) -->
+    <TelemetryPoint>
+        <name>InvalidFlag</name>
+        <offset>159</offset>
+        <length>1</length>
+        <type>UNSIGNED_INT</type>
+    </TelemetryPoint>
+
+    <!-- Last Frame VCID (Virtual Channel ID of the target frame) -->
+    <TelemetryPoint>
+        <name>TargetFrameVcid</name>
+        <offset>160</offset>
+        <length>8</length>
+        <type>UNSIGNED_INT</type>
+    </TelemetryPoint>
+
+    <!-- Last Frame VCFC (Virtual Channel Frame Count of the target frame) -->
+    <TelemetryPoint>
+        <name>TargetFrameVcfc</name>
+        <offset>168</offset>
+        <length>24</length>
+        <type>UNSIGNED_INT</type>
+    </TelemetryPoint>
+
+    <!-- Last Frame Encoding Mode (Encoding method of the target frame) -->
+    <TelemetryPoint>
+        <name>EncodingMethod</name>
+        <offset>192</offset>
+        <length>8</length>
+        <type>UNSIGNED_INT</type>
+    </TelemetryPoint>
+
+    <!-- Last Frame Downlink Data Rate in bits per second (Downlink rate of the target frame) -->
+    <TelemetryPoint>
+        <name>DownlinkDataRate</name>
+        <offset>200</offset>
+        <length>64</length>
+        <type>UNSIGNED_INT</type>
+    </TelemetryPoint>
+</Packet_Definition>

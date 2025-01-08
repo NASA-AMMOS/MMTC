@@ -1,0 +1,5 @@
+Run Time,Path ID,Target Frame ERT,Target Secondary Hdr SCLK Coarse,Target Secondary Hdr SCLK Fine,Supp SCLK Coarse,Supp SCLK Fine,Supp Frame ERT,Encoding Type,MCFC,VCID,VCFC,Target ERT String, Data Rate BPS,Frame Size Bits
+-,55,17551::9002503::3170,0000030119,06084,-,-,-,-,-,-,-,2006-020T02:30:2.503317,-,-,-
+-,55,17551::9002503::3170,0000030119,06084,-,-,-,-,-,-,-,2006-020T02:30:2.503317,-,-,-
+-,55,17551::9002503::3170,0000030119,06084,-,-,-,-,-,-,-,2006-020T02:30:2.503317,-,-,-
+2019-06-17T21:42:11.274Z,55,17551::9002503::3170,0000030119,06084,-,-,-,-,-,-,-,2006-020T02:30:2.503317,-,-,-
