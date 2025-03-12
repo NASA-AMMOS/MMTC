@@ -4,7 +4,6 @@
 :revnumber: 1.6.0-SNAPSHOT
 :revremark: Rev G
 :imagesdir: ./images/
-
 :toc: macro
 :toc-title:
 :toclevels: 2
