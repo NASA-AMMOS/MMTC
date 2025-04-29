@@ -316,6 +316,7 @@ public class TimeCorrelationApp {
                 timeHistoryFileRecord.setValue(TimeHistoryFile.CLK_CHANGE_RATE_MODE, "P");
                 break;
             case ASSIGN:
+            case ASSIGN_KEY:
                 timeHistoryFileRecord.setValue(TimeHistoryFile.CLK_CHANGE_RATE_MODE, "A");
                 break;
             case NO_DRIFT:
