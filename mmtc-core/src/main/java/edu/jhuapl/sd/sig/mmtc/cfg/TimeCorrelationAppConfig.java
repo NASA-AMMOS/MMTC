@@ -288,12 +288,21 @@ public class TimeCorrelationAppConfig {
     public double getTestModeOwlt() { return cmdLineConfig.getTestModeOwlt(); }
 
     /**
+     * Indicates if this is a dry run
+     *
+     * @return true if -D or --dry-run CLI options are invoked
+     */
+    public boolean isDryRun() {
+        return cmdLineConfig.isDryRun();
+    }
+
+    /**
      * As is the case with the other filters, the contact filter can be enabled or
      * disabled from the parameter file, which is the preferred way to do it.
      * However, it can also be disabled from the command line with the
      * --disable-contact-filter or -F command line option. The command line option
      * overrides the configuration filter.contact.enabled paramter setting.
-     * 
+     *
      * @return true if the contact filter is DISABLED, false if enabled
      * @throws MmtcException if contact filter is not disabled from the
      *                                  command line and is also missing from
@@ -335,7 +344,7 @@ public class TimeCorrelationAppConfig {
      * command line options. If no relevant command line options are passed in, then
      * this is determined by the configuration file. If no relevant option is found
      * in the configuration file, then this falls back to a default method.
-     * 
+     *
      * @throws MmtcException if the configuration file contains an
      *                                  invalid value for the clock change rate mode
      *                                  option.
@@ -449,7 +458,7 @@ public class TimeCorrelationAppConfig {
      * Get the maximum virtual channel frame counter value a frame can be assigned before the next frame's virtual
      * channel frame index is assigned zero. Depending on mission, this can range anywhere from a few hundred to 
      * a few million, so MMTC needs to know when to expect a VCFC rollover.
-     * 
+     *
      * @return the maximum virtual channel frame counter value before the counter rolls over to 0
      */
     public int getVcfcMaxValue() {
@@ -700,7 +709,7 @@ public class TimeCorrelationAppConfig {
     /**
      * Indicates whether the VCID filter is enabled. Note that this method does not throw if the VCID filter is missing
      * from the configuration file altogether.
-     * 
+     *
      * @return true if the VCID filter is enabled in the configuration file, false
      *         otherwise (including if an exception occurs while reading the
      *         configuration)
@@ -716,7 +725,7 @@ public class TimeCorrelationAppConfig {
 
     /**
      * Gets the valid VCID groups.
-     * 
+     *
      * @return the groups of valid VCIDs
      * @throws MmtcException if the groups are not specified in the
      *                                  configuration file, the value is empty, or the value contains
@@ -1088,7 +1097,7 @@ public class TimeCorrelationAppConfig {
      * correlated times will be offset by a "Bit Rate Error" time delay. This delay
      * can be computed from the downlink rate and the bit offset between the parts
      * of the frame that the spacecraft and the ground station use.
-     * 
+     *
      * This method gets the configuration value that represents that bit offset.
      *
      * @return the bit offset between the parts of the frame that the spacecraft and

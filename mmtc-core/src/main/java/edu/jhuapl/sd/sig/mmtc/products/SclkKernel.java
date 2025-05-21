@@ -371,4 +371,8 @@ public class SclkKernel extends TextProduct {
             throw new TextProductException("Invalid input SCLK Kernel. No time correlation records found.");
         }
     }
+
+    public int getNumTriplets() {
+        return this.endDataNum - firstDataRecNum(sourceProduct);
+    }
 }

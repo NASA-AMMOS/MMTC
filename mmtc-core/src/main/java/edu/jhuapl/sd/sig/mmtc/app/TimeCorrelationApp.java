@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
@@ -67,8 +68,10 @@ public class TimeCorrelationApp {
     private TableRecord runHistoryFileRecord;
     private TableRecord summaryTableRecord;
     private TableRecord timeHistoryFileRecord;
+    private TableRecord rawTlmTableRecord;
     private SclkKernel currentSclkKernel;
     private SclkKernel newSclkKernel;
+    private SclkScetFile scetFile;
     private Map<String, TimeCorrelationFilter> filters;
 
     // The target sample ERT.
@@ -236,28 +239,25 @@ public class TimeCorrelationApp {
     }
 
     /**
-     * Write the sample set to the raw telemetry table.
+     * Generate the sample set to the raw telemetry table.
      *
      * @param samples the current sample set
      * @throws MmtcException when a record cannot be written
      */
-    private void writeRawTelemetryTable(List<FrameSample> samples) throws MmtcException {
+    private void generateRawTelemetryTable(List<FrameSample> samples) throws MmtcException {
         for (FrameSample sample : samples) {
-            TableRecord rec = sample.toRawTelemetryTableRecord(rawTlmTable.getHeaders());
-            rec.setValue(RawTelemetryTable.RUN_TIME, appRunTime.toString());
-            rawTlmTable.writeRecord(rec);
+            rawTlmTableRecord = sample.toRawTelemetryTableRecord(rawTlmTable.getHeaders());
+            rawTlmTableRecord.setValue(RawTelemetryTable.RUN_TIME, appRunTime.toString());
         }
-
-        logger.info(USER_NOTICE, "Appended new entries to Raw Telemetry Table located at " + rawTlmTable.getPath());
     }
 
     /**
-     * Write the next record to the summary table.
+     * Generate the next record to the summary table.
      *
      * @throws MmtcException when a failure occurs on write
      * @throws TimeConvertException when a time conversion fails
      */
-    private void writeSummaryTable() throws MmtcException, TimeConvertException {
+    private void generateSummaryTable() throws MmtcException, TimeConvertException {
         int sclkPartition = config.getSclkPartition(TimeConvert.parseIsoDoyUtcStr(targetSample.getErtStr()));
 
         summaryTableRecord.setValue(SummaryTable.TARGET_FRAME_UTC, TimeConvert.parseIsoDoyUtcStr(targetSample.getErtStr()).toString());
@@ -284,19 +284,15 @@ public class TimeCorrelationApp {
                         )
                 )
         );
-
-        summaryTable.writeRecord(summaryTableRecord);
-
-        logger.info(USER_NOTICE, "Appended a new entry to Summary Table located at " + summaryTable.getPath());
     }
 
     /**
-     * Write the next record to the time history file.
+     * Generate the next record to the time history file.
      *
      * @throws MmtcException when a failure occurs on write
      * @throws TimeConvertException if a time conversion operation failed
      */
-    private void writeTimeHistoryFile(OffsetDateTime scet_tdt_g, TimeCorrelationTarget tcTarget, Double currentPredictedClockChangeRate) throws MmtcException, TimeConvertException, TextProductException {
+    private void generateTimeHistoryFile(OffsetDateTime scet_tdt_g, TimeCorrelationTarget tcTarget, Double currentPredictedClockChangeRate) throws MmtcException, TimeConvertException, TextProductException {
         final int sclkPartition = config.getSclkPartition(TimeConvert.parseIsoDoyUtcStr(targetSample.getErtStr()));
 
         final String scId = String.valueOf(config.getNaifSpacecraftId());
@@ -468,10 +464,6 @@ public class TimeCorrelationApp {
         timeHistoryFileRecord.setValue(TimeHistoryFile.RADIO_ID,                  radioId);
         timeHistoryFileRecord.setValue(TimeHistoryFile.OSCILLATOR,                activeOscillatorId);
         timeHistoryFileRecord.setValue(TimeHistoryFile.OSCILLATOR_TEMP_DEGC,      String.valueOf(oscillatorTemperature));
-
-        timeHistoryFile.writeRecord(timeHistoryFileRecord);
-
-        logger.info(USER_NOTICE, "Appended a new entry to Time History File located at " + timeHistoryFile.getPath());
     }
 
     private double computeTdtSErrorMs(TelemetrySource.GncParms gncParms, Double currentCorrelationSclk, Double currentCorrelationTdtG, Double currentCorrelationPredictedClockChangeRate) {
@@ -534,7 +526,6 @@ public class TimeCorrelationApp {
      */
     private void writeSclkScetFile() throws MmtcException {
         try {
-            SclkScetFile scetFile;
 
             // Create the new SCLK/SCET file from the newly-created SCLK kernel.
             scetFile = new SclkScetFile(
@@ -559,7 +550,7 @@ public class TimeCorrelationApp {
      * @param clockChangeRate the clock change rate
      * @throws MmtcException if the Uplink Command File cannot be written
      */
-    private void writeUplinkCommandFile(double et_g, double tdt_g, double clockChangeRate) throws MmtcException {
+    private UplinkCmdFile createUplinkCommandFile(double et_g, double tdt_g, double clockChangeRate) throws MmtcException {
         String cmdFilespec = "";
         try {
             UplinkCommand uplinkCmd = new UplinkCommand(
@@ -574,9 +565,10 @@ public class TimeCorrelationApp {
                     UplinkCmdFile.FILE_SUFFIX;
             UplinkCmdFile cmdFile = new UplinkCmdFile(Paths.get(
                     config.getUplinkCmdFileDir(), cmdFilename).toString());
-            cmdFile.write(uplinkCmd);
-        } catch (IOException | TimeConvertException ex) {
-            throw new MmtcException("Unable to write the Uplink Command File: " + cmdFilespec, ex);
+            cmdFile.setCommandString(uplinkCmd);
+            return cmdFile;
+        } catch (TimeConvertException ex) {
+            throw new MmtcException("Unable to initialize the Uplink Command File: " + cmdFilespec, ex);
         }
     }
 
@@ -1026,6 +1018,17 @@ public class TimeCorrelationApp {
         }
     }
 
+    private void logProductContents(String productType, String[] entries) {
+        logger.info("************ BEGIN DRY RUN {} RECORD ************", productType);
+        if(productType.equals("SCLK KERNEL")) {
+            logger.info("[Omitting {} unmodified triplets and recording last two entries of new file]", newSclkKernel.getNumTriplets());
+        }
+        for (String entry : entries) {
+            logger.info(entry);
+        }
+        logger.info("************ END DRY RUN {} RECORD ************", productType);
+    }
+
     /**
      * Main application processing.
      */
@@ -1034,6 +1037,10 @@ public class TimeCorrelationApp {
 
         if (config.isTestMode()) {
             logger.warn(String.format("Test mode is enabled! One-way light time will be set to the provided value %f and ancillary positional and velocity calculations will be skipped.", config.getTestModeOwlt()));
+        }
+
+        if (config.isDryRun()) {
+            logger.warn("Dry run mode is enabled! No products/outputs will be kept and will only be recorded in the log at {}/log/", System.getenv("MMTC_HOME"));
         }
 
         if (tk_sclk_fine_tick_modulus == -1) {
@@ -1196,31 +1203,68 @@ public class TimeCorrelationApp {
         summaryTableRecord.setValue(SummaryTable.CLK_CHANGE_RATE_PREDICTED, String.valueOf(clockChangeRate));
         timeHistoryFileRecord.setValue(TimeHistoryFile.CLK_CHANGE_RATE, String.valueOf(clockChangeRate));
 
-        // Write the SCLK kernel.
+        // Write the SCLK kernel. If dry run, log the new triplets
         writeSclkKernel(tdtG, encSclk, clockChangeRate, interpClkChgRate);
+        if(config.isDryRun()) {
+            String[] newSclkEntries = newSclkKernel.getLastXRecords(2);
+            logProductContents("SCLK KERNEL", newSclkEntries);
+        }
+
 
         // Write the optional SCLK/SCET file if selected to do so.
         if (config.createSclkScetFile()) {
             writeSclkScetFile();
+            if(config.isDryRun()) {
+                String[] sclkScetEntry = scetFile.getLastXRecords(1);
+                Files.deleteIfExists(Paths.get(scetFile.getPath()));
+                logger.info(USER_NOTICE, "DRY RUN: Deleted new time correlation product file: {}", scetFile.getPath());
+                logProductContents("SCET FILE", sclkScetEntry);
+            }
+        }
+
+        if(config.isDryRun()) {
+            Files.deleteIfExists(Paths.get(newSclkKernel.getPath())); // Delete new SCLK kernel now that scet file has been recorded
+            logger.info(USER_NOTICE, "DRY RUN: Deleted new time correlation product file: {}", newSclkKernel.getPath());
         }
 
         // Write the optional Uplink Command File if selected to do so.
         if (config.createUplinkCmdFile()) {
-            writeUplinkCommandFile(etG, tdtG, clockChangeRate);
+            UplinkCmdFile cmdFile = createUplinkCommandFile(etG, tdtG, clockChangeRate);
+            if(!config.isDryRun()) {
+                try {
+                    cmdFile.write();
+                } catch(IOException e) {
+                    throw new MmtcException("Unable to write UplinkCmdFile");
+                }
+            } else {
+                logProductContents("UPLINK COMMAND", new String[]{cmdFile.getCommandString().toString()});
+            }
         }
 
-        // Write the tables.
-        writeRawTelemetryTable(tcTarget.getSampleSet());
-        writeSummaryTable();
-
-        writeTimeHistoryFile(
+        // Generate the tables.
+        generateRawTelemetryTable(tcTarget.getSampleSet());
+        generateSummaryTable();
+        generateTimeHistoryFile(
                 equivalent_scet_utc_for_tdt_g,
                 tcTarget,
                 clockChangeRate
         );
 
-        writeRunHistoryFileAfterRun();
-        logger.info(String.format("Run at %s recorded to %s", appRunTime, config.getRunHistoryFileUri().toString()));
+        // Write the tables
+        if(!config.isDryRun()) {
+            rawTlmTable.writeRecord(rawTlmTableRecord);
+            logger.info(USER_NOTICE, "Appended new entries to Raw Telemetry Table located at " + rawTlmTable.getPath());
+
+            summaryTable.writeRecord(summaryTableRecord);
+            logger.info(USER_NOTICE, "Appended a new entry to Summary Table located at " + summaryTable.getPath());
+
+            timeHistoryFile.writeRecord(timeHistoryFileRecord);
+            logger.info(USER_NOTICE, "Appended a new entry to Time History File located at " + timeHistoryFile.getPath());
+
+            writeRunHistoryFileAfterRun();
+            logger.info(String.format("Run at %s recorded to %s", appRunTime, config.getRunHistoryFileUri().toString()));
+        }
+
 
         logger.info(USER_NOTICE, "MMTC completed successfully.");
     }
