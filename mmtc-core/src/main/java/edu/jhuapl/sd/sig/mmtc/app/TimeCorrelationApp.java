@@ -1019,14 +1019,14 @@ public class TimeCorrelationApp {
     }
 
     private void logProductContents(String productType, String[] entries) {
-        logger.info("************ BEGIN DRY RUN {} RECORD ************", productType);
+        logger.info("<<<<<<<<<<<< BEGIN DRY RUN {} RECORD <<<<<<<<<<<<", productType);
         if(productType.equals("SCLK KERNEL")) {
             logger.info("[Omitting {} unmodified triplets and recording last two entries of new file]", newSclkKernel.getNumTriplets());
         }
         for (String entry : entries) {
             logger.info(entry);
         }
-        logger.info("************ END DRY RUN {} RECORD ************", productType);
+        logger.info(">>>>>>>>>>>> END DRY RUN {} RECORD >>>>>>>>>>>>", productType);
     }
 
     /**
@@ -1263,6 +1263,11 @@ public class TimeCorrelationApp {
 
             writeRunHistoryFileAfterRun();
             logger.info(String.format("Run at %s recorded to %s", appRunTime, config.getRunHistoryFileUri().toString()));
+        } else {
+            // Record the new table entries in the log
+            logProductContents("RAW TLM TABLE", new String[] {rawTlmTable.getHeaders().toString(), rawTlmTableRecord.getValues().toString()});
+            logProductContents("RAW TLM TABLE", new String[] {summaryTable.getHeaders().toString(), summaryTableRecord.getValues().toString()});
+            logProductContents("RAW TLM TABLE", new String[] {timeHistoryFile.getHeaders().toString(), timeHistoryFileRecord.getValues().toString()});
         }
 
 
