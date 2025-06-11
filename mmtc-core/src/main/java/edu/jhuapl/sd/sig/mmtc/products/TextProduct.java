@@ -164,6 +164,23 @@ abstract class TextProduct {
         return sourceProduct.get(lastDataRecNum(sourceProduct)).trim();
     }
 
+    /**
+     * Gets the last x records in the original source product
+     *
+     * @param numRecords the number of records to return
+     * @return a String array of records in their original order, else an empty array if numRecords is invalid
+     */
+    public String[] getLastXRecords(int numRecords) {
+        if(numRecords < 1) { return new String[0]; }
+        int lastRecordIndex = lastDataRecNum(sourceProduct);
+
+        String[] records = new String[numRecords];
+        for(int i=lastRecordIndex-(numRecords-1), j=0;i < lastRecordIndex+1; i++, j++) {
+            records[j] = sourceProduct.get(i);
+        }
+        return records;
+    }
+
 
     /**
      * Creates a new product file from an existing source file and writes it to the directory

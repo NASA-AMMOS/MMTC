@@ -22,6 +22,7 @@ public class UplinkCmdFile {
 
     private String         filespec;
     private BufferedWriter writer;
+    private UplinkCommand commandString;
 
     public UplinkCmdFile(String filespec) {
         this.filespec = filespec;
@@ -30,13 +31,20 @@ public class UplinkCmdFile {
     /**
      * Writes the CSV format uplink command record to the Uplink Command File.
      *
-     * @param commandString the uplink command parameters
      * @throws IOException if the file cannot be written
      */
-    public void write(UplinkCommand commandString) throws IOException  {
+    public void write() throws IOException  {
         writer = new BufferedWriter(new FileWriter(filespec));
         writer.write(commandString.toString());
         writer.close();
         logger.info(TimeCorrelationApp.USER_NOTICE, "Wrote new uplink command file at: " + Paths.get(filespec));
+    }
+
+    public void setCommandString(UplinkCommand commandString) {
+        this.commandString = commandString;
+    }
+
+    public UplinkCommand getCommandString() {
+        return this.commandString;
     }
 }

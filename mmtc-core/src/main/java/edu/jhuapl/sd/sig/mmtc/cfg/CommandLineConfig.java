@@ -95,6 +95,14 @@ public class CommandLineConfig implements IConfiguration {
                 "Run in test mode, which allows the user to override one-way-light-time."
         );
 
+        opts.addOption(
+                "D",
+                "dry-run",
+                false,
+                "Executes a dry run of MMTC with outputs calculated as otherwise configured " +
+                        "but only records them in the log without writing/modifying product files."
+        );
+
         opts.addOption("v", "version", false, "Print the MMTC version number.");
 
         opts.addOption("h", "help", false, "Print this message.");
@@ -186,6 +194,10 @@ public class CommandLineConfig implements IConfiguration {
 
     double getTestModeOwlt() {
         return Double.parseDouble(cmdLine.getOptionValue('T'));
+    }
+
+    boolean isDryRun() {
+        return cmdLine.hasOption("D") || cmdLine.hasOption("dry-run");
     }
 
     boolean isGenerateCmdFile() {
