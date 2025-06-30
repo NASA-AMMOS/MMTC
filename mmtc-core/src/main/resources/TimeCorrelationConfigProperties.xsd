@@ -130,7 +130,6 @@
       <xs:enumeration value="table.runHistoryFile.uri"/>
       <xs:enumeration value="table.rawTelemetryTable.uri"/>
       <xs:enumeration value="table.rawTelemetryTable.dateTimePattern"/>
-      <xs:enumeration value="table.summaryTable.uri"/>
       <xs:enumeration value="table.timeHistoryFile.uri"/>
       <xs:enumeration value="table.timeHistoryFile.excludeColumns"/>
       <xs:enumeration value="table.timeHistoryFile.scetUtcPrecision"/>

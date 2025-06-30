@@ -61,18 +61,13 @@ public class TimeCorrelationApp {
 
     private RunHistoryFile runHistoryFile;
     private RawTelemetryTable rawTlmTable;
-    private SummaryTable summaryTable;
     private TimeHistoryFile timeHistoryFile;
     private FrameSample targetSample;
     private TableRecord runHistoryFileRecord;
-    private TableRecord summaryTableRecord;
     private TableRecord timeHistoryFileRecord;
     private SclkKernel currentSclkKernel;
     private SclkKernel newSclkKernel;
     private Map<String, TimeCorrelationFilter> filters;
-
-    // The target sample ERT.
-    private OffsetDateTime ert;
 
     // This is the SCLK modulus (i.e., fine time ticks per second) related to FrameSample.tkSclkFine.
     // It is used to compute TF Offset for use in clock change rate calculations.
@@ -138,9 +133,6 @@ public class TimeCorrelationApp {
         currentSclkKernel.readSourceProduct();
 
         rawTlmTable = new RawTelemetryTable(config.getRawTelemetryTableUri());
-
-        summaryTable = new SummaryTable(config.getSummaryTableUri());
-        summaryTableRecord = new TableRecord(summaryTable.getHeaders());
 
         timeHistoryFile = new TimeHistoryFile(config.getTimeHistoryFileUri(), config.getTimeHistoryFileExcludeColumns());
         timeHistoryFileRecord = new TableRecord(timeHistoryFile.getHeaders());
@@ -252,45 +244,6 @@ public class TimeCorrelationApp {
     }
 
     /**
-     * Write the next record to the summary table.
-     *
-     * @throws MmtcException when a failure occurs on write
-     * @throws TimeConvertException when a time conversion fails
-     */
-    private void writeSummaryTable() throws MmtcException, TimeConvertException {
-        int sclkPartition = config.getSclkPartition(TimeConvert.parseIsoDoyUtcStr(targetSample.getErtStr()));
-
-        summaryTableRecord.setValue(SummaryTable.TARGET_FRAME_UTC, TimeConvert.parseIsoDoyUtcStr(targetSample.getErtStr()).toString());
-        summaryTableRecord.setValue(SummaryTable.TARGET_FRAME_VCID, String.valueOf(targetSample.getTkVcid()));
-        summaryTableRecord.setValue(SummaryTable.TARGET_FRAME_VCFC, String.valueOf(targetSample.getTkVcfc()));
-        summaryTableRecord.setValue(SummaryTable.SCLK_PARTITION_NUM, String.valueOf(sclkPartition));
-        summaryTableRecord.setValue(SummaryTable.RUN_TIME, appRunTime.toString());
-        summaryTableRecord.setValue(SummaryTable.STATION_ID, config.getStationId(targetSample.getPathId()));
-        summaryTableRecord.setValue(SummaryTable.TARGET_FRAME_ERT, targetSample.getErt().toString());
-        summaryTableRecord.setValue(SummaryTable.TF_OFFSET, String.valueOf(tf_offset));
-
-        summaryTableRecord.setValue(SummaryTable.DATA_RATE_BPS, targetSample.getTkDataRateBpsAsRoundedString());
-        summaryTableRecord.setValue(SummaryTable.FRAME_SIZE_BITS, String.valueOf(targetSample.isFrameSizeBitsSet() ? targetSample.getFrameSizeBits() : "-"));
-
-        summaryTableRecord.setValue(SummaryTable.SPACECRAFT_TIME_DELAY, String.valueOf(config.getSpacecraftTimeDelaySec()));
-        summaryTableRecord.setValue(SummaryTable.BITRATE_TIME_ERROR, String.valueOf(targetSample.getDerivedTdBe()));
-
-        summaryTableRecord.setValue(SummaryTable.TARGET_FRAME_ENC_SCLK,
-                String.valueOf(TimeConvert.sclkToEncSclk(
-                                config.getNaifSpacecraftId(),
-                                sclkPartition,
-                                targetSample.getTkSclkCoarse(),
-                                0
-                        )
-                )
-        );
-
-        summaryTable.writeRecord(summaryTableRecord);
-
-        logger.info(USER_NOTICE, "Appended a new entry to Summary Table located at " + summaryTable.getPath());
-    }
-
-    /**
      * Write the next record to the time history file.
      *
      * @throws MmtcException when a failure occurs on write
@@ -307,6 +260,9 @@ public class TimeCorrelationApp {
         timeHistoryFileRecord.setValue(TimeHistoryFile.STATION_ID,                    config.getStationId(targetSample.getPathId()));
         timeHistoryFileRecord.setValue(TimeHistoryFile.DATA_RATE_BPS,                 targetSample.getTkDataRateBpsAsRoundedString());
         timeHistoryFileRecord.setValue(TimeHistoryFile.CLK_CHANGE_RATE_INTERVAL_DAYS, String.format("%.2f", config.getPredictedClkRateLookBackDays()));
+        timeHistoryFileRecord.setValue(TimeHistoryFile.SPACECRAFT_TIME_DELAY,         String.valueOf(config.getSpacecraftTimeDelaySec()));
+        timeHistoryFileRecord.setValue(TimeHistoryFile.BITRATE_TIME_ERROR,            String.valueOf(targetSample.getDerivedTdBe()));
+        timeHistoryFileRecord.setValue(TimeHistoryFile.TF_OFFSET,                     String.valueOf(tf_offset));
 
         switch (actualClkChgRateMode) {
             case COMPUTE_INTERPOLATED:
@@ -514,7 +470,7 @@ public class TimeCorrelationApp {
             newSclkKernel.setProductCreationTime(appRunTime);
             newSclkKernel.setDir(config.getSclkKernelOutputDir().toString());
             newSclkKernel.setName(getNextSclkKernelName());
-            newSclkKernel.setTriplet(encSclk, TimeConvert.tdtToTdtStr(tdt_g), clockChangeRate);
+            newSclkKernel.setNewTriplet(encSclk, TimeConvert.tdtToTdtStr(tdt_g), clockChangeRate);
 
             if (actualClkChgRateMode == ClockChangeRateMode.COMPUTE_INTERPOLATED) {
                 newSclkKernel.setReplacementClockChgRate(clockChangeRateInterp);
@@ -633,8 +589,6 @@ public class TimeCorrelationApp {
         runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SCLKSCET,       getLatestFileCounterByPrefix(config.getSclkScetOutputDir(), config.getSclkScetFileBasename(), config.getSclkScetFileSuffix()));
         // TimeHistoryFile
         runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_TIMEHIST,       String.valueOf(timeHistoryFile.getLastLineNumber()));
-        // SummaryTable
-        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SUMMARYTABLE,   String.valueOf(summaryTable.getLastLineNumber()));
         // RawTlmTable
         runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_RAWTLMTABLE,    String.valueOf(rawTlmTable.getLastLineNumber()));
         // Uplink Command File
@@ -653,8 +607,6 @@ public class TimeCorrelationApp {
         runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLKSCET,      newVersionStr);
         // TimeHistoryFile
         runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_TIMEHIST,      String.valueOf(timeHistoryFile.getLastLineNumber()));
-        // SummaryTable
-        runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SUMMARYTABLE,  String.valueOf(summaryTable.getLastLineNumber()));
         // RawTlmTable
         runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_RAWTLMTABLE,   String.valueOf(rawTlmTable.getLastLineNumber()));
         // Uplink Command File
@@ -1059,7 +1011,6 @@ public class TimeCorrelationApp {
         targetSample = tcTarget.getTargetSample();
 
         final String groundStationId = tcTarget.getTargetSampleGroundStationId();
-        ert = tcTarget.getTargetSampleErt();
 
         logger.info(USER_NOTICE, "--- Target and supplemental frame summary ---");
         logger.info(USER_NOTICE, targetSample.toSummaryString(groundStationId));
@@ -1081,7 +1032,6 @@ public class TimeCorrelationApp {
         }
 
         // Record OWLT
-        summaryTableRecord.setValue(SummaryTable.OWLT_SEC, String.format("%.6f", owlt));
         timeHistoryFileRecord.setValue(TimeHistoryFile.OWLT_SEC, String.format("%.6f", owlt));
 
         double encSclk = tcTarget.getTargetSampleEncSclk();
@@ -1104,8 +1054,6 @@ public class TimeCorrelationApp {
         String tdt_g_numericStr = tdf.format(tdtG);
         String et_numericStr    = tdf.format(etG);
 
-        summaryTableRecord.setValue(SummaryTable.TDT_G, tdt_g_numericStr);
-        summaryTableRecord.setValue(SummaryTable.TDT_G_STR, tdtGStr);
         timeHistoryFileRecord.setValue(TimeHistoryFile.TDT_G, tdt_g_numericStr);
         timeHistoryFileRecord.setValue(TimeHistoryFile.TDT_G_STR, tdtGStr);
         timeHistoryFileRecord.setValue(TimeHistoryFile.ET_G, et_numericStr);
@@ -1150,8 +1098,8 @@ public class TimeCorrelationApp {
         // kernel CLKRATE with an interpolated value. Typically, the user would select ASSIGN or NO_DRIFT as the
         // CLKRATE method anyway for the first few runs.
         ClockChangeRateMode requestedClockChangeRateMode = config.getClockChangeRateMode();
-        if (requestedClockChangeRateMode == ClockChangeRateMode.COMPUTE_INTERPOLATED && !summaryTable.exists()) {
-            logger.warn("User selected to compute an interpolated clock change rate, but Summary Table file does not exist. Switching to predicted mode.");
+        if (requestedClockChangeRateMode == ClockChangeRateMode.COMPUTE_INTERPOLATED && currentSclkKernel.getSourceProductDataRecCount() == 1) {
+            logger.warn("Switching from interpolated mode to predicted so as not to overwrite seed kernel entry.");
             actualClkChgRateMode = ClockChangeRateMode.COMPUTE_PREDICTED;
         } else {
             actualClkChgRateMode = requestedClockChangeRateMode;
@@ -1163,10 +1111,13 @@ public class TimeCorrelationApp {
         double interpClkChgRate = -1.;
         if (actualClkChgRateMode == ClockChangeRateMode.COMPUTE_INTERPOLATED) {
             try {
-                Map<String, String> lastRecord = summaryTable.readLastRecord();
                 interpClkChgRate = computeInterpolatedClkChgRate(targetSample.getTkSclkCoarse(), tdtG);
-                lastRecord.replace(SummaryTable.CLK_CHANGE_RATE_INTERP, String.valueOf(interpClkChgRate));
-                summaryTable.replaceLastRecord(lastRecord);
+
+                if (timeHistoryFile.exists()) {
+                    Map<String, String> lastRecord = timeHistoryFile.readLastRecord();
+                    lastRecord.replace(TimeHistoryFile.INTERP_CLK_CHANGE_RATE, String.valueOf(interpClkChgRate));
+                    timeHistoryFile.replaceLastRecord(lastRecord);
+                }
             } catch (MmtcException ex) {
                 throw new MmtcException("Can't compute or record interpolated clock change rate.", ex);
             }
@@ -1193,8 +1144,7 @@ public class TimeCorrelationApp {
         }
 
         // Record the predicted / assigned clock change rate value
-        summaryTableRecord.setValue(SummaryTable.CLK_CHANGE_RATE_PREDICTED, String.valueOf(clockChangeRate));
-        timeHistoryFileRecord.setValue(TimeHistoryFile.CLK_CHANGE_RATE, String.valueOf(clockChangeRate));
+        timeHistoryFileRecord.setValue(TimeHistoryFile.PRED_CLK_CHANGE_RATE, String.valueOf(clockChangeRate));
 
         // Write the SCLK kernel.
         writeSclkKernel(tdtG, encSclk, clockChangeRate, interpClkChgRate);
@@ -1211,7 +1161,6 @@ public class TimeCorrelationApp {
 
         // Write the tables.
         writeRawTelemetryTable(tcTarget.getSampleSet());
-        writeSummaryTable();
 
         writeTimeHistoryFile(
                 equivalent_scet_utc_for_tdt_g,

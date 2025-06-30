@@ -31,7 +31,30 @@ public class SclkKernelTests {
      */
     @Test
     @DisplayName("SclkKernel.readSourceProduct Test 1")
-    void readSourceProduct_Test1() throws IOException, TextProductException, TimeConvertException{
+    void testReadSeedKernel() throws IOException, TextProductException {
+        String tscDir     = "src/test/resources/SclkKernelTests";
+        String newTscName = "mmtc01.tsc";
+        String sourceTsc  = "src/test/resources/nh_kernels/sclk/new-horizons_0000.tsc";
+
+        SclkKernel tsc = new SclkKernel(tscDir, newTscName);
+
+        tsc.setSourceFilespec(sourceTsc);
+        tsc.readSourceProduct();
+        String lastrec = tsc.getLastSourceProdDataRec();
+
+        String expectedRec = "0     @19-JAN-2006-18:09:05.184000     1.00000000000";
+        assertEquals(expectedRec, lastrec);
+
+        assertEquals(1, tsc.getSourceProductDataRecCount());
+    }
+
+    /**
+     * Verify that the SclkKernel.readSourceProduct() method can read and store an input SCLK kernel properly
+     * and that it can identify return the last data record in the file.
+     */
+    @Test
+    @DisplayName("SclkKernel.readSourceProduct Test 1")
+    void readSourceProduct_Test1() throws IOException, TextProductException {
         String tscDir     = "src/test/resources/SclkKernelTests";
         String newTscName = "mmtc01.tsc";
         String sourceTsc  = "src/test/resources/nh_kernels/sclk/new-horizons_1876.tsc";
@@ -44,6 +67,8 @@ public class SclkKernelTests {
 
         String expectedRec = "21119278300000     @09-JUN-2019-11:28:37.488441     1.00000001166";
         assertEquals(expectedRec, lastrec);
+
+        assertEquals(1877, tsc.getSourceProductDataRecCount());
     }
 
 
@@ -64,7 +89,7 @@ public class SclkKernelTests {
         SclkKernel tsc = new SclkKernel(tscDir.toString(), newTscName);
         tsc.setProductCreationTime(OffsetDateTime.now());
         tsc.setSourceFilespec(sourceTsc.toString());
-        tsc.setTriplet(17672059990000., "02-APR-2017-19:00:01.123456", 1.00000001999);
+        tsc.setNewTriplet(17672059990000., "02-APR-2017-19:00:01.123456", 1.00000001999);
 
         String newFilePath = tscDir + File.separator + newTscName;
         Path newFile       = Paths.get(newFilePath);
@@ -97,7 +122,7 @@ public class SclkKernelTests {
         SclkKernel tsc = new SclkKernel(tscDir, newTscName);
         tsc.setProductCreationTime(OffsetDateTime.now());
         tsc.setSourceFilespec(sourceTsc);
-        tsc.setTriplet(17672059990000., "02-APR-2017-19:00:01.123456", 1.00000001999);
+        tsc.setNewTriplet(17672059990000., "02-APR-2017-19:00:01.123456", 1.00000001999);
 
         String newFilePath = tscDir + File.separator + newTscName;
         Path newFile       = Paths.get(newFilePath);

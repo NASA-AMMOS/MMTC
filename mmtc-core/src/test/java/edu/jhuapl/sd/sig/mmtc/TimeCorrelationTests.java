@@ -34,7 +34,7 @@ class TimeCorrelationTests {
         SclkKernel tsc = new SclkKernel(tscDir, newTscName);
         tsc.setProductCreationTime(OffsetDateTime.now());
         tsc.setSourceFilespec(sourceTsc);
-        tsc.setTriplet(17672059990000., "02-APR-2017-19:00:01.123456", 1.00000001999);
+        tsc.setNewTriplet(17672059990000., "02-APR-2017-19:00:01.123456", 1.00000001999);
 
         String newFilePath = tscDir + File.separator + newTscName;
         Path newFile       = Paths.get(newFilePath);

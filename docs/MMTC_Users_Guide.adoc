@@ -259,9 +259,9 @@ or any other combination of valid command line arguments as documented in
 <<Arguments and options>>.
 
 === Demo Output Products
-With the above invocation, MMTC should create six total files: An SCLK kernel
+With the above invocation, MMTC should create five total files: An SCLK kernel
 ("new-horizons_1001.tsc"), a SCLKSCET file ("new-horizons_1001.sclkscet"), and tables
-RunHistoryFile.csv, SummaryTable.csv, TimeHistoryFile.csv, and RawTlmTable.csv.
+RunHistoryFile.csv, TimeHistoryFile.csv, and RawTlmTable.csv.
 Note that table products will not output to the same directory as text products
 unless otherwise configured as mentioned earlier.
 
@@ -312,7 +312,7 @@ If the SCLK for the target frame is included in a later frame, nominally the nex
 
 Each time MMTC is run, a collection of output products is updated.  MMTC is run over a specified time interval.  For some missions, MMTC will be run once a day over all the data accumulated for the previous day.  For other missions, MMTC will run following each downlink contact between the spacecraft and a ground station to process all the data obtained during that contact.  MMTC processes the newest (most recent) data first.  If that data set does not provide a valid correlation between the spacecraft time and terrestrial time, the software notes that in a log file and looks at an earlier set of data within the specified interval.  The behavior by which MMTC looks through the available data is configurable.
 
-This process continues until a “good” set of data is identified by a set of filters.  That good set is used to determine the correlation between SCLK and Earth time.  All the data used in that determination are assembled into a text record that is appended to the Summary Table.  Each successful run of MMTC results is captured in a single new time record in the Summary Table.  MMTC completes when a good set of data is identified and all the products are produced or updated.
+This process continues until a “good” set of data is identified by a set of filters.  That good set is used to determine the correlation between SCLK and Earth time.  All the data used in that determination are assembled into a text record that is appended to the Time History File at the conclusion of each successful run of MMTC.  MMTC completes execution when a good set of data is identified and all products are produced or updated.
 
 The receiving ground station reports the “Earth Received Time” or ERT of the received downlink frame, typically in terms of UTC.  MMTC combines the SCLK of the supplemental frame with the ERT of the target frame and other data, such as the estimated one-way light time (OWLT) for the frame to travel from the spacecraft to the ground station, to establish the correlation between SCLK and a standard terrestrial time scale.  The standard terrestrial time scale used by MMTC is called Terrestrial Dynamical Time or TDT. See Appendix A. for a description of TDT. Figure 1 below illustrates the data flows involved in time correlation.
 
@@ -354,7 +354,7 @@ not the current one. The MMTC uses the predicted method to compute the clock cha
 but then overwrites the clock change rate in the previous time correlation record in the SCLK kernel. The next time that
 the MMTC runs with interpolation on, it will overwrite this latest clock change rate in the current time correlation record
 with a new interpolated one. This method has been shown to provide a slightly more accurate value for clock change rate.
-This value is also written to the SummaryTable and the TimeHistoryFile. Since the MMTC creates the SCLK/SCET file from
+This value is also written to the Time History File. Since MMTC creates the SCLK/SCET file from
 the SCLK kernel, the SCLK/SCET file will contain the same interpolated values for all but the very last time correlation,
 but rounded to one less digit of precision. *This is the recommended method of computing the clock change rate and is the
 default if no alternate clock change rate mode is specified with command line arguments* (see <<Arguments and options>>.
@@ -695,7 +695,7 @@ This option and any other *--clkchgrate-** options are mutually exclusive.
 
 == Inputs
 
-Though SPICE SCLK kernel files are one of the primary output products of the MMTC (see <<Output Products>> for details about outputs), MMTC also requires a seed SPICE SCLK kernel file or other previously generated SPICE SCLK kernel file as an input in order to run. It requires other inputs and writes to some other files as well. Upon start-up, the MMTC loads a set of configuration parameters read from a configuration file. It then loads a set of SPICE kernels, which are specified in the configuration parameters. In the course of its processing, it reads and writes to a cumulative Summary Table, and writes to a cumulative Raw Telemetry Table and a cumulative Time History File.
+Though SPICE SCLK kernel files are one of the primary output products of the MMTC (see <<Output Products>> for details about outputs), MMTC also requires a seed SPICE SCLK kernel file or other previously generated SPICE SCLK kernel file as an input in order to run. It requires other inputs and writes to some other files as well. Upon start-up, tMMTC loads a set of configuration parameters read from a configuration file. It then loads a set of SPICE kernels, which are specified in the configuration parameters. In the course of its processing, it writes to a cumulative Raw Telemetry Table and a cumulative Time History File.
 
 === Input types
 
@@ -1309,17 +1309,12 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 |table.rawTelemetryTable.uri
 |REQUIRED
 |STR
-|The desired URI of the output Raw Telemetry Table file. This file and the Summary Table are commonly co-located.
+|The desired URI of the output Raw Telemetry Table file.
 
 |table.rawTelemetryTable.dateTimePattern
 |REQUIRED
 |STR
 |The pattern that is used to parse ERTs from query metadata and to write ERT to the RawTlmTable in calendar string date/time form (e.g., ISO DOY format: “yyyy-DDD’T’HH:mm:ss.SSSSSS”).
-
-|table.summaryTable.uri
-|REQUIRED
-|STR
-|The desired URI of the output Summary Table file. This file and the Raw Telemetry Table are commonly co-located.
 
 |table.timeHistoryFile.uri
 |REQUIRED
@@ -1672,7 +1667,7 @@ At a minimum, the TK packet must contain a coarse SCLK value and a fine SCLK val
 
 The user is reminded that the SCLK Coarse and SCLK Fine values are associated with the target frame, NOT the frame containing the TK packet. The target frame is usually, but not always, the frame that immediately precedes the supplemental frame (i.e., the one containing the TK packet) in the telemetry sequence. In other words, the VCFC of the target frame is a set number of counts (usually just 1) less than that of the supplemental frame. The number of frames that the supplemental frame follows the target frame is specified in the *telemetry.supplementalSampleOffset* configuration parameter.
 
-The structure of TK packets is mission-specific. Each mission must describe its TK packets using a TK Packet Description XML file that implements the *tk_packet.xsd* schema provided with the MMTC distribution. The full path to the TK Packet Description file is indicated in the *telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri* configuration parameter. Not all of the fields are applicable for all missions; however all missions must provide at minimum the SCLK Coarse and SCLK Fine fields in order to process. See Appendix H. for an example of a TK Packet Description file.
+The structure of TK packets is mission-specific. Each mission must describe its TK packets using a TK Packet Description XML file that implements the *tk_packet.xsd* schema provided with the MMTC distribution. The full path to the TK Packet Description file is indicated in the *telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri* configuration parameter. Not all fields are applicable for all missions; however all missions must provide at minimum the SCLK Coarse and SCLK Fine fields in order to process.
 
 The primary purpose of the definition file is to specify the locations and bit lengths of these fields within the packet so that the MMTC can decom them. Each field given in the definition file is identified by a name, the offset from the beginning of the packet (normally the first bit of the primary packet header), and the length of the field in bits.
 
@@ -1718,18 +1713,6 @@ Path ID, Station ID, Station Name
 65,dss-65,Madrid_34HEF
 ----
 
-== Time Correlation Data Tables
-
-The MMTC creates data tables the first time it runs and appends to them each time it runs thereafter, so they must be preserved. If over the course of a mission, they become inconveniently large, the records created from runs from more than ten contacts prior or so can be deleted. The files can also be deleted, in which case MMTC will recreate them; however, after this is done the Contact Filter must be turned off before the next MMTC run. It is recommended that a copy of the intact original files be stored somewhere for future use.
-
-=== Raw Telemetry Table
-
-The Raw Telemetry Table contains the unprocessed data extracted from telemetry used in time correlation. It contains the basic SCLK, ERT, and virtual channel information. The data contained in this table, along with the associated SPICE kernels and configuration parameters, contain the information needed to run the Time Correlation application and, when necessary, to reproduce the results of a previous time correlation and its output products (SCLK kernel, SCLK/SCET file, command uplink file) without having to connect to the telemetry archive again. This is a comma separated value (CSV) formatted text file. It is useful for analysis and for later reprocessing if needed. It contains records of all frames/TK Packets in the sample set and is appended to each time the application runs. The fields in the table are described in Table 9 in the Appendix.
-
-=== Summary Table
-
-The SCLK Summary Table contains record of the processed time correlation, containing the computed values and inputs. The telemetry data that are extracted from the telemetry archive passes through several filtering steps within MMTC to select a suitable set of telemetry to use for time correlation.  The set of telemetry data that is selected for time correlation is saved in the SCLK Summary Tables.  As the data is processed, all computed values are saved in the SCLK Summary Tables. It is needed for the Contact Filter as well as for analysis and is a CSV-formatted text file. One record is appended to this table each time the MMTC runs and this record contains information on the Target and Supplemental frame/packet used in the time correlation computations. If this file is deleted, the application will generate a new one and run although the Contact Filter should be turned off in the configuration file for the next few runs. This table is described in Appendix G.
-
 == Output Products
 
 === Output SCLK Kernel
@@ -1747,7 +1730,7 @@ For example, setting _basename_ to “europaclipper”, _sep_ to “_”, and _s
 
 MMTC writes the SCLK kernels to the directory indicated in *spice.kernel.sclk.kerneldir*. The existing input SCLK Kernel must reside in this directory and the new output SCLK kernel will be written to it.
 
-==== 10.1.1 Input SCLK Kernel Override
+==== Input SCLK Kernel Override
 
 MMTC provides a configuration parameter *spice.kernel.sclk.inputPathOverride* that directs it to read the source (current) SCLK Kernel not from the normal *spice.kernel.sclk.kerneldir* from which it normally derives its input SCLK kernel, but from an alternate SCLK Kernel. This is intended for use only in test venues. On occasion, it is convenient when testing to read an SCLK kernel other than the one resident in the directory that the new one will be written to. This can cause versioning problems and duplicate SCLK Kernel filename errors in successive runs. Therefore, this option is only for certain test situations and should never be used operationally. To use this, set *spice.kernel.sclk.inputPathOverride* to the fully qualified path of the alternate SCLK Kernel. Remove it before running again. Successive runs will likely fail if this parameter is not removed after the first run.
 
@@ -1776,7 +1759,15 @@ This file is produced if the *product.uplinkCmdFile.create* configuration parame
 
 === Time History File
 
-The Time History File is a cumulative product that is updated with a single record appended to its end each time the MMTC runs. It is a CSV format text file that contains information useful in assessing the state of the onboard clock. This file is intended for analysis purposes. Table 8 in Appendix E describes the fields in this file.
+The Time History File is a cumulative product that is updated with a single record appended to its end each time the MMTC runs. It is a CSV format text file that contains records of processed time correlations (including inputs and computed values) as well as other information useful in assessing the state of the onboard clock. This file is intended for analysis purposes. Table 8 in Appendix E describes the fields in this file.
+
+MMTC creates this file upon its first execution, and appends to it with each successful run thereafter.  If this file becomes inconveniently large over the course of a mission, the records created from prior runs may be deleted (possibly having been copied elsewhere for archival purposes.)
+
+=== Raw Telemetry Table
+
+The Raw Telemetry Table contains the unprocessed data extracted from telemetry used in time correlation. It contains the basic SCLK, ERT, and virtual channel information. The data contained in this table, along with the associated SPICE kernels and configuration parameters, contain the information needed to run the Time Correlation application and, when necessary, to reproduce the results of a previous time correlation and its output products (SCLK kernel, SCLK/SCET file, command uplink file) without having to connect to the telemetry archive again. This is a comma separated value (CSV) formatted text file. It is useful for analysis and for later reprocessing if needed. It contains records of all frames/TK Packets in the sample set and is appended to each time the application runs. The fields in the table are described in Table 9 in the Appendix.
+
+MMTC creates this file upon its first execution, and appends to it with each successful run thereafter.  If this file becomes inconveniently large over the course of a mission, the records created from prior runs may be deleted (possibly having been copied elsewhere for archival purposes.)
 
 === Run History File
 The Run History File is another cumulative product that records information about each successful MMTC run that is executed. While it can be useful to users for tracking things such as: the state of output products before and
@@ -1792,7 +1783,7 @@ a list of the last 10 successful MMTC runs with Run IDs, dates/times, and result
 isn't limited to the 10 most recent runs listed by MMTC--by entering the corresponding ID including leading zeroes.
 
 After selecting a valid Run ID, MMTC will describe the changes that will occur if the user proceeds with rolling back to the specified run by listing the
-output files that will be deleted (SCLK kernels, SCLKSCET files, and/or Uplink Command Files) and the number of lines that will be truncated from each data table (Summary Table, Time History File, and/or the Raw Telemetry Table).
+output files that will be deleted (SCLK kernels, SCLKSCET files, and/or Uplink Command Files) and the number of lines that will be truncated from each data table (Time History File and/or Raw Telemetry Table).
 After listing the effects of rollback, MMTC will ask users for Y/N confirmation to proceed. This marks the "point of no return" after which files will potentially be permanently deleted, so users are again reminded to make backups
 of *all* output products before initiating a rollback.
 
@@ -1994,8 +1985,8 @@ An example of an Uplink Command File as described in <<Uplink Command File>> cre
 398916214,714492283.860548,714492283.861766,23-AUG-2022-02:04:43.861766,1.00000000922
 ----
 
-=== E. Time History File Fields
-[[appendix_E, Appendix E: Time History File Fields]]
+=== E. Time History File
+[[appendix_E, Appendix E: Time History File]]
 
 .Time History File Fields
 [[table8, Table 8: Time History File Fields]]
@@ -2070,7 +2061,7 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 
 |RF_Encoding
 |“T” or “C”
-|The frame encoding method. Typically “T” for turbo or “C” for convolutional encoding; other encodings may be deployed in the future.
+|The frame encoding method. Typically, “T” for turbo or “C” for convolutional encoding; other encodings may be deployed in the future.
 
 |GroundStation
 |DSN-xx if a DSN station, where xx is the DSN station number
@@ -2079,6 +2070,18 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 |OWLT(sec)
 |X.Y in units of seconds
 |One-Way Light (travel) Time.
+
+| TD SC (sec)
+| Double
+| The spacecraft time delay in seconds. This is a constant value set in configuration parameters (spacecraft.timeDelaySec) that is subtracted from the computation of TDT(G). It is the time delay from the SCLK reported by the spacecraft to when the related downlink frame leaves the spacecraft antenna. With careful spacecraft design, this value can be effectively 0 at all downlink bit rates. TD SC can be useful during mission simulations prior to launch to bias TDT(G) to a future time. This value is usually only a fraction of a second and is often set to 0.
+
+| TD BE (sec)
+| Double
+| The bitrate error. This is an adjustment for the bitrate-dependent time error due to a mismatch between frame times reported by the spacecraft and the receiving ground station. This value is divided by the downlink data rate and subtracted from the TDT(G) computation. It is typically only a fraction of a second and is often set to zero.
+
+| TF Offset
+| Double
+| This value adjusts the TDT(G) value to align with the whole second SCLK value. It is computed by dividing the SCLK fine time from the supplemental frame or selected TK packet by the subseconds modulus to convert it to decimal fraction of a second and then subtracting it from the TDT(G). This simplifies time correlations with no loss in accuracy. The subseconds modulus is read from the configuration parameter spacecraft.sclkModulusOverride if provided. If it is not provided, the value is read from the second stage of the SCLK01_MODULI_<nnn> field in the SCLK Kernel.
 
 |SpaccraftSunDistance(AU)
 |X.Y in units of AU
@@ -2167,10 +2170,11 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 |Warning
 |Plain text content detailing the warning.
 |Typically blank. Contains a message if the TDT(S) Error Warning threshold is exceeded.
+
 |===
 
-=== F. Raw Telemetry Table Fields
-[[appendix_F, Appendix F: Raw Telemetry Table Fields]]
+=== F. Raw Telemetry Table
+[[appendix_F, Appendix F: Raw Telemetry Table]]
 
 .Raw Telemetry Table Fields
 [[table9, Table 9: Raw Telemetry Table Fields]]
@@ -2233,87 +2237,6 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 |Data Rate BPS
 |Unsigned Integer
 |The downlink data at which the Target Frame was received in bits per second.
-
-|===
-
-=== G. Summary Table Fields
-[[appendix_G, Appendix G: Summary Table Fields]]
-
-.Summary Table Fields
-[[table10, Table 10: Summary Table Fields]]
-[%autowidth]
-|===
-| Name | Typical Value | Remarks
-
-
-| Run Time
-| ISO Calendar Time String
-| The system time in UTC when the MMTC was run.
-
-| Ground Station
-| String
-| The ground station at which the Target Frame was received.
-
-| Target Frame ERT
-| CDS Time Code
-| The ERT of the Target Frame. Used in computing TDT(G).
-
-| Target Frame UTC
-| ISO Calendar Time String
-| The ERT of the Target Frame as a calendar string. Used in computing TDT(G).
-
-| Target Frame VCID
-| Unsigned Integer
-| The Virtual Channel ID of the Target Frame.
-
-| Target Frame VCFC
-| Unsigned Integer
-| The Virtual Channel Frame Count of the Target Frame.
-
-| TK Encoded SCLK
-| Unsigned Integer
-| The SCLK coarse value in SPICE encoded SCLK used in time correlation computations. It is obtained from the body of the time correlation packet and is associated with the preceding target frame.
-
-| SCLK Partition
-| Unsigned Integer
-| The SCLK partition currently in use.
-
-| Predicted Clk Change Rate
-| Double
-| The Predicted CLKRATE. This value is written to the latest record of the SCLK Kernel and SCLK/SCET files. If the next run is in Interpolate mode, this record will be overwritten in the next SCLK Kernel and SCLK/SCET file with an updated value.
-
-| Interpolated Clk Change Rate
-| Double
-| The Interpolated CLKRATE. This value is written to the last record of the SCLK Kernel and SCLK/SCET from the previous run. If the current run is in Interpolate mode. This value replaces the CLKRATE from the previous run. The SCLK Kernel and SCLK/SCET files from the previous run are not changed. The second to the last record in the new files are.
-
-| OWLT
-| Double
-| The one-way light travel time from the spacecraft to the receiving ground station.
-
-| TDT(G)
-| Double
-| The ground time in TDT written to the SCLK Kernel and used to compute the CLKRATE.
-
-| TD SC (sec)
-| Double
-| The spacecraft time delay in seconds. This is a constant value set in configuration parameters (spacecraft.timeDelaySec) that is subtracted from the computation of TDT(G). It is the time delay from the SCLK reported by the spacecraft to when the related downlink frame leaves the spacecraft antenna. With careful spacecraft design, this value can be effectively 0 at all downlink bit rates. TD SC can be useful during mission simulations prior to launch to bias TDT(G) to a future time. This value is usually only a fraction of a second and is often set to 0.
-
-| TD BE (sec)
-| Double
-| The bitrate error. This is an adjustment for the bitrate-dependent time error due to a mismatch between frame times reported by the spacecraft and the receiving ground station. This value is divided by the downlink data rate and subtracted from the TDT(G) computation. It is typically only a fraction of a second and is often set to zero.
-
-| TF Offset
-| Double
-| This value adjusts the TDT(G) value to align with the whole second SCLK value. It is computed by dividing the SCLK fine time from the supplemental frame or selected TK packet by the subseconds modulus to convert it to decimal fraction of a second and then subtracting it from the TDT(G). This simplifies time correlations with no loss in accuracy. The subseconds modulus is read from the configuration parameter spacecraft.sclkModulusOverride if provided. If it is not provided, the value is read from the second stage of the SCLK01_MODULI_<nnn> field in the SCLK Kernel.
-
-| Data Rate
-| Unsigned Integer
-| The downlink data rate at which the Target Frame was received in bits per second.
-
-| Frame size (bits)
-| Unsigned Integer
-| The size in bits of a transfer frame used for time correlation or of a frame which can contain a TK packet. This is a constant set in configuration parameters (telemetry.frameSizeBits).
-
 
 |===
 
