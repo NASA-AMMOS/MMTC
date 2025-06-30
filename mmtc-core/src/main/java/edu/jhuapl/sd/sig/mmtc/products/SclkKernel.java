@@ -13,23 +13,22 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 /**
- * The SclkKernel class creates the SCLK kernel file and its contents. The SCLK Kernel is the primary product
- * of the MMTC.
+ * The SclkKernel class creates the SCLK kernel file and its contents. The SCLK Kernel is the primary product of MMTC.
  */
 public class SclkKernel extends TextProduct {
     public static final String FILE_SUFFIX = ".tsc";
 
     /* Encoded SCLK value for the new time correlation record. */
-    private Double  encSclk;
+    private Double encSclk;
 
     /* TDT value in calendar string form for the new time correlation record. */
-    private String  tdtStr;
+    private String tdtStr;
 
     /* Clock change rate for the new time correlation record. */
-    private Double  clockChgRate;
+    private Double clockChgRate;
 
     /* New interpolated clock change reate to ovewrite the predicted rate in the existing SCLK kernel record. */
-    private Double  updatedClockChgRate;
+    private Double updatedClockChgRate;
 
     /* Indicates if the new time correlation data have been set. */
     private boolean newTripletSet = false;
@@ -38,10 +37,10 @@ public class SclkKernel extends TextProduct {
     private boolean newClkChgRateSet = false;
 
     /* The zero-based index of the last data record in the SCLK kernel (i.e., the last record containing a triplet. */
-    private int     endDataNum = -1;
+    private int endDataNum = -1;
 
     /* The number of fields in an SCLK kernel triplet time correlation record. */
-    private int     numFieldsInRecord = 3;
+    private int numFieldsInRecord = 3;
 
     /* Indices for the fields in a triplet record. */
     public static final int ENCSCLK    = 0;
@@ -96,7 +95,7 @@ public class SclkKernel extends TextProduct {
      * @param tdtStr       IN TDT in calendar string
      * @param clockChgRate IN clock change rate
      */
-    public void setTriplet(Double encSclk, String tdtStr, Double clockChgRate) {
+    public void setNewTriplet(Double encSclk, String tdtStr, Double clockChgRate) {
         this.encSclk      = encSclk;
         this.tdtStr       = tdtStr;
         this.clockChgRate = clockChgRate;
@@ -124,22 +123,22 @@ public class SclkKernel extends TextProduct {
     public void createNewProduct() throws TextProductException {
 
         /* Find the last data (triplet) record in the SCLK kernel data. A data record should contain
-         * contain 3 fields and the second (index 1) field should contain a "@" character.
+         * 3 fields and the second (index 1) field should contain a "@" character.
          */
-        endDataNum = lastDataRecNum(sourceProduct);
+        endDataNum = lastDataRecNum(sourceProductLines);
 
         if (endDataNum < 3) {
             throw new TextProductException("Cannot find last data record. Invalid SCLK kernel data loaded.");
         }
 
-        if (sourceProduct.size() < 1) {
+        if (sourceProductLines.size() < 1) {
             throw new TextProductException("Valid source SCLK Kernel data have not been loaded.");
         }
 
         if (newTripletSet && sourceProductReadIn) {
 
             /* Create the new SCLK kernel from the Old. */
-            newProduct = new ArrayList<>(sourceProduct);
+            newProductLines = new ArrayList<>(sourceProductLines);
 
             /* Replace the FILENAME field. */
             String newname = "FILENAME = " + "\"" + getName() + "\"";
@@ -154,13 +153,13 @@ public class SclkKernel extends TextProduct {
             /* Replace the clock change rate of the last record in the product with the new rate, if selected. */
             if (newClkChgRateSet) {
                 String updatedTriplet = replaceChgRate();
-                newProduct.remove(endDataNum);
-                newProduct.add(endDataNum, updatedTriplet);
+                newProductLines.remove(endDataNum);
+                newProductLines.add(endDataNum, updatedTriplet);
             }
 
             /* Form a new time correlation record from the triplet values and append it to the SCLK kernel data. */
             String newTriplet = assembleNewTripletRecord();
-            newProduct.add(endDataNum+1, newTriplet);
+            newProductLines.add(endDataNum+1, newTriplet);
         }
         else {
             throw new TextProductException("Cannot create SCLK kernel. New record values have not been set.");
@@ -178,7 +177,7 @@ public class SclkKernel extends TextProduct {
      */
     private String replaceChgRate() throws TextProductException {
 
-        String record          = sourceProduct.get(endDataNum);
+        String record          = sourceProductLines.get(endDataNum);
         String[] tripletFields = parseRecord(record, numFieldsInRecord);
 
         /* Replace the existing clock change rate value with the new one. */
@@ -208,7 +207,6 @@ public class SclkKernel extends TextProduct {
         return chgRateStr;
     }
 
-
     /**
      * Gets the selected value of the last record in the previous SCLK kernel
      * based on the index ENCSCLK, TDTG, or CLKCHGRATE.
@@ -218,7 +216,7 @@ public class SclkKernel extends TextProduct {
      * @throws TextProductException if the TDT(G) value could not be obtained
      */
     public String getLastRecValue(int index) throws TextProductException {
-        String record  = sourceProduct.get(endDataNum);
+        String record  = sourceProductLines.get(endDataNum);
 
         // Remove any parentheses that might be in the record.
         String recstr  = record.replace("(", "");
@@ -227,7 +225,6 @@ public class SclkKernel extends TextProduct {
 
         return tripletFields[index];
     }
-
 
     /**
      * Retrieves a data record from the current SCLK kernel that is the specified number of hours
@@ -239,14 +236,13 @@ public class SclkKernel extends TextProduct {
      * @throws TextProductException if the prior record could not be found
      */
     public String[] getPriorRec(Double fromTdt, Double lookBackHours) throws TextProductException {
-
         String[] tripletFields = null;
 
         try {
             double minLookbackSeconds = lookBackHours * 3600.;
 
             for (int i = endDataNum; i > 0; i--) {
-                String record = sourceProduct.get(i);
+                String record = sourceProductLines.get(i);
                 if (! isDataRecord(record)) {
                     throw new TextProductException("Look back time invalid for the specified SCLK kernel.");
                 }
@@ -277,7 +273,7 @@ public class SclkKernel extends TextProduct {
 
         /* Use the last existing record in the SCLK kernel data as the template to create the new one.
            This assures consistency of format and spacing. */
-        String record          = sourceProduct.get(endDataNum);
+        String record          = sourceProductLines.get(endDataNum);
         String[] tripletFields = parseRecord(record, numFieldsInRecord);
 
         /* New encoded SCLK value. */
@@ -326,7 +322,7 @@ public class SclkKernel extends TextProduct {
 
 
     /**
-     * Determines if the the record is an SCLK kernel time correlaton record containing a triplet
+     * Determines if the record is an SCLK kernel time correlation record containing a triplet
      * or if its supporting text. Implements the corresponding abstract method in the parent class.
      * An SCLK kernel time correlation contains three fields (enc SCLK, TDT, ClockChgRate) separated
      * by whitespace. The TDT value may be represented either as a calendar string, which always
@@ -336,7 +332,6 @@ public class SclkKernel extends TextProduct {
      * @return true if the record is a time correlation triplet, false otherwise
      */
     public boolean isDataRecord(String record) {
-
         boolean isdata = false;
         String recstr = record.replace("(","");
         recstr = recstr.replace(")", "");
@@ -366,7 +361,7 @@ public class SclkKernel extends TextProduct {
     @Override
     public void readSourceProduct() throws IOException, TextProductException {
         super.readSourceProduct();
-        this.endDataNum = lastDataRecNum(sourceProduct);
+        this.endDataNum = lastDataRecNum(sourceProductLines);
         if (this.endDataNum < 1) {
             throw new TextProductException("Invalid input SCLK Kernel. No time correlation records found.");
         }

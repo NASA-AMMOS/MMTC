@@ -140,8 +140,7 @@
   <!-- Output Files -->
   <entry key="table.rawTelemetryTable.uri">file:///absolute/path/to/output/RawTlmTable.csv</entry>
   <entry key="table.rawTelemetryTable.dateTimePattern">yyyy-DDD'T'HH:mm:ss.SSSSSS</entry>
-  <entry key="table.summaryTable.uri">file:///absolute/path/to/output/SummaryTable.csv</entry>
-  <entry key="table.timeHistoryFile.uri">file:///absolute/path/to/output/TimeHistoryFile.csv</entry>
+    <entry key="table.timeHistoryFile.uri">file:///absolute/path/to/output/TimeHistoryFile.csv</entry>
   <entry key="table.timeHistoryFile.excludeColumns"></entry>
   <entry key="table.timeHistoryFile.scetUtcPrecision">6</entry>
 

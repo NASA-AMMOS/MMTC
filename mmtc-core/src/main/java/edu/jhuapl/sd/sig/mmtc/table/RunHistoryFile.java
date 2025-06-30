@@ -27,8 +27,6 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public static final String POSTRUN_SCLKSCET = "Latest SCLKSCET File Post-run";
     public static final String PRERUN_TIMEHIST = "Latest TimeHistoryFile Line Pre-run";
     public static final String POSTRUN_TIMEHIST = "Latest TimeHistoryFile Line Post-run";
-    public static final String PRERUN_SUMMARYTABLE = "Latest SummaryTable Line Pre-run";
-    public static final String POSTRUN_SUMMARYTABLE = "Latest SummaryTable Line Post-run";
     public static final String PRERUN_RAWTLMTABLE = "Latest RawTlmTable Line Pre-run";
     public static final String POSTRUN_RAWTLMTABLE = "Latest RawTlmTable Line Post-run";
     public static final String PRERUN_UPLINKCMD = "Latest Uplink Command File Pre-run";
@@ -52,8 +50,6 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
                 POSTRUN_SCLKSCET,
                 PRERUN_TIMEHIST,
                 POSTRUN_TIMEHIST,
-                PRERUN_SUMMARYTABLE,
-                POSTRUN_SUMMARYTABLE,
                 PRERUN_RAWTLMTABLE,
                 POSTRUN_RAWTLMTABLE,
                 PRERUN_UPLINKCMD,

@@ -85,8 +85,7 @@
     <entry key="table.runHistoryFile.uri"></entry>
     <entry key="table.rawTelemetryTable.uri"></entry>
     <entry key="table.rawTelemetryTable.dateTimePattern"></entry>
-    <entry key="table.summaryTable.uri"></entry>
-    <entry key="table.timeHistoryFile.uri"></entry>
+        <entry key="table.timeHistoryFile.uri"></entry>
     <entry key="table.timeHistoryFile.excludeColumns"></entry>
     <entry key="table.timeHistoryFile.scetUtcPrecision"></entry>
 

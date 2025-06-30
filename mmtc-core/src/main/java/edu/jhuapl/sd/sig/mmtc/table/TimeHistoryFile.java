@@ -16,7 +16,8 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
     public static final String TDT_G = "TDT(G)";
     public static final String TDT_G_STR = "TDT(G)_Calendar";
     public static final String ET_G = "TDB(G)";  // NOTE: This is referred to as et (ephemeris time) elsewhere in the code.
-    public static final String CLK_CHANGE_RATE = "ClkChgRate(s/s)";
+    public static final String PRED_CLK_CHANGE_RATE = "Predicted Clk Chg Rate (s/s)";
+    public static final String INTERP_CLK_CHANGE_RATE = "Interpolated Clk Chg Rate (s/s)";
     public static final String SCLK_DRIFT = "SCLK_Drift(ms/day)";
     public static final String OSCILLATOR = "Oscillator";
     public static final String OSCILLATOR_TEMP_DEGC = "Osc_Temp(degC)";
@@ -29,6 +30,9 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
     public static final String RF_ENCODING = "RF_Encoding";
     public static final String STATION_ID = "GroundStationID";
     public static final String OWLT_SEC = "OWLT(sec)";
+    public static final String SPACECRAFT_TIME_DELAY = "TD SC (sec)";
+    public static final String BITRATE_TIME_ERROR = "TD BE (sec)";
+    public static final String TF_OFFSET = "TF Offset";
     public static final String SC_SUN_DIST_AU = "SpacecraftSunDist(AU)";
     public static final String SC_SUN_DIST_KM = "SpacecraftSunDist(km)";
     public static final String SC_EARTH_DIST_KM = "SpacecraftEarthDist(km)";
@@ -57,7 +61,8 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
             TDT_G,
             TDT_G_STR,
             ET_G,
-            CLK_CHANGE_RATE,
+            PRED_CLK_CHANGE_RATE,
+            INTERP_CLK_CHANGE_RATE,
             EP,
             EP_DT,
             DT,
@@ -70,6 +75,9 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
             RF_ENCODING,
             STATION_ID,
             OWLT_SEC,
+            SPACECRAFT_TIME_DELAY,
+            BITRATE_TIME_ERROR,
+            TF_OFFSET,
             SC_SUN_DIST_AU,
             SC_SUN_DIST_KM,
             SC_EARTH_DIST_KM,

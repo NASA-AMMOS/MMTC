@@ -20,7 +20,6 @@ public class TimeCorrelationRollback {
     private static final Logger logger = LogManager.getLogger();
     private final RunHistoryFile runHistoryFile;
     private final OutputProduct timeHist;
-    private final OutputProduct sumTable;
     private final OutputProduct tlmTable;
     private final OutputProduct sclkKernels;
     private final OutputProduct sclkscetFiles;
@@ -33,9 +32,6 @@ public class TimeCorrelationRollback {
 
         this.timeHist = new OutputProduct(RunHistoryFile.POSTRUN_TIMEHIST, config.getTimeHistoryFileUri());
         timeHist.setTable(new TimeHistoryFile(timeHist.getUri()));
-
-        this.sumTable = new OutputProduct(RunHistoryFile.POSTRUN_SUMMARYTABLE, config.getSummaryTableUri());
-        sumTable.setTable(new SummaryTable(sumTable.getUri()));
 
         this.tlmTable = new OutputProduct(RunHistoryFile.POSTRUN_RAWTLMTABLE, config.getRawTelemetryTableUri());
         tlmTable.setTable(new RawTelemetryTable(tlmTable.getUri()));
@@ -60,8 +56,8 @@ public class TimeCorrelationRollback {
      * (this includes products being modified between rollback being initiated and deletion confirmation being given by the user)
      */
     public void rollback() throws Exception {
-        final OutputProduct[] allProducts = new OutputProduct[]{timeHist, sumTable, tlmTable, sclkKernels, sclkscetFiles, uplinkFiles};
-        final OutputProduct[] tableProducts = new OutputProduct[]{timeHist, sumTable, tlmTable};
+        final OutputProduct[] allProducts = new OutputProduct[]{timeHist, tlmTable, sclkKernels, sclkscetFiles, uplinkFiles};
+        final OutputProduct[] tableProducts = new OutputProduct[]{timeHist, tlmTable};
         final OutputProduct[] textProducts = new OutputProduct[]{sclkKernels, sclkscetFiles, uplinkFiles};
         Scanner scanner = new Scanner(System.in);
         List<TableRecord> rawRunHistoryRecords = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS); // Will be used to rewrite complete RunHistoryFile

@@ -798,20 +798,6 @@ public class TimeCorrelationAppConfig {
     }
 
     /**
-     * Gets the location of the output Summary Table.
-     * @return the path to the input and output Summary Table
-     * @throws MmtcException if the location cannot be accessed
-     */
-    public URI getSummaryTableUri() throws MmtcException {
-        try {
-            return new URI(timeCorrelationConfig.getConfig().getString("table.summaryTable.uri"));
-        }
-        catch (URISyntaxException ex) {
-            throw new MmtcException("Unable to parse URI", ex);
-        }
-    }
-
-    /**
      * Gets the location of the output Time History File.
      * @return the path to the output Time History File
      * @throws MmtcException if the location cannot be accessed

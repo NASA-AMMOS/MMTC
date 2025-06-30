@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.nio.file.*;
+import java.util.stream.Stream;
 
 /**
  * The TextProduct class is an abstract base class that provides basic functions that derived classes use to
@@ -46,14 +47,14 @@ abstract class TextProduct {
     protected static String nl;
 
     /* The contents of the original product and an iterator. */
-    protected List<String> sourceProduct;
+    protected List<String> sourceProductLines;
     protected ListIterator<String> spItr;
 
     /* Set to true when the sourceProduct has been successfully read in. */
     protected boolean sourceProductReadIn = false;
 
     /* The contents of the new product to be written and an iterator. */
-    protected List<String> newProduct;
+    protected List<String> newProductLines;
     protected ListIterator<String> npItr;
 
     /* The time that the product was created. */
@@ -64,9 +65,8 @@ abstract class TextProduct {
      * Class constructor. Initializes class attributes.
      */
     public TextProduct() {
-
-        sourceProduct   = new ArrayList<>();
-        newProduct      = new ArrayList<>();
+        sourceProductLines = new ArrayList<>();
+        newProductLines = new ArrayList<>();
         pathSep         = File.separator;
         nl              = System.lineSeparator();
     }
@@ -161,7 +161,7 @@ abstract class TextProduct {
      * @return the last data record
      */
     public String getLastSourceProdDataRec() {
-        return sourceProduct.get(lastDataRecNum(sourceProduct)).trim();
+        return sourceProductLines.get(lastDataRecNum(sourceProductLines)).trim();
     }
 
 
@@ -224,12 +224,12 @@ abstract class TextProduct {
         BufferedReader productReader = new BufferedReader(new FileReader(sourceFilespec));
 
         while ((line = productReader.readLine()) != null) {
-            sourceProduct.add(line);
+            sourceProductLines.add(line);
         }
 
         productReader.close();
         sourceProductReadIn = true;
-        spItr               = sourceProduct.listIterator();
+        spItr               = sourceProductLines.listIterator();
     }
 
 
@@ -239,7 +239,7 @@ abstract class TextProduct {
      * @return the selected record
      */
     public String getSourceProdRecord(int recNum) {
-        return sourceProduct.get(recNum);
+        return sourceProductLines.get(recNum);
     }
 
 
@@ -262,13 +262,13 @@ abstract class TextProduct {
         int       recidx;
         String    record;
 
-        recidx = findInProduct(pattern, newProduct);
-        record = newProduct.get(recidx);
+        recidx = findInProduct(pattern, newProductLines);
+        record = newProductLines.get(recidx);
 
         if (recidx > -1) {
             String fields[]  = record.split(delimeter);
             String newRecord = newFieldVal.trim();
-            newProduct.set(recidx, newRecord);
+            newProductLines.set(recidx, newRecord);
         }
         else {
                 throw new TextProductException("Delmeter " + "\"" + delimeter + "\"" +
@@ -344,7 +344,7 @@ abstract class TextProduct {
         }
 
         try {
-            Files.write(newFile, newProduct);
+            Files.write(newFile, newProductLines);
         } catch (IOException e) {
             throw new TextProductException("Error creating new Time Correlation file \"" + newFilePath + "\".", e);
         }
@@ -396,6 +396,17 @@ abstract class TextProduct {
         return firstDataRecNum;
     }
 
+    /**
+     * Returns the number of data records contained in the source product's lines of text.
+     *
+     * @return a non-negative integer representing the found number of data records
+     */
+    public int getSourceProductDataRecCount() {
+        return (int) this.sourceProductLines.stream()
+                .filter(this::isDataRecord)
+                .count();
+    }
+
 
     /**
      * Finds the index (zero-based) of the last data record in the product. The last data record is
@@ -404,17 +415,16 @@ abstract class TextProduct {
      * of that record. Since the form of a data record is product-specific, it calls the abstract method
      * isDataRecord() implemented in a product-specific derived class to identify a data record.
      *
-     * @param product     IN the product data to search
+     * @param productLines     IN the product data to search
      * @return the index of the last data record
      */
-    protected int lastDataRecNum(List<String> product) {
-
+    protected int lastDataRecNum(List<String> productLines) {
         int lastDataRecNum = -1;
 
         /* Iterate backwards through the product beginning at the end. */
-        for (int i=product.size()-1; i>0; i--) {
+        for (int i=productLines.size()-1; i>0; i--) {
 
-            String record = product.get(i);
+            String record = productLines.get(i);
             if (isDataRecord(record)) {
                 lastDataRecNum = i;
                 break;

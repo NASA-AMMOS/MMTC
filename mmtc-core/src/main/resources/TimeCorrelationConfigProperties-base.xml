@@ -46,7 +46,6 @@
     <entry key="table.runHistoryFile.uri"/>
     <entry key="table.rawTelemetryTable.uri"/>
     <entry key="table.rawTelemetryTable.dateTimePattern"/>
-    <entry key="table.summaryTable.uri"/>
     <entry key="table.timeHistoryFile.uri"/>
     <entry key="table.timeHistoryFile.scetUtcPrecision"/>
 

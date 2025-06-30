@@ -158,13 +158,13 @@ public class SclkScetFile extends TextProduct {
          * contain 4 fields and the second (index 1) field should contain a "T" character as part
          * of the ISO time string format.
          */
-        endDataNum = lastDataRecNum(sourceProduct);
+        endDataNum = lastDataRecNum(sourceProductLines);
 
         if (endDataNum < 3) {
             throw new TextProductException("Cannot find last data record. Invalid SCLK/SCET data loaded.");
         }
 
-        if (sourceProduct.size() < 1) {
+        if (sourceProductLines.size() < 1) {
             throw new TextProductException("Valid source SCLK/SCET file data have not been loaded.");
         }
 
@@ -212,9 +212,9 @@ public class SclkScetFile extends TextProduct {
             default: throw new IllegalStateException("No such leap second SCLKRATE mode: " + leapSecondSclkRateMode);
         }
 
-        newProduct = new ArrayList<>(hdr);
-        sclkScetRecs.forEach(r -> newProduct.add(r.toString()));
-        newProduct.add(SCLKSCET_FTR);
+        newProductLines = new ArrayList<>(hdr);
+        sclkScetRecs.forEach(r -> newProductLines.add(r.toString()));
+        newProductLines.add(SCLKSCET_FTR);
 
     }
 
@@ -320,8 +320,8 @@ public class SclkScetFile extends TextProduct {
         /* Extract the individual encSclk, TDT str, and change rate fields from the
          * SCLK kernel triplet. Convert to the corresponding SCET file fields.
          */
-        for (int i=0; i<sourceProduct.size(); i++) {
-            String sclkKernelRecord = sourceProduct.get(i).trim();
+        for (int i = 0; i< sourceProductLines.size(); i++) {
+            String sclkKernelRecord = sourceProductLines.get(i).trim();
             logger.trace("SclkScetFile.List(): sclkKernelRecord = " + sclkKernelRecord);
 
             if (isDataRecord(sclkKernelRecord)) {
