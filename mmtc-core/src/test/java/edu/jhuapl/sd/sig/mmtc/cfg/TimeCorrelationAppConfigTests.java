@@ -143,6 +143,7 @@ class TimeCorrelationAppConfigTests {
 			expectedMissingVals.add("spacecraft.id");
 			expectedMissingVals.add("spice.kernel.sclk.baseName");
 			expectedMissingVals.add("spice.kernel.sclk.separator");
+            expectedMissingVals.add("spice.kernel.sclk.uniqueKernelCounters");
 
 			ArrayList<String> actualMissingVals = config.validateRequiredConfigKeys("TimeCorrelationConfigProperties-base.xml");
 			assertEquals(expectedMissingVals, actualMissingVals, "Validation of config with four missing required entries.");
