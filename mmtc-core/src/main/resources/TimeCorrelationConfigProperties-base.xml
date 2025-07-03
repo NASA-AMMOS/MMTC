@@ -27,6 +27,7 @@
     <entry key="spice.kernel.sclk.kerneldir"/>
     <entry key="spice.kernel.sclk.baseName"/>
     <entry key="spice.kernel.sclk.separator"/>
+    <entry key="spice.kernel.sclk.uniqueKernelCounters"/>
 
     <entry key="compute.tdtG.rate.predicted.lookBackDays"/>
     <entry key="compute.tdtG.rate.predicted.maxLookBackDays"/>
