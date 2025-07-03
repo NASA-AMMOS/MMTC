@@ -51,14 +51,5 @@
     <entry key="table.timeHistoryFile.scetUtcPrecision"/>
 
     <entry key="product.sclkScetFile.create"/>
-    <entry key="product.sclkScetFile.dir"/>
-    <entry key="product.sclkScetFile.baseName"/>
-    <entry key="product.sclkScetFile.separator"/>
-    <entry key="product.sclkScetFile.suffix"/>
-    <entry key="product.sclkScetFile.datasetId"/>
-    <entry key="product.sclkScetFile.producerId"/>
     <entry key="product.uplinkCmdFile.create"/>
-    <entry key="product.uplinkCmdFile.outputDir"/>
-    <entry key="product.uplinkCmdFile.baseName"/>
-    <entry key="product.sclkScetFile.scetUtcPrecision"/>
 </properties>

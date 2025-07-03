@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -145,8 +146,15 @@ class TimeCorrelationAppConfigTests {
 			expectedMissingVals.add("spice.kernel.sclk.separator");
             expectedMissingVals.add("spice.kernel.sclk.uniqueKernelCounters");
 
-			ArrayList<String> actualMissingVals = config.validateRequiredConfigKeys("TimeCorrelationConfigProperties-base.xml");
-			assertEquals(expectedMissingVals, actualMissingVals, "Validation of config with four missing required entries.");
+			MmtcException resultingException = assertThrows(
+					MmtcException.class,
+                    config::validate
+			);
+
+			assertTrue(resultingException.getMessage().startsWith("Failed to validate TimeCorrelationConfigProperties.xml, missing 5 required key(s):"));
+			for (String expectedMissingVal : expectedMissingVals) {
+				assertTrue(resultingException.getMessage().contains(expectedMissingVal));
+			}
 		}
 	}
 
@@ -155,11 +163,10 @@ class TimeCorrelationAppConfigTests {
 		try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
-					.thenReturn("src/test/resources/");
+                    .thenReturn("src/test/resources/ConfigTests/minimalKeys");
 			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
 
-			ArrayList<String> actualMissingVals = config.validateRequiredConfigKeys("TimeCorrelationConfigProperties-base.xml");
-			assertTrue(actualMissingVals.isEmpty(), "Validation of normal NH config returns no reported missing keys.");
+			config.validate();
 		}
 	}
 

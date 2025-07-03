@@ -47,6 +47,8 @@ import javax.xml.parsers.ParserConfigurationException;
  * configuration parameters file.
  */
 public class TimeCorrelationAppConfig {
+    private static final String BASE_CONFIG_FILENAME = "TimeCorrelationConfigProperties-base.xml";
+
     private static final Set<String> BUILT_IN_TLM_SOURCES = new HashSet<>(Collections.singletonList("rawTlmTable"));
 
     public String getCmdLineOptionValue(char shortOpt) {
@@ -1284,16 +1286,29 @@ public class TimeCorrelationAppConfig {
         return timeCorrelationConfig.getConfig().getInt("telemetry.sampleSetBuildingStrategy.sampling.samplingRateMinutes");
     }
 
+    public void validate() throws MmtcException {
+        // Validate that all required config keys are present
+        validateRequiredConfigKeys(BASE_CONFIG_FILENAME);
+
+        if (createSclkScetFile()) {
+            validateSclkScetConfiguration();
+        }
+
+        if (createUplinkCmdFile()) {
+            validateUplinkCmdFileConfiguration();
+        }
+    }
+
     /**
      * Method used for up-front validation of the presence of all required keys in TimeCorrelationAppConfig.xml. This is
      * intended to be used with the standard base config found at {$TK_CONFIG_PATH}/examples/TimeCorrelationConfigProperties-base.xml,
      * but any valid XML config can technically be used.
      * @param baseConfigPath Path to the baseline config file that the active config will be compared against
-     * @return An ArrayList of key names missing from the active config (or an empty list if all required keys are found)
-     * @throws MmtcException if the baseline config cannot be parsed.
+     *
+     * @throws MmtcException if there are missing keys, or if the baseline config cannot be parsed.
      */
-    public ArrayList<String> validateRequiredConfigKeys(String baseConfigPath) throws MmtcException {
-        ArrayList<String> missingKeys = new ArrayList<>();
+    public void validateRequiredConfigKeys(String baseConfigPath) throws MmtcException {
+        final ArrayList<String> missingKeys = new ArrayList<>();
         FileBasedConfiguration activeConf = timeCorrelationConfig.getConfig();
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -1325,6 +1340,63 @@ public class TimeCorrelationAppConfig {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        if (missingKeys.isEmpty()) {
+            logger.info(String.format("All required config keys validated against %s successfully.",baseConfigPath));
+        } else {
+            throw new MmtcException(String.format("Failed to validate TimeCorrelationConfigProperties.xml, missing %d required key(s): %s",missingKeys.size(), missingKeys));
+        }
+    }
+
+    private static final List<String> REQD_SCLK_SCET_CONFIG_KEY_GROUP = Arrays.asList(
+            "product.sclkScetFile.create",
+            "product.sclkScetFile.dir",
+            "product.sclkScetFile.baseName",
+            "product.sclkScetFile.separator",
+            "product.sclkScetFile.suffix",
+            "product.sclkScetFile.datasetId",
+            "product.sclkScetFile.producerId"
+    );
+
+    private static final List<String> REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP = Arrays.asList(
+            "product.uplinkCmdFile.create",
+            "product.uplinkCmdFile.outputDir",
+            "product.uplinkCmdFile.baseName"
+    );
+
+    public void validateSclkScetConfiguration() throws MmtcException {
+        List<String> missingKeys = checkForMissingKeysInGroup(REQD_SCLK_SCET_CONFIG_KEY_GROUP);
+
+        if (! missingKeys.isEmpty()) {
+            throw new MmtcException("If SCLK-SCET file creation is enabled, the following keys must be set: " + missingKeys.toString());
+        }
+    }
+
+    public void validateUplinkCmdFileConfiguration() throws MmtcException {
+        List<String> missingKeys = checkForMissingKeysInGroup(REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP);
+
+        if (! missingKeys.isEmpty()) {
+            throw new MmtcException("If uplink command file creation is enabled, the following keys must be set: " + missingKeys.toString());
+        }
+    }
+
+    public boolean isSclkScetConfigurationComplete() {
+        return checkForMissingKeysInGroup(REQD_SCLK_SCET_CONFIG_KEY_GROUP).isEmpty();
+    }
+
+    public boolean isUplinkFileConfigurationComplete() {
+        return checkForMissingKeysInGroup(REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP).isEmpty();
+    }
+
+    private List<String> checkForMissingKeysInGroup(List<String> requiredKeys) {
+        List<String> missingKeys = new ArrayList();
+
+        for (String key : requiredKeys) {
+            if (! timeCorrelationConfig.getConfig().containsKey(key)) {
+                missingKeys.add(key);
+            }
+        }
+
         return missingKeys;
     }
 }

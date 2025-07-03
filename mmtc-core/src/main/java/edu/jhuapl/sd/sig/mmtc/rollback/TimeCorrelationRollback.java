@@ -22,8 +22,9 @@ public class TimeCorrelationRollback {
     private final OutputProduct timeHist;
     private final OutputProduct tlmTable;
     private final OutputProduct sclkKernels;
-    private final OutputProduct sclkscetFiles;
-    private final OutputProduct uplinkFiles;
+
+    private final Optional<OutputProduct> sclkscetFiles;
+    private final Optional<OutputProduct> uplinkFiles;
 
     public TimeCorrelationRollback() throws Exception {
         TimeCorrelationAppConfig config = new TimeCorrelationAppConfig();
@@ -39,13 +40,44 @@ public class TimeCorrelationRollback {
         this.sclkKernels = new OutputProduct(RunHistoryFile.POSTRUN_SCLK,
                 config.getSclkKernelOutputDir().toAbsolutePath(),
                 config.getSclkKernelBasename());
-        this.sclkscetFiles = new OutputProduct(RunHistoryFile.POSTRUN_SCLKSCET,
-                config.getSclkScetOutputDir().toAbsolutePath(),
-                config.getSclkScetFileBasename());
-        this.uplinkFiles = new OutputProduct(RunHistoryFile.POSTRUN_UPLINKCMD,
-                Paths.get(config.getUplinkCmdFileDir()).toAbsolutePath(),
-                config.getUplinkCmdFileBasename());
 
+        if (this.runHistoryFile.anyValuesInColumn(RunHistoryFile.PRERUN_SCLKSCET) || this.runHistoryFile.anyValuesInColumn(RunHistoryFile.POSTRUN_SCLKSCET)) {
+            // if MMTC has ever written SCLK-SCET files in the past, ensure that its configuration is still populated to be able to manipulate them
+            if (config.isSclkScetConfigurationComplete()) {
+                this.sclkscetFiles = Optional.of(
+                        new OutputProduct(
+                            RunHistoryFile.POSTRUN_SCLKSCET,
+                            config.getSclkScetOutputDir().toAbsolutePath(),
+                            config.getSclkScetFileBasename()
+                        )
+                );
+            } else {
+                System.out.println("SCLK-SCET file information is present in the Run History File, but SCLK-SCET configuration is not fully specified in the configuration file.");
+                throw new MmtcRollbackException("Rollback aborted due to inconsistent state, no changes made.  Please resolve and retry.");
+            }
+        } else {
+            // if it hasn't, then no need to check configuration, and don't operate on them
+            this.sclkscetFiles = Optional.empty();
+        }
+
+        if (this.runHistoryFile.anyValuesInColumn(RunHistoryFile.PRERUN_UPLINKCMD) || this.runHistoryFile.anyValuesInColumn(RunHistoryFile.POSTRUN_UPLINKCMD)) {
+            // if MMTC has ever written uplink command files in the past, ensure that its configuration is still populated to be able to manipulate them
+            if (config.isUplinkFileConfigurationComplete()) {
+                this.uplinkFiles = Optional.of(
+                        new OutputProduct(
+                                RunHistoryFile.POSTRUN_UPLINKCMD,
+                                Paths.get(config.getUplinkCmdFileDir()).toAbsolutePath(),
+                                config.getUplinkCmdFileBasename()
+                        )
+                );
+            } else {
+                System.out.println("Uplink command file information is present in the Run History File, but uplink command file configuration is not fully specified in the configuration file.");
+                throw new MmtcRollbackException("Rollback aborted due to inconsistent state, no changes made.  Please resolve and retry.");
+            }
+        } else {
+            // if it hasn't, then no need to check configuration, and don't operate on them
+            this.uplinkFiles = Optional.empty();
+        }
     }
 
     /**
@@ -56,9 +88,16 @@ public class TimeCorrelationRollback {
      * (this includes products being modified between rollback being initiated and deletion confirmation being given by the user)
      */
     public void rollback() throws Exception {
-        final OutputProduct[] allProducts = new OutputProduct[]{timeHist, tlmTable, sclkKernels, sclkscetFiles, uplinkFiles};
-        final OutputProduct[] tableProducts = new OutputProduct[]{timeHist, tlmTable};
-        final OutputProduct[] textProducts = new OutputProduct[]{sclkKernels, sclkscetFiles, uplinkFiles};
+        final List<OutputProduct> allProducts = new ArrayList<>(Arrays.asList(timeHist, tlmTable, sclkKernels));
+        sclkscetFiles.ifPresent(allProducts::add);
+        uplinkFiles.ifPresent(allProducts::add);
+
+        final List<OutputProduct> tableProducts = new ArrayList<>(Arrays.asList(timeHist, tlmTable));
+
+        final List<OutputProduct> textProducts = new ArrayList<>(Collections.singletonList(sclkKernels));
+        sclkscetFiles.ifPresent(textProducts::add);
+        uplinkFiles.ifPresent(textProducts::add);
+
         Scanner scanner = new Scanner(System.in);
         List<TableRecord> rawRunHistoryRecords = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS); // Will be used to rewrite complete RunHistoryFile
         List<TableRecord> runHistoryRecords = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS); // Will be used for rollback and shouldn't include rolled back entries

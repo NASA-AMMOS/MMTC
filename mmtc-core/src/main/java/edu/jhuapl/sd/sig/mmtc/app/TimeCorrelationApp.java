@@ -103,15 +103,7 @@ public class TimeCorrelationApp {
      * @return true if successful, false otherwise
      */
     private void init() throws Exception {
-        // Validate that all required config keys are present
-        final String baseConfigPath = "TimeCorrelationConfigProperties-base.xml";
-        final ArrayList<String> missingKeys = config.validateRequiredConfigKeys(baseConfigPath);
-
-        if (missingKeys.isEmpty()) {
-            logger.info(String.format("All required config keys validated against %s successfully.",baseConfigPath));
-        } else {
-            throw new MmtcException(String.format("Failed to validate TimeCorrelationConfigProperties.xml, missing %d required key(s): %s",missingKeys.size(), missingKeys));
-        }
+        config.validate();
 
         logger.debug("Loading SPICE library");
         TimeConvert.loadSpiceLib();
@@ -572,7 +564,7 @@ public class TimeCorrelationApp {
     private void recordRunHistoryFileBeforeValues() throws MmtcException {
         int newRunId;
         List<TableRecord> prevRuns = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS);
-        if(prevRuns.isEmpty()) {
+        if (prevRuns.isEmpty()) {
             newRunId = 1;
         } else {
             newRunId = Integer.parseInt(prevRuns.get(prevRuns.size()-1).getValue("Run ID")) + 1;
@@ -583,16 +575,37 @@ public class TimeCorrelationApp {
         runHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,            "false");
         runHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,              System.getProperty("user.name"));
         runHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,              String.join(" ",cliArgs));
+
         // SCLK Kernel
         runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SCLK,           getLatestFileCounterByPrefix(config.getSclkKernelOutputDir(), config.getSclkKernelBasename(), SclkKernel.FILE_SUFFIX));
-        // SCLKSCET File
-        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SCLKSCET,       getLatestFileCounterByPrefix(config.getSclkScetOutputDir(), config.getSclkScetFileBasename(), config.getSclkScetFileSuffix()));
+
         // TimeHistoryFile
         runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_TIMEHIST,       String.valueOf(timeHistoryFile.getLastLineNumber()));
+
         // RawTlmTable
         runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_RAWTLMTABLE,    String.valueOf(rawTlmTable.getLastLineNumber()));
+
+        // SCLKSCET File
+        String latestSclkScetFileCounter;
+        if (config.createSclkScetFile()) {
+            // if this run is creating a SCLK-SCET file, assume the associated configuration is populated and read it
+            latestSclkScetFileCounter = getLatestFileCounterByPrefix(config.getSclkScetOutputDir(), config.getSclkScetFileBasename(), config.getSclkScetFileSuffix());
+        } else {
+            // else, if this run is not creating a SCLK-SCET file, then use the prior value, if any exists, or "-" otherwise
+            latestSclkScetFileCounter = runHistoryFile.readLatestValueOf(RunHistoryFile.POSTRUN_SCLKSCET, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-");
+        }
+        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SCLKSCET, latestSclkScetFileCounter);
+
         // Uplink Command File
-        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_UPLINKCMD,      getLatestFileCounterByPrefix(Paths.get(config.getUplinkCmdFileDir()),config.getUplinkCmdFileBasename(), UplinkCmdFile.FILE_SUFFIX));
+        String latestUplinkCmdFileCounter;
+        if (config.createUplinkCmdFile()) {
+            // if this run is creating an uplink command file, assume the associated configuration is populated and read it
+            latestUplinkCmdFileCounter = getLatestFileCounterByPrefix(Paths.get(config.getUplinkCmdFileDir()), config.getUplinkCmdFileBasename(), UplinkCmdFile.FILE_SUFFIX);
+        } else {
+            // else, if this run is not creating an uplink command file, then use the prior value, if any exists, or "-" otherwise
+            latestUplinkCmdFileCounter = runHistoryFile.readLatestValueOf(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-");
+        }
+        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_UPLINKCMD, latestUplinkCmdFileCounter);
     }
 
     /**
@@ -603,14 +616,27 @@ public class TimeCorrelationApp {
     private void writeRunHistoryFileAfterRun() throws MmtcException {
         // SCLK kernel
         runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLK,          newVersionStr);
-        // SCLKSCET file
-        runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLKSCET,      newVersionStr);
+
         // TimeHistoryFile
         runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_TIMEHIST,      String.valueOf(timeHistoryFile.getLastLineNumber()));
+
         // RawTlmTable
         runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_RAWTLMTABLE,   String.valueOf(rawTlmTable.getLastLineNumber()));
+
+        // SCLKSCET file
+        if (config.createSclkScetFile()) {
+            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLKSCET, newVersionStr);
+        } else {
+            // else, if this run did not create a SCLK-SCET file, then use the prior value, if any exists, or "-" otherwise
+            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLKSCET, runHistoryFile.readLatestValueOf(RunHistoryFile.POSTRUN_SCLKSCET, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
+        }
+
         // Uplink Command File
-        runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_UPLINKCMD,     getLatestFileCounterByPrefix(Paths.get(config.getUplinkCmdFileDir()), config.getUplinkCmdFileBasename(), UplinkCmdFile.FILE_SUFFIX));
+        if (config.createUplinkCmdFile()) {
+            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_UPLINKCMD, getLatestFileCounterByPrefix(Paths.get(config.getUplinkCmdFileDir()), config.getUplinkCmdFileBasename(), UplinkCmdFile.FILE_SUFFIX));
+        } else {
+            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_UPLINKCMD, runHistoryFile.readLatestValueOf(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
+        }
 
         runHistoryFile.writeRecord(runHistoryFileRecord);
 

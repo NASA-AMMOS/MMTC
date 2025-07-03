@@ -1337,39 +1337,39 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 |Activates creation of SCLK/SCET files. Set to true if a SCLK/SCET file is to be created. Valid values are “true” or “false”.
 
 |product.sclkScetFile.dir
-|REQUIRED
+|OPTIONAL
 |STR
-|The directory to which the SCLK/SCET files are written.
+|The directory to which the SCLK/SCET files are written. Required if product.sclkScetFile.create is `true`.
 
 |product.sclkScetFile.baseName
-|REQUIRED
+|OPTIONAL
 |STR
-|The basename of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “europaclipper” is the basename. Applicable only if product.sclkScetFile.create=true.
+|The basename of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “europaclipper” is the basename. Required if product.sclkScetFile.create is `true`.
 
 |product.sclkScetFile.separator
-|REQUIRED
+|OPTIONAL
 |STR
-|The separator between the basename and the version number of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “_” (underscore) is the separator. Applicable only if product.sclkScetFile.create=true.
+|The separator between the basename and the version number of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “_” (underscore) is the separator. Required if product.sclkScetFile.create is `true`.
 
 |product.sclkScetFile.suffix
-|REQUIRED
+|OPTIONAL
 |STR
-|The file suffix of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “coeff” is the suffix. Applicable only if product.sclkScetFile.create=true.
+|The file suffix of the SCLK/SCET file. For example, given “europaclipper_00000.coeff”, “coeff” is the suffix. Required if product.sclkScetFile.create is `true`.
 
 |product.sclkScetFile.scetUtcPrecision
-|REQUIRED
+|OPTIONAL
 |INT
-|The number of digits to which the SCET fraction of second is to be written in an SCLK/SCET file. Applicable only if product.sclkScetFile.create=true.
+|The number of digits to which the SCET fraction of second is to be written in an SCLK/SCET file. Required if product.sclkScetFile.create is `true`.
 
 |product.sclkScetFile.datasetId
-|REQUIRED
+|OPTIONAL
 |STR
-|The value for the DATA_SET_ID field in the header of the SCLK/SCET file. Applicable only if product.sclkScetFile.create=true.
+|The value for the DATA_SET_ID field in the header of the SCLK/SCET file. Required if product.sclkScetFile.create is `true`.
 
 |product.sclkScetFile.producerId
-|REQUIRED
+|OPTIONAL
 |STR
-|The value for the PRODUCER_ID field in the header of the SCLK/SCET file. Applicable only if product.sclkScetFile.create=true.
+|The value for the PRODUCER_ID field in the header of the SCLK/SCET file. Required if product.sclkScetFile.create is `true`.
 
 |product.sclkScetFile.applicableDurationDays
 |OPTIONAL
@@ -1382,19 +1382,19 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 |Valid values for this key are 'PRIOR_RATE' or 'ONE'.  MMTC inserts two records for each leap second (specified via a SPICE leap second kernel via MMTC configuration) into each SCLK-SCET file. The first record in each pair sets the time the leap second effectively 'begins' (adjusted to a whole SCLK coarse tick) with either a very low (0.001) or high (2.000) SCLKRATE (depending on whether it is encoding an added leap second or a removed second (i.e. negative leap second),) respectively.  The second entry sets the end of the leap second with a SCLKRATE of either 1.0 (if the value for this key is 'ONE') or that of the correlation record just prior to the leap second (if the value for this key is 'PRIOR_RATE'.)  If not set, the default value of 'PRIOR_RATE' is used.
 
 |product.uplinkCmdFile.create
-|REQUIRED
+|OPTIONAL
 |STR
 |Activates creation of Uplink Command Files. Set to true if an Uplink Command File is to be created. Valid values are “true” or “false”.
 
 |product.uplinkCmdFile.outputDir
-|REQUIRED
+|OPTIONAL
 |STR
-|The path to the directory where Uplink Command Files are to be written.
+|The path to the directory where Uplink Command Files are to be written. Required if product.uplinkCmdFile.create is `true`.
 
 |product.uplinkCmdFile.baseName
-|REQUIRED
+|OPTIONAL
 |STR
-|The basename of the Uplink Command File. For example, given the filename “uplinkCmd1577130458.csv”, “uplinkCmd” is the basename. Applicable only if product.uplinkCmdFile.create=true.
+|The basename of the Uplink Command File. For example, given the filename “uplinkCmd1577130458.csv”, “uplinkCmd” is the basename. Required if product.uplinkCmdFile.create is `true`.
 
 
 |===

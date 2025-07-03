@@ -9,6 +9,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public enum RollbackEntryOption {
@@ -65,7 +66,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
      * @return A list of existing runs/entries/rows as TableRecords or an empty list if the file doesn't exist yet
      * @throws MmtcRollbackException if the table exists but can't be parsed
      */
-    public List<TableRecord> readRunHistoryFile(RollbackEntryOption option) throws MmtcException, MmtcRollbackException {
+    public List<TableRecord> readRunHistoryFile(RollbackEntryOption option) throws MmtcException {
         List<TableRecord> records = new ArrayList<>();
         if(!this.getFile().exists()) {
             return records;
@@ -90,5 +91,19 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
             throw new MmtcRollbackException("Rollback failed while reading RunHistoryFile: could not close parser");
         }
         return records;
+    }
+
+    public Optional<String> readLatestValueOf(String columnName, RollbackEntryOption option) throws MmtcException {
+        List<TableRecord> recs = readRunHistoryFile(option);
+        if (! recs.isEmpty()) {
+            return Optional.of(recs.get(recs.size() - 1).getValue(columnName));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public boolean anyValuesInColumn(String columnName) throws MmtcException {
+        List<TableRecord> recs = readRunHistoryFile(RollbackEntryOption.INCLUDE_ROLLBACKS);
+        return recs.stream().anyMatch(r -> ! r.getValue(columnName).equals("-"));
     }
 }
