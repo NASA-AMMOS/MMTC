@@ -105,7 +105,6 @@
   <entry key="table.timeHistoryFile.scetUtcPrecision">6</entry>
 
   <entry key="product.sclkScetFile.create">true</entry>
-  <entry key="product.sclkScetFile.source">SCLK_KERNEL</entry>
   <entry key="product.sclkScetFile.dir">./output</entry>
   <entry key="product.sclkScetFile.baseName">new-horizons</entry>
   <entry key="product.sclkScetFile.separator">_</entry>

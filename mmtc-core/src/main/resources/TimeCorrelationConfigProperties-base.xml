@@ -50,7 +50,6 @@
     <entry key="table.timeHistoryFile.scetUtcPrecision"/>
 
     <entry key="product.sclkScetFile.create"/>
-    <entry key="product.sclkScetFile.source"/>
     <entry key="product.sclkScetFile.dir"/>
     <entry key="product.sclkScetFile.baseName"/>
     <entry key="product.sclkScetFile.separator"/>
