@@ -134,7 +134,6 @@
       <xs:enumeration value="table.timeHistoryFile.excludeColumns"/>
       <xs:enumeration value="table.timeHistoryFile.scetUtcPrecision"/>
       <xs:enumeration value="product.sclkScetFile.create"/>
-      <xs:enumeration value="product.sclkScetFile.source"/>
       <xs:enumeration value="product.sclkScetFile.dir"/>
       <xs:enumeration value="product.sclkScetFile.baseName"/>
       <xs:enumeration value="product.sclkScetFile.separator"/>
