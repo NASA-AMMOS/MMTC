@@ -1134,9 +1134,9 @@ source.name is not set to rawTlmTable.
 |The maximum number of days to look back into previous contacts to get SCLK and TDT values when computing the predicted clock change rate. This value is a float type and will be converted to truncated integer whole hours internally. If there is no time correlation record in the input SCLK Kernel within this amount of time prior to the current sample time, the MMTC will terminate with an error.
 
 |compute.tdtS.threshold.errorMsecWarning
-|REQUIRED
+|OPTIONAL
 |DBL
-|The threshold in milliseconds above which a computed error in TDT(S) calculations will indicate a warning as recorded in the Time History File.
+|The threshold in milliseconds above which a computed error in TDT(S) calculations will indicate a warning as recorded in the Time History File.  If not set, the TDT(S) error will not be evaluated against a threshold and no related warning will be written to the Time History File.
 
 4+^|*The following parameters relate to SPICE kernels*
 

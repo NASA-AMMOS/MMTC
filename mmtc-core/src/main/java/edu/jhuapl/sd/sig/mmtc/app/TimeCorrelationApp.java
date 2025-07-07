@@ -335,7 +335,18 @@ public class TimeCorrelationApp {
                 )
         );
 
-        timeHistoryFileRecord.setValue(TimeHistoryFile.TDT_S_ERROR_WARNING_THRESHOLD, String.valueOf(config.getTdtSErrorWarningThresholdMs()));
+        final Optional<Double> tdtSErrorWarningThreshold = config.getTdtSErrorWarningThresholdMs();
+        if (tdtSErrorWarningThreshold.isPresent()) {
+            timeHistoryFileRecord.setValue(
+                    TimeHistoryFile.TDT_S_ERROR_WARNING_THRESHOLD,
+                    String.valueOf(tdtSErrorWarningThreshold.get())
+            );
+        } else {
+            timeHistoryFileRecord.setValue(
+                    TimeHistoryFile.TDT_S_ERROR_WARNING_THRESHOLD,
+                    "-"
+            );
+        }
 
         logger.info("Retrieving GNC and oscillator temperature values to include with the Time History File");
 
@@ -400,9 +411,11 @@ public class TimeCorrelationApp {
                     new DecimalFormat("0.000000").format(tdtSError)
             );
 
-            if (Math.abs(tdtSError) > config.getTdtSErrorWarningThresholdMs()) {
-                logger.warn(String.format("Magnitude of computed error in TDT(S) of %f exceeds threshold of %f. Warning noted in TimeHistoryFile.", tdtSError, config.getTdtSErrorWarningThresholdMs()));
-                timeHistoryFileWarnings.add("TDT(S)_Error_threshold_exceeded!");
+            if (config.getTdtSErrorWarningThresholdMs().isPresent()) {
+                if (Math.abs(tdtSError) > config.getTdtSErrorWarningThresholdMs().get()) {
+                    logger.warn(String.format("Magnitude of computed error in TDT(S) of %f exceeds threshold of %f. Warning noted in TimeHistoryFile.", tdtSError, config.getTdtSErrorWarningThresholdMs().get()));
+                    timeHistoryFileWarnings.add("TDT(S)_Error_threshold_exceeded!");
+                }
             }
 
             // Set the Warnings in the TimeHistoryFile (nominally, these will be blank).

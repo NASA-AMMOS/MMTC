@@ -994,8 +994,12 @@ public class TimeCorrelationAppConfig {
      * the TimeHistoryFile
      * @return the error threshold for TDT(S)
      */
-    public double getTdtSErrorWarningThresholdMs() {
-        return timeCorrelationConfig.getConfig().getDouble("compute.tdtS.threshold.errorMsecWarning");
+    public Optional<Double> getTdtSErrorWarningThresholdMs() {
+        if (timeCorrelationConfig.getConfig().containsKey("compute.tdtS.threshold.errorMsecWarning")) {
+            return Optional.of(timeCorrelationConfig.getConfig().getDouble("compute.tdtS.threshold.errorMsecWarning"));
+        } else {
+            return Optional.empty();
+        }
     }
 
     /**
