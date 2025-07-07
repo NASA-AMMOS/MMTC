@@ -1155,10 +1155,12 @@ public class TimeCorrelationAppConfig {
      * included in a query. It is the seconds +/- precision of a SCET query value in which the query can be found.
      * Values for the telemetry point outside of this window will not match.
      *
+     * If not set, the default value is 600 seconds (10 minutes.)
+     *
      * @return the time window in seconds
      */
     public int getTkOscTempWindowSec()  {
-        return timeCorrelationConfig.getConfig().getInt("telemetry.tkOscTempWindowSec");
+        return timeCorrelationConfig.getConfig().getInt("telemetry.tkOscTempWindowSec", 600);
     }
 
     /**
@@ -1167,10 +1169,12 @@ public class TimeCorrelationAppConfig {
      * TLM point may not be available at exactly the ERT queried. This allows a query for the telemetry
      * point at ERT +/- [this value].
      *
+     * If not set, the default value is 600 seconds (10 minutes.)
+     *
      * @return the time in seconds within which a TK parameter TLM point may be queried.
      */
     public int getTkParmWindowSec() {
-        return timeCorrelationConfig.getConfig().getInt("telemetry.tkParmWindowSec");
+        return timeCorrelationConfig.getConfig().getInt("telemetry.tkParmWindowSec", 600);
     }
 
     /**

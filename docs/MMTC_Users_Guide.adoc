@@ -1114,14 +1114,14 @@ source.name is not set to rawTlmTable.
 |The basename of the telemetry source plugin jar file that should be used. This parameter is ignored if telemetry.source.name is rawTlmTable.
 
 |telemetry.tkOscTempWindowSec
-|REQUIRED
+|OPTIONAL
 |INT
-|The number of seconds +/- at which the oscillator temperature is to be queried by SCET (around the SCET of the time correlation target frame.) This allows for the SCET of the queried channel to be approximate.
+|The number of seconds +/- at which the oscillator temperature is to be queried by SCET (around the SCET of the time correlation target frame.) This allows for the SCET of the queried channel to be approximate. If not set, a default value of 600 seconds (10 minutes) is used.
 
 |telemetry.tkParmWindowSec
-|REQUIRED
+|OPTIONAL
 |INT
-|The maximum number of seconds after the time correlation target frame SCET for which to query GNC telemetry (SCLK/TDT(S)) values. This allows for the SCET of the queried channel to be approximate. The GNC TDT(S) and SCLK (for TDT(S)) values) are expected to have an identical SCET and the TDT(S) value is expected to be at or after the time correlation target frame's TDT(G).
+|The maximum number of seconds after the time correlation target frame SCET for which to query GNC telemetry (SCLK/TDT(S)) values. This allows for the SCET of the queried channel to be approximate. The GNC TDT(S) and SCLK (for TDT(S)) values) are expected to have an identical SCET and the TDT(S) value is expected to be at or after the time correlation target frame's TDT(G).  If not set, a default value of 600 seconds (10 minutes) is used.
 
 |compute.tdtG.rate.predicted.lookBackDays
 |REQUIRED

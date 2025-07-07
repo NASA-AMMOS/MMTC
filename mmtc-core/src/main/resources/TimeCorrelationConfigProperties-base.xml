@@ -20,8 +20,6 @@
     <entry key="telemetry.samplesPerSet"/>
     <entry key="telemetry.supplementalSampleOffset"/>
     <entry key="telemetry.source.name"/>
-    <entry key="telemetry.tkOscTempWindowSec"/>
-    <entry key="telemetry.tkParmWindowSec"/>
 
     <entry key="spice.naifSpacecraftId"/>
     <entry key="spice.kernel.sclk.kerneldir"/>

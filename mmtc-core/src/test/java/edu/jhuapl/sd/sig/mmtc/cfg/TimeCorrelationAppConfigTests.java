@@ -132,6 +132,19 @@ class TimeCorrelationAppConfigTests {
 	}
 
 	@Test
+	void testGetDefaultValuesForTkOscTempAndParmWindowSec() throws Exception {
+		try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
+			mockedEnvironment
+					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
+					.thenReturn("src/test/resources/ConfigTests/noTkOscTempOrParmWindow");
+			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+
+			assertEquals(600, config.getTkOscTempWindowSec());
+			assertEquals(600, config.getTkParmWindowSec());
+		}
+	}
+
+	@Test
 	void testCatchesMissingRequiredConfigKeys() throws Exception {
 		try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
 			mockedEnvironment
