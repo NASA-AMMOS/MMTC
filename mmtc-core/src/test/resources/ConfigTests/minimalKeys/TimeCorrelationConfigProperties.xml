@@ -73,8 +73,6 @@
   <entry key="compute.tdtG.rate.predicted.lookBackDays">7.00</entry>
   <entry key="compute.tdtG.rate.predicted.maxLookBackDays">9.00</entry>
 
-  <entry key="compute.tdtS.threshold.errorMsecWarning">1500</entry>
-
   <entry key="filter.contact.deltaUpperThreshold">90.0</entry>
   <entry key="filter.contact.deltaLowerThreshold">-90.0</entry>
 

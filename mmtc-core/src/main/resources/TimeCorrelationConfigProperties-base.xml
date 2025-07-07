@@ -31,7 +31,6 @@
 
     <entry key="compute.tdtG.rate.predicted.lookBackDays"/>
     <entry key="compute.tdtG.rate.predicted.maxLookBackDays"/>
-    <entry key="compute.tdtS.threshold.errorMsecWarning"/>
 
     <entry key="filter.contact.enabled"/>
     <entry key="filter.ert.enabled"/>
