@@ -92,11 +92,10 @@
   <entry key="filter.dataRate.maxDataRateBps">1000000</entry>
 
   <!-- Output Files -->
-  <entry key="table.runHistoryFile.uri">file:///opt/local/mmtc/output/RunHistoryFile.csv</entry>
-  <entry key="table.rawTelemetryTable.uri">file:///opt/local/mmtc/output/RawTlmTable.csv</entry>
+  <entry key="table.runHistoryFile.uri">/opt/local/mmtc/output/RunHistoryFile.csv</entry>
+  <entry key="table.rawTelemetryTable.uri">/opt/local/mmtc/output/RawTlmTable.csv</entry>
   <entry key="table.rawTelemetryTable.dateTimePattern">yyyy-DDD'T'HH:mm:ss.SSSSSS</entry>
-  <entry key="table.summaryTable.uri">file:///opt/local/mmtc/output/SummaryTable.csv</entry>
-  <entry key="table.timeHistoryFile.uri">file:///opt/local/mmtc/output/TimeHistoryFile.csv</entry>
+  <entry key="table.timeHistoryFile.uri">/opt/local/mmtc/output/TimeHistoryFile.csv</entry>
   <entry key="table.timeHistoryFile.excludeColumns"></entry>
   <entry key="table.timeHistoryFile.scetUtcPrecision">6</entry>
 
