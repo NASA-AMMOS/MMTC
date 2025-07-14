@@ -18,6 +18,8 @@ import java.io.File;
  * parameters.
  */
 public class TimeCorrelationXmlPropertiesConfig extends TimeCorrelationConfig {
+    public static final String TIME_COR_CONFIG_PROPERTIES_NAME = "TimeCorrelationConfigProperties.xml";
+
     private FileBasedConfigurationBuilder<LocatedXMLPropertiesConfiguration> builder;
 
     private static final Logger logger = LogManager.getLogger();
@@ -34,19 +36,18 @@ public class TimeCorrelationXmlPropertiesConfig extends TimeCorrelationConfig {
      */
     public boolean load() {
         try {
-            final String fileName = "TimeCorrelationConfigProperties.xml";
             String basePath = Environment.getEnvironmentVariable("TK_CONFIG_PATH");
             Parameters params = new Parameters();
 
-            logger.info(String.format("Attempting to load configuration file %s from $TK_CONFIG_PATH (%s).", fileName, basePath));
+            logger.info(String.format("Attempting to load configuration file %s from $TK_CONFIG_PATH (%s).", TIME_COR_CONFIG_PROPERTIES_NAME, basePath));
             builder = new FileBasedConfigurationBuilder<>(LocatedXMLPropertiesConfiguration.class)
                     .configure(params.properties()
                     .setBasePath(basePath)
-                    .setFileName(fileName)
+                    .setFileName(TIME_COR_CONFIG_PROPERTIES_NAME)
                     .setLocationStrategy(new BasePathLocationStrategy())
                     .setListDelimiterHandler(new DefaultListDelimiterHandler(',')));
 
-            setPath(basePath + File.separator + fileName);
+            setPath(basePath + File.separator + TIME_COR_CONFIG_PROPERTIES_NAME);
 
             final LocatedXMLPropertiesConfiguration config = builder.getConfiguration();
             final boolean success = config != null;

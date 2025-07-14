@@ -12,12 +12,14 @@ import java.util.*;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
+import edu.jhuapl.sd.sig.mmtc.cfg.CommandLineConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig.ClockChangeRateMode;
 import edu.jhuapl.sd.sig.mmtc.filter.ContactFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.products.*;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
+import edu.jhuapl.sd.sig.mmtc.sandbox.TimeCorrelationSandboxCreator;
 import edu.jhuapl.sd.sig.mmtc.table.*;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -53,7 +55,6 @@ public class TimeCorrelationApp {
     private static final Logger logger = LogManager.getLogger();
 
     private final OffsetDateTime appRunTime = OffsetDateTime.now(ZoneOffset.UTC);
-    private final String[] cliArgs;
     private final List<String> timeHistoryFileWarnings = new ArrayList<>();
 
     private final TimeCorrelationAppConfig config;
@@ -90,15 +91,14 @@ public class TimeCorrelationApp {
     // The version number of the new SCLK Kernel and new SCLK/SCET file in the filenames.
     private String newVersionStr = "";
 
-    /**
-     * Create the configuration objects.
-     *
-     * @param args the incoming command line arguments
-     */
     private TimeCorrelationApp(String[] args) throws Exception {
-        config = new TimeCorrelationAppConfig(args);
-        tlmSource = config.getTelemetrySource();
-        cliArgs = args;
+        this.config = new TimeCorrelationAppConfig(args);
+        this.tlmSource = config.getTelemetrySource();
+    }
+
+    private TimeCorrelationApp(TimeCorrelationAppConfig config) throws Exception {
+        this.config = config;
+        this.tlmSource = config.getTelemetrySource();
     }
 
     /**
@@ -626,7 +626,7 @@ public class TimeCorrelationApp {
         runHistoryFileRecord.setValue(RunHistoryFile.RUN_ID,                String.format("%05d",newRunId));
         runHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,            "false");
         runHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,              System.getProperty("user.name"));
-        runHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,              String.join(" ",cliArgs));
+        runHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,              String.join(" ", config.getCliArgs()));
         // SCLK Kernel
         runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SCLK,           getLatestFileCounterByPrefix(config.getSclkKernelOutputDir(), config.getSclkKernelBasename(), SclkKernel.FILE_SUFFIX));
         // SCLKSCET File
@@ -1234,28 +1234,42 @@ public class TimeCorrelationApp {
         logger.info(USER_NOTICE, String.format("************ %s version %s ************", MMTC_TITLE, BUILD_INFO.version));
         logger.info(USER_NOTICE, String.format("Commit %s built at %s", BUILD_INFO.commit, BUILD_INFO.buildDate));
 
-        if (args[0].equalsIgnoreCase("rollback")) {
-            logger.info(USER_NOTICE, String.format("Rollback invoked by command %s, starting rollback process", Arrays.toString(args)));
-            try {
-                TimeCorrelationRollback rollbackInstance = new TimeCorrelationRollback();
-                rollbackInstance.rollback();
-            } catch (Exception e) {
-                logger.fatal("Rollback failed.", e);
-                System.exit(1);
-            }
-        } else {
-            try {
-                TimeCorrelationApp app = new TimeCorrelationApp(args);
-                app.init();
+        switch (CommandLineConfig.determineApplicationMode(args)) {
+            case CORRELATION: {
                 try {
-                    app.run();
+                    TimeCorrelationApp app = new TimeCorrelationApp(args);
+                    app.init();
+                    try {
+                        app.run();
+                    } catch (Exception ex) {
+                        logger.fatal("MMTC run failed.", ex);
+                        System.exit(1);
+                    }
                 } catch (Exception ex) {
-                    logger.fatal("MMTC run failed.", ex);
+                    logger.fatal("MMTC initialization failed.", ex);
                     System.exit(1);
                 }
-            } catch (Exception ex) {
-                logger.fatal("MMTC initialization failed.", ex);
-                System.exit(1);
+                break;
+            }
+            case ROLLBACK: {
+                logger.info(USER_NOTICE, String.format("Rollback invoked by command %s, starting rollback process", Arrays.toString(args)));
+                try {
+                    TimeCorrelationRollback rollbackInstance = new TimeCorrelationRollback();
+                    rollbackInstance.rollback();
+                } catch (Exception e) {
+                    logger.fatal("Rollback failed.", e);
+                    System.exit(1);
+                }
+                break;
+            }
+            case CREATE_SANDBOX: {
+                logger.info(USER_NOTICE, String.format("Creating new sandbox at %s", Arrays.toString(args)));
+                try {
+                    TimeCorrelationSandboxCreator.createSandbox();
+                } catch (Exception e) {
+                    logger.fatal("Sandbox creation failed failed.", e);
+                    System.exit(1);
+                }
             }
         }
     }

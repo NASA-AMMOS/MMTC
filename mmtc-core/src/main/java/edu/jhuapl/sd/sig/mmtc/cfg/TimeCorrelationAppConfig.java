@@ -103,7 +103,7 @@ public class TimeCorrelationAppConfig {
 
         this.cmdLineConfig = new CommandLineConfig(args, this.telemetrySource.getAdditionalCliArguments());
 
-        if (!cmdLineConfig.load()) {
+        if (! cmdLineConfig.load()) {
             throw new MmtcException("Error parsing command line arguments.");
         }
 
@@ -207,6 +207,10 @@ public class TimeCorrelationAppConfig {
 
         logger.info("Loaded telemetry source {}", tlmSource.getName());
         return tlmSource;
+    }
+
+    public String[] getCliArgs() {
+        return this.cmdLineConfig.getArgs();
     }
 
     @Override

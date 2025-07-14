@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.log4j.api)
     implementation(libs.log4j.core)
     implementation(libs.log4j.jcl)
+    implementation(libs.commons.io)
 
     testImplementation(testlibs.junit.jupiter.api)
     testImplementation(testlibs.junit.jupiter.params)

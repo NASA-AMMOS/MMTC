@@ -8,9 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -23,6 +21,12 @@ import java.util.stream.Collectors;
  * Defines the command line configuration options for the MMTC application.
  */
 public class CommandLineConfig implements IConfiguration {
+    public enum PrimaryApplicationCommand {
+        CORRELATION,
+        ROLLBACK,
+        CREATE_SANDBOX
+    }
+
     private HelpFormatter help = new HelpFormatter();
     private Options opts = new Options();
     private CommandLine cmdLine;
@@ -39,6 +43,16 @@ public class CommandLineConfig implements IConfiguration {
     private static final String ClockChangeRateOptionAssign = "clkchgrate-assign";
 
     private static final Logger logger = LogManager.getLogger();
+
+    public static PrimaryApplicationCommand determineApplicationMode(String... args) {
+        if (args[0].equalsIgnoreCase("rollback")) {
+            return PrimaryApplicationCommand.ROLLBACK;
+        } else if (args[0].equalsIgnoreCase("create-sandbox")) {
+            return PrimaryApplicationCommand.CREATE_SANDBOX;
+        } else {
+            return PrimaryApplicationCommand.CORRELATION;
+        }
+    }
 
     CommandLineConfig(String[] args) {
         this(args, Collections.emptyList());
@@ -114,6 +128,10 @@ public class CommandLineConfig implements IConfiguration {
         return opts.hasShortOption(option.getOpt()) || opts.hasLongOption(option.getLongOpt());
     }
 
+    public String[] getArgs() {
+        return Arrays.copyOf(this.args, this.args.length);
+    }
+
     public boolean load() {
         try {
             logger.info("Command line arguments: ["
@@ -127,6 +145,7 @@ public class CommandLineConfig implements IConfiguration {
 
             // Print help and exit, regardless of any other arguments
             if (isHelpSet()) {
+                // to do: check if we need to include rollback and create-sandbox options here
                 help.printHelp("mmtc [options] <start-time> <stop-time>", opts);
                 System.exit(0);
             }
