@@ -5,6 +5,7 @@ import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import org.junit.jupiter.api.*;
 
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +16,7 @@ class RawTelemetryTableTests {
     private RawTelemetryTable table;
 
     void loadTable(String path) throws Exception {
-        table = new RawTelemetryTable(new URI(path));
+        table = new RawTelemetryTable(Paths.get(path));
         table.resetParser();
     }
 

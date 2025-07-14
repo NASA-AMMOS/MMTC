@@ -27,14 +27,14 @@
   <entry key="telemetry.source.name">AmpcsTlmArchive</entry>
 
   <!-- Options for built-in Raw TLM Table telemetry source -->
-  <entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri">file:///absolute/path/to/RawTelemetryTable_NH_reformatted.csv</entry>
+  <entry key="telemetry.source.plugin.rawTlmTable.tableFile.path">/absolute/path/to/RawTelemetryTable_NH_reformatted.csv</entry>
 
   <!-- General options for AMPCS telemetry source plugin -->
   <entry key="telemetry.source.plugin.ampcs.frameSizeBits">1119</entry>
   <entry key="telemetry.source.plugin.ampcs.chillTimeoutSec">300</entry>
   <entry key="telemetry.source.plugin.ampcs.tkpacket.apid">123</entry>
   <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketSizeBytes">29</entry>
-  <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri">file:///opt/local/mmtc/conf/tk_packet.xml</entry>
+  <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path">/opt/local/mmtc/conf/tk_packet.xml</entry>
 
   <!-- Timekeeping packet metadata column header names for AMPCS telemetry source plugin -->
   <entry key="telemetry.source.plugin.ampcs.tkpacket.apidFieldName">apid</entry>
@@ -138,10 +138,10 @@
   <entry key="filter.dataRate.maxDataRateBps">1000000</entry>
 
   <!-- Output Files -->
-  <entry key="table.rawTelemetryTable.uri">file:///absolute/path/to/output/RawTlmTable.csv</entry>
+  <entry key="table.rawTelemetryTable.path">/absolute/path/to/output/RawTlmTable.csv</entry>
   <entry key="table.rawTelemetryTable.dateTimePattern">yyyy-DDD'T'HH:mm:ss.SSSSSS</entry>
-  <entry key="table.summaryTable.uri">file:///absolute/path/to/output/SummaryTable.csv</entry>
-  <entry key="table.timeHistoryFile.uri">file:///absolute/path/to/output/TimeHistoryFile.csv</entry>
+  <entry key="table.summaryTable.path">/absolute/path/to/output/SummaryTable.csv</entry>
+  <entry key="table.timeHistoryFile.path">/absolute/path/to/output/TimeHistoryFile.csv</entry>
   <entry key="table.timeHistoryFile.excludeColumns"></entry>
   <entry key="table.timeHistoryFile.scetUtcPrecision">6</entry>
 

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,11 +17,10 @@ class TimeHistoryFileTests {
 
     void loadTable(String path) {
         try {
-            URI uri = new URI(path);
-            table = new TimeHistoryFile(uri);
+            table = new TimeHistoryFile(Paths.get(path));
             table.resetParser();
         }
-        catch (URISyntaxException | MmtcException ex) {
+        catch (MmtcException ex) {
             fail("Failed to load TimeHistoryFile file." + ex);
         }
     }

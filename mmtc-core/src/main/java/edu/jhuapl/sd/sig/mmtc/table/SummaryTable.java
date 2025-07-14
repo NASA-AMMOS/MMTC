@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
-import java.net.URI;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,8 +27,8 @@ public class SummaryTable extends AbstractTimeCorrelationTable {
     public static final String DATA_RATE_BPS = "Data Rate (bps)";
     public static final String FRAME_SIZE_BITS = "Frame size (bits)";
 
-    public SummaryTable(URI uri) {
-        super(uri);
+    public SummaryTable(Path path) {
+        super(path);
     }
 
     @Override

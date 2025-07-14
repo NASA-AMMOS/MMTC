@@ -3,6 +3,8 @@ package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class AmpcsTelemetrySourceConfig {
@@ -241,8 +243,10 @@ public class AmpcsTelemetrySourceConfig {
      *
      * @return the path to the TK description packet
      */
-    public String getTkPacketDescriptionFile() {
-        return timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri");
+    public Path getTkPacketDescriptionFilePath() {
+        return timeCorrelationAppConfig.ensureAbsolute(
+                Paths.get(timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path"))
+        );
     }
 
     public enum ActiveOscillatorSelectionMode {

@@ -43,11 +43,11 @@
     <entry key="filter.consecutiveMasterChannelFrames.enabled"/>
 
     <entry key="filter.vcid.enabled"/>
-    <entry key="table.runHistoryFile.uri"/>
-    <entry key="table.rawTelemetryTable.uri"/>
+    <entry key="table.runHistoryFile.path"/>
+    <entry key="table.rawTelemetryTable.path"/>
     <entry key="table.rawTelemetryTable.dateTimePattern"/>
-    <entry key="table.summaryTable.uri"/>
-    <entry key="table.timeHistoryFile.uri"/>
+    <entry key="table.summaryTable.path"/>
+    <entry key="table.timeHistoryFile.path"/>
     <entry key="table.timeHistoryFile.scetUtcPrecision"/>
 
     <entry key="product.sclkScetFile.create"/>

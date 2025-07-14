@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
-import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -96,12 +96,12 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
 
     private final ArrayList<String> columns;
 
-    public TimeHistoryFile(URI uri) {
-        this(uri, Collections.emptyList());
+    public TimeHistoryFile(Path path) {
+        this(path, Collections.emptyList());
     }
 
-    public TimeHistoryFile(URI uri, List<String> columnsToExclude) {
-        super(uri);
+    public TimeHistoryFile(Path path, List<String> columnsToExclude) {
+        super(path);
         this.columns = new ArrayList<>(DEFAULT_COLUMNS);
         this.columns.removeAll(columnsToExclude);
     }

@@ -3,7 +3,6 @@ package edu.jhuapl.sd.sig.mmtc.rollback;
 import edu.jhuapl.sd.sig.mmtc.table.AbstractTimeCorrelationTable;
 
 import java.io.File;
-import java.net.URI;
 import java.nio.file.Path;
 
 /**
@@ -12,7 +11,6 @@ import java.nio.file.Path;
 class OutputProduct {
 
     private final String nameInRunHistory;
-    private URI uri;
     private int newLatestVal;
     private AbstractTimeCorrelationTable table;
     private final Path path;
@@ -20,11 +18,10 @@ class OutputProduct {
     private String baseName;
 
 
-    public OutputProduct(String name, URI uri) {
+    public OutputProduct(String name, Path path) {
         this.nameInRunHistory = name;
-        this.uri = uri;
-        this.file = new File(uri);
-        this.path = this.file.toPath();
+        this.path = path;
+        this.file = path.toFile();
     }
 
     public OutputProduct(String name, Path path, String basename) {
@@ -60,10 +57,6 @@ class OutputProduct {
 
     public String getNameInRunHistory() {
         return nameInRunHistory;
-    }
-
-    public URI getUri() {
-        return uri;
     }
 
     public AbstractTimeCorrelationTable getTable() {

@@ -29,16 +29,16 @@ public class TimeCorrelationRollback {
     public TimeCorrelationRollback() throws Exception {
         TimeCorrelationAppConfig config = new TimeCorrelationAppConfig();
         
-        this.runHistoryFile = new RunHistoryFile(config.getRunHistoryFileUri());
+        this.runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath());
 
-        this.timeHist = new OutputProduct(RunHistoryFile.POSTRUN_TIMEHIST, config.getTimeHistoryFileUri());
-        timeHist.setTable(new TimeHistoryFile(timeHist.getUri()));
+        this.timeHist = new OutputProduct(RunHistoryFile.POSTRUN_TIMEHIST, config.getTimeHistoryFilePath());
+        timeHist.setTable(new TimeHistoryFile(timeHist.getPath()));
 
-        this.sumTable = new OutputProduct(RunHistoryFile.POSTRUN_SUMMARYTABLE, config.getSummaryTableUri());
-        sumTable.setTable(new SummaryTable(sumTable.getUri()));
+        this.sumTable = new OutputProduct(RunHistoryFile.POSTRUN_SUMMARYTABLE, config.getSummaryTablePath());
+        sumTable.setTable(new SummaryTable(sumTable.getPath()));
 
-        this.tlmTable = new OutputProduct(RunHistoryFile.POSTRUN_RAWTLMTABLE, config.getRawTelemetryTableUri());
-        tlmTable.setTable(new RawTelemetryTable(tlmTable.getUri()));
+        this.tlmTable = new OutputProduct(RunHistoryFile.POSTRUN_RAWTLMTABLE, config.getRawTelemetryTablePath());
+        tlmTable.setTable(new RawTelemetryTable(tlmTable.getPath()));
 
         this.sclkKernels = new OutputProduct(RunHistoryFile.POSTRUN_SCLK,
                 config.getSclkKernelOutputDir().toAbsolutePath(),

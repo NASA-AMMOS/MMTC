@@ -10,8 +10,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -23,7 +22,7 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
 
     private static final ZoneOffset ZONE_OFFSET = ZoneOffset.UTC;
 
-    private static final String RAW_TLM_TABLE_URI_CONFIG_KEY = "telemetry.source.plugin.rawTlmTable.tableFile.uri";
+    private static final String RAW_TLM_TABLE_PATH_CONFIG_KEY = "telemetry.source.plugin.rawTlmTable.tableFile.path";
 
     private TimeCorrelationAppConfig config;
     private RawTelemetryTable rawTlmTable;
@@ -47,12 +46,7 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
         }
 
         this.config = config;
-
-        try {
-            this.rawTlmTable = new RawTelemetryTable(new URI(config.getString(RAW_TLM_TABLE_URI_CONFIG_KEY)));
-        } catch (URISyntaxException e) {
-            throw new MmtcException("Invalid URI syntax given in " + RAW_TLM_TABLE_URI_CONFIG_KEY, e);
-        }
+        this.rawTlmTable = new RawTelemetryTable(Paths.get(config.getString(RAW_TLM_TABLE_PATH_CONFIG_KEY)));
     }
 
     @Override

@@ -6,8 +6,6 @@ import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.*;
@@ -76,6 +74,8 @@ public class TimeCorrelationAppConfig {
     public static final String VCID_FILTER = "vcid";
     public static final String CONSEC_MC_FRAME_FILTER = "consecutiveMasterChannelFrames";
 
+    private final Path mmtcHome;
+
     private final CommandLineConfig cmdLineConfig;
     private final TimeCorrelationConfig timeCorrelationConfig;
     private final TelemetrySource telemetrySource;
@@ -90,6 +90,8 @@ public class TimeCorrelationAppConfig {
 
     public TimeCorrelationAppConfig(String... args) throws Exception {
         logger.debug("Loading configuration");
+
+        this.mmtcHome = Paths.get(System.getenv("MMTC_HOME")).toAbsolutePath();
 
         this.timeCorrelationConfig = new TimeCorrelationXmlPropertiesConfig();
 
@@ -135,6 +137,7 @@ public class TimeCorrelationAppConfig {
 
     public TimeCorrelationAppConfig() throws Exception {
         // Minimal constructor for use during rollback
+        this.mmtcHome = Paths.get(System.getenv("MMTC_HOME")).toAbsolutePath();
         this.timeCorrelationConfig = new TimeCorrelationXmlPropertiesConfig();
         this.telemetrySource = null;
         this.cmdLineConfig = null;
@@ -568,21 +571,6 @@ public class TimeCorrelationAppConfig {
     }
 
     /**
-     * Gets the telemetry source object. This is the abstract object that could be a telemetry server or a file.
-     *
-     * @return the URI of the SCLK/ERT data source
-     * @throws MmtcException if the telemetry source could not be determined
-     */
-    public URI getTelemetrySourceUri() throws MmtcException {
-        try {
-            return new URI(timeCorrelationConfig.getConfig().getString("telemetry.source.uri"));
-        }
-        catch (URISyntaxException ex) {
-            throw new MmtcException("Unable to parse URI", ex);
-        }
-    }
-
-    /**
      * Creates a container map that holds the filters that are to be applied in this run, excluding the
      * contact filter.
      * @return a map containing names and TimeCorrelationFilter instances; note this does not include the
@@ -687,14 +675,16 @@ public class TimeCorrelationAppConfig {
     /**
      * Gets the location of the output Raw Telemetry Table.
      * @return the path to the output Raw Telemetry Table
-     * @throws MmtcException if the location cannot be accessed
      */
-    public URI getRawTelemetryTableUri() throws MmtcException {
-        try {
-            return new URI(timeCorrelationConfig.getConfig().getString("table.rawTelemetryTable.uri"));
-        } catch (URISyntaxException ex) {
-            throw new MmtcException("Unable to parse URI", ex);
+    public Path getRawTelemetryTablePath() {
+        return ensureAbsolute(Paths.get(timeCorrelationConfig.getConfig().getString("table.rawTelemetryTable.path")));
+    }
+
+    public Path ensureAbsolute(Path path) {
+        if (! path.isAbsolute()) {
+            return mmtcHome.resolve(path);
         }
+        return path;
     }
 
     /**
@@ -786,43 +776,25 @@ public class TimeCorrelationAppConfig {
     /**
      * Gets the location of the output RunHistoryFile
      * @return the path to the input and output RunHistoryFile
-     * @throws MmtcException if the location cannot be accessed
      */
-    public URI getRunHistoryFileUri() throws MmtcException {
-        try {
-            return new URI(timeCorrelationConfig.getConfig().getString("table.runHistoryFile.uri"));
-        }
-        catch (URISyntaxException ex) {
-            throw new MmtcException("Unable to parse URI", ex);
-        }
+    public Path getRunHistoryFilePath() {
+        return ensureAbsolute(Paths.get(timeCorrelationConfig.getConfig().getString("table.runHistoryFile.path")));
     }
 
     /**
      * Gets the location of the output Summary Table.
      * @return the path to the input and output Summary Table
-     * @throws MmtcException if the location cannot be accessed
      */
-    public URI getSummaryTableUri() throws MmtcException {
-        try {
-            return new URI(timeCorrelationConfig.getConfig().getString("table.summaryTable.uri"));
-        }
-        catch (URISyntaxException ex) {
-            throw new MmtcException("Unable to parse URI", ex);
-        }
+    public Path getSummaryTablePath() {
+        return ensureAbsolute(Paths.get(timeCorrelationConfig.getConfig().getString("table.summaryTable.path")));
     }
 
     /**
      * Gets the location of the output Time History File.
      * @return the path to the output Time History File
-     * @throws MmtcException if the location cannot be accessed
      */
-    public URI getTimeHistoryFileUri() throws MmtcException {
-        try {
-            return new URI(timeCorrelationConfig.getConfig().getString("table.timeHistoryFile.uri"));
-        }
-        catch (URISyntaxException ex) {
-            throw new MmtcException("Unable to parse URI", ex);
-        }
+    public Path getTimeHistoryFilePath() {
+        return ensureAbsolute(Paths.get(timeCorrelationConfig.getConfig().getString("table.timeHistoryFile.path")));
     }
 
     public List<String> getTimeHistoryFileExcludeColumns() {

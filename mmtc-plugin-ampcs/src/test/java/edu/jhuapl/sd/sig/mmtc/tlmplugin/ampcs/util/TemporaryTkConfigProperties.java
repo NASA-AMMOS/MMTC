@@ -44,7 +44,7 @@ public class TemporaryTkConfigProperties implements AutoCloseable {
 
     public static TemporaryTkConfigProperties withTestTkPacketDescriptionFile(String baseConfigDir) throws IOException {
         Map<String, String> overrides = new HashMap<>();
-        overrides.put("telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri", "file://" + Paths.get("../mmtc-plugin-ampcs/src/test/resources/test_tk_pkt.xml").toAbsolutePath());
+        overrides.put("telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path", Paths.get("../mmtc-plugin-ampcs/src/test/resources/test_tk_pkt.xml").toAbsolutePath().toString());
         return new TemporaryTkConfigProperties(baseConfigDir, overrides);
     }
 

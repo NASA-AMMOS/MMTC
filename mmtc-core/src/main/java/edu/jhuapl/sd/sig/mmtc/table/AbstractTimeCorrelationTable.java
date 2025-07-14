@@ -6,11 +6,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.*;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -26,16 +23,16 @@ public abstract class AbstractTimeCorrelationTable {
     CSVParser parser;
 
     /**
-     * Create the table file object from the specified URI.
+     * Create the table file object from the specified path.
      *
-     * @param uri the path to the table
+     * @param path the path to the table
      */
-    AbstractTimeCorrelationTable(URI uri) {
-        setUri(uri);
+    AbstractTimeCorrelationTable(Path path) {
+        setPath(path);
     }
 
-    protected void setUri(URI uri) {
-        file = new File(uri.getPath());
+    protected void setPath(Path path) {
+        file = path.toFile();
     }
 
     protected File getFile() { return this.file; }

@@ -137,15 +137,15 @@ public class TimeCorrelationApp {
         }
         currentSclkKernel.readSourceProduct();
 
-        rawTlmTable = new RawTelemetryTable(config.getRawTelemetryTableUri());
+        rawTlmTable = new RawTelemetryTable(config.getRawTelemetryTablePath());
 
-        summaryTable = new SummaryTable(config.getSummaryTableUri());
+        summaryTable = new SummaryTable(config.getSummaryTablePath());
         summaryTableRecord = new TableRecord(summaryTable.getHeaders());
 
-        timeHistoryFile = new TimeHistoryFile(config.getTimeHistoryFileUri(), config.getTimeHistoryFileExcludeColumns());
+        timeHistoryFile = new TimeHistoryFile(config.getTimeHistoryFilePath(), config.getTimeHistoryFileExcludeColumns());
         timeHistoryFileRecord = new TableRecord(timeHistoryFile.getHeaders());
 
-        runHistoryFile = new RunHistoryFile(config.getRunHistoryFileUri());
+        runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath());
         runHistoryFileRecord = new TableRecord(runHistoryFile.getHeaders());
         recordRunHistoryFileBeforeValues();
 
@@ -1220,7 +1220,7 @@ public class TimeCorrelationApp {
         );
 
         writeRunHistoryFileAfterRun();
-        logger.info(String.format("Run at %s recorded to %s", appRunTime, config.getRunHistoryFileUri().toString()));
+        logger.info(String.format("Run at %s recorded to %s", appRunTime, config.getRunHistoryFilePath().toString()));
 
         logger.info(USER_NOTICE, "MMTC completed successfully.");
     }

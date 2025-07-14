@@ -3,7 +3,6 @@ package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.time.OffsetDateTime;
@@ -188,10 +187,10 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     protected boolean packetsHaveDownlinkDataRate() throws MmtcException {
         try {
             return new TimekeepingPacketParser(
-                    new URI(ampcsConfig.getTkPacketDescriptionFile())
+                    ampcsConfig.getTkPacketDescriptionFilePath()
             ).packetsHaveDownlinkDataRate();
         } catch (Exception e) {
-            throw new MmtcException("Unable to read or parse packet definition file " + ampcsConfig.getTkPacketDescriptionFile(), e);
+            throw new MmtcException("Unable to read or parse packet definition file " + ampcsConfig.getTkPacketDescriptionFilePath(), e);
 
         }
     }
@@ -199,10 +198,10 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     protected boolean packetsHaveInvalidFlag() throws MmtcException {
         try {
             return new TimekeepingPacketParser(
-                    new URI(ampcsConfig.getTkPacketDescriptionFile())
+                    ampcsConfig.getTkPacketDescriptionFilePath()
             ).packetsHaveInvalidFlag();
         } catch (Exception e) {
-            throw new MmtcException("Unable to read or parse packet definition file " + ampcsConfig.getTkPacketDescriptionFile());
+            throw new MmtcException("Unable to read or parse packet definition file " + ampcsConfig.getTkPacketDescriptionFilePath());
         }
     }
 

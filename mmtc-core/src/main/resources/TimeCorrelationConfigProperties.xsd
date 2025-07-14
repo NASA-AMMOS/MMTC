@@ -127,11 +127,11 @@
       <xs:enumeration value="filter.consecutiveMasterChannelFrames.enabled" />
 
       <!-- File locations -->
-      <xs:enumeration value="table.runHistoryFile.uri"/>
-      <xs:enumeration value="table.rawTelemetryTable.uri"/>
+      <xs:enumeration value="table.runHistoryFile.path"/>
+      <xs:enumeration value="table.rawTelemetryTable.path"/>
       <xs:enumeration value="table.rawTelemetryTable.dateTimePattern"/>
-      <xs:enumeration value="table.summaryTable.uri"/>
-      <xs:enumeration value="table.timeHistoryFile.uri"/>
+      <xs:enumeration value="table.summaryTable.path"/>
+      <xs:enumeration value="table.timeHistoryFile.path"/>
       <xs:enumeration value="table.timeHistoryFile.excludeColumns"/>
       <xs:enumeration value="table.timeHistoryFile.scetUtcPrecision"/>
       <xs:enumeration value="product.sclkScetFile.create"/>

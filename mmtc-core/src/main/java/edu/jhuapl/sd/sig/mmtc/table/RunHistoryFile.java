@@ -5,7 +5,7 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.IOException;
-import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,8 +34,8 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public static final String PRERUN_UPLINKCMD = "Latest Uplink Command File Pre-run";
     public static final String POSTRUN_UPLINKCMD = "Latest Uplink Command File Post-run";
 
-    public RunHistoryFile(URI uri) {
-        super(uri);
+    public RunHistoryFile(Path path) {
+        super(path);
     }
 
     @Override

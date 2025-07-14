@@ -234,14 +234,14 @@ by modifying the key
 
 [source, xml]
 ----
-<entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri">file:///opt/local/mmtc/RawTelemetryTable_NH_reformatted.csv</entry>
+<entry key="telemetry.source.plugin.rawTlmTable.tableFile.path">/opt/local/mmtc/RawTelemetryTable_NH_reformatted.csv</entry>
 ----
 
 to:
 
 [source, xml]
 ----
-<entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri">file:///[MMTC Demo directory\]/RawTelemetryTable_NH_reformatted.csv</entry>
+<entry key="telemetry.source.plugin.rawTlmTable.tableFile.path">/[MMTC Demo directory\]/RawTelemetryTable_NH_reformatted.csv</entry>
 ----
 
 
@@ -745,7 +745,7 @@ Plugins that aren't included with MMTC and which are obtained from other sources
 
 MMTC creates and writes to a cumulative output file called the Raw Telemetry Table. The Raw Telemetry Table stores a record of the raw time correlation data that were used to perform all previous time correlations. MMTC appends to it each time it runs. This file can also serve as an input, thus allowing time correlation computations to be rerun. This is useful in I&T environments where TK packets are not available or when there is a need to reprocess time correlations. This need can arise due to errors having occurred in the previous runs or when an improved spacecraft ephemeris is available that will provide for more accuracy.
 
-When the *telemetry.source.name* configuration parameter is set to `rawTlmTable`, MMTC will read its input from the Raw Telemetry Table indicated in the *telemetry.source.plugin.rawTlmTable.tableFile.uri* configuration parameter. The fields in the Time History File that would normally contain ancillary data from telemetry will be empty.
+When the *telemetry.source.name* configuration parameter is set to `rawTlmTable`, MMTC will read its input from the Raw Telemetry Table indicated in the *telemetry.source.plugin.rawTlmTable.tableFile.path* configuration parameter. The fields in the Time History File that would normally contain ancillary data from telemetry will be empty.
 
 === AMPCS Telemetry Sources
 
@@ -812,7 +812,7 @@ A set of Time Correlation (TK) packets received from spacecraft telemetry is the
 
 As in the case of the Europa Clipper mission, the TK packet may also contain a validity flag, the frame encoding method, and the downlink data rate.
 
-The structure of the TK packet is defined in the TK Packet Description file. This is an XML file that conforms to the *tk_packet.xsd* schema (see section 8.3). This packet defines the bit offsets from the beginning of the packet of each field, their lengths in bits, and their expected type. Type for all fields is expected to be UNSIGNED_INT except for DownlinkDataRate which can be UNSIGNED_INT, SINGLE_FLOAT, or DOUBLE_FLOAT. This file must be customized for each mission. The name and location of this file is given in *telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri* within the configuration parameters.
+The structure of the TK packet is defined in the TK Packet Description file. This is an XML file that conforms to the *tk_packet.xsd* schema (see section 8.3). This packet defines the bit offsets from the beginning of the packet of each field, their lengths in bits, and their expected type. Type for all fields is expected to be UNSIGNED_INT except for DownlinkDataRate which can be UNSIGNED_INT, SINGLE_FLOAT, or DOUBLE_FLOAT. This file must be customized for each mission. The name and location of this file is given in *telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path* within the configuration parameters.
 
 ==== Channelized Time Correlation Parameters
 
@@ -1088,7 +1088,7 @@ If the ConsecutiveFrameFilter is enabled, this must be set to a specific positiv
 |REQUIRED
 |STR
 |Indicates which telemetry source to use. A value of "rawTlmTable" causes MMTC to use the Raw Telemetry Table specified by telemetry.source.plugin.
-rawTlmTable.tableFile.uri; this would generally only be useful in test venues or if a previous run needs to be reprocessed. Otherwise, valid values depend on the telemetry source plugin specified by telemetry.source.pluginDirectory and telemetry.
+This would generally only be useful in test venues or if a previous run needs to be reprocessed. Otherwise, valid values depend on the telemetry source plugin specified by telemetry.source.pluginDirectory and telemetry.
 source.pluginJarPrefix; consult the plugin provider for instructions.
 When using the AMPCS plugin that ships with MMTC, valid values for telemetry.source.name are “AmpcsTlmArchive” and “AmpcsTlmWithFrames”:
 
@@ -1097,10 +1097,10 @@ When using the AMPCS plugin that ships with MMTC, valid values for telemetry.sou
 • AmpcsTlmWithFrames: Query supplemental sample information from a TK packet. Query the target sample information from the frame referenced from within the TK packet. Use if consecutive TK packets are not available. NOTE: In this mode, the TK packets must contain the downlink data rate in bps.
 
 
-|telemetry.source.plugin.rawTlmTable.tableFile.uri
+|telemetry.source.plugin.rawTlmTable.tableFile.path
 |CONDITIONAL
 |STR
-|The fully qualified path to the input Raw Telemetry Table file. This parameter is ignored if telemetry.
+|The path to the input Raw Telemetry Table file. This parameter is ignored if telemetry.
 source.name is not set to rawTlmTable.
 
 |telemetry.source.pluginDirectory
@@ -1306,25 +1306,30 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 
 4+^|*The following parameters relate to the location and contents of MMTC output products*
 
-|table.rawTelemetryTable.uri
+|table.runHistoryFile.path
 |REQUIRED
 |STR
-|The desired URI of the output Raw Telemetry Table file. This file and the Summary Table are commonly co-located.
+|The desired path of the Run History File.  This file and other output tables are commonly co-located.
+
+|table.rawTelemetryTable.path
+|REQUIRED
+|STR
+|The desired path of the output Raw Telemetry Table file. This file and the Summary Table are commonly co-located.
 
 |table.rawTelemetryTable.dateTimePattern
 |REQUIRED
 |STR
 |The pattern that is used to parse ERTs from query metadata and to write ERT to the RawTlmTable in calendar string date/time form (e.g., ISO DOY format: “yyyy-DDD’T’HH:mm:ss.SSSSSS”).
 
-|table.summaryTable.uri
+|table.summaryTable.path
 |REQUIRED
 |STR
-|The desired URI of the output Summary Table file. This file and the Raw Telemetry Table are commonly co-located.
+|The desired path of the output Summary Table file. This file and the Raw Telemetry Table are commonly co-located.
 
-|table.timeHistoryFile.uri
+|table.timeHistoryFile.path
 |REQUIRED
 |STR
-|The desired URI of the output Time History File.
+|The desired path of the output Time History File.
 
 |table.timeHistoryFile.excludeColumns
 |OPTIONAL
@@ -1440,7 +1445,7 @@ The parameters in the table below are only applicable to missions using AMPCS wh
 |INT
 |The size in bytes of the TK packet, excluding the primary packet header minus 1. In other words, the size of the data portion of the packet, which includes the secondary header, minus 1.
 
-|telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri
+|telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path
 |REQUIRED
 |STR
 |The path to the XML file that describes the TK packet.
@@ -1672,7 +1677,7 @@ At a minimum, the TK packet must contain a coarse SCLK value and a fine SCLK val
 
 The user is reminded that the SCLK Coarse and SCLK Fine values are associated with the target frame, NOT the frame containing the TK packet. The target frame is usually, but not always, the frame that immediately precedes the supplemental frame (i.e., the one containing the TK packet) in the telemetry sequence. In other words, the VCFC of the target frame is a set number of counts (usually just 1) less than that of the supplemental frame. The number of frames that the supplemental frame follows the target frame is specified in the *telemetry.supplementalSampleOffset* configuration parameter.
 
-The structure of TK packets is mission-specific. Each mission must describe its TK packets using a TK Packet Description XML file that implements the *tk_packet.xsd* schema provided with the MMTC distribution. The full path to the TK Packet Description file is indicated in the *telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri* configuration parameter. Not all of the fields are applicable for all missions; however all missions must provide at minimum the SCLK Coarse and SCLK Fine fields in order to process. See Appendix H. for an example of a TK Packet Description file.
+The structure of TK packets is mission-specific. Each mission must describe its TK packets using a TK Packet Description XML file that implements the *tk_packet.xsd* schema provided with the MMTC distribution. The full path to the TK Packet Description file is indicated in the *telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path* configuration parameter. Not all of the fields are applicable for all missions; however all missions must provide at minimum the SCLK Coarse and SCLK Fine fields in order to process. See Appendix H. for an example of a TK Packet Description file.
 
 The primary purpose of the definition file is to specify the locations and bit lengths of these fields within the packet so that the MMTC can decom them. Each field given in the definition file is identified by a name, the offset from the beginning of the packet (normally the first bit of the primary packet header), and the length of the field in bits.
 
