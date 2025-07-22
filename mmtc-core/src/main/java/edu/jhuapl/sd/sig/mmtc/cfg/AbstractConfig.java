@@ -1,17 +1,19 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
+import java.nio.file.Path;
+
 /**
  * Defines an abstract class for configuration files.
  */
 abstract class AbstractConfig implements IConfiguration {
-    String path;
+    Path path;
 
     /**
      * Create the configuration object with the specified filename.
      *
      * @param path the name of the configuration file
      */
-    AbstractConfig(final String path) {
+    AbstractConfig(final Path path) {
         this.path = path;
     }
 
@@ -27,13 +29,13 @@ abstract class AbstractConfig implements IConfiguration {
      *
      * @param filepath the full path to the configuration file
      */
-    void setPath(String filepath) {
+    void setPath(Path filepath) {
         this.path = filepath;
     }
     /**
      * @return the properties configuration filename
      */
-    String getPath() {
+    Path getPath() {
         return path;
     }
 }

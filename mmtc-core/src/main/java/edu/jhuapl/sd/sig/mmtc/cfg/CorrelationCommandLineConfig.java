@@ -20,13 +20,7 @@ import java.util.stream.Collectors;
 /**
  * Defines the command line configuration options for the MMTC application.
  */
-public class CommandLineConfig implements IConfiguration {
-    public enum PrimaryApplicationCommand {
-        CORRELATION,
-        ROLLBACK,
-        CREATE_SANDBOX
-    }
-
+public class CorrelationCommandLineConfig implements IConfiguration {
     private HelpFormatter help = new HelpFormatter();
     private Options opts = new Options();
     private CommandLine cmdLine;
@@ -44,21 +38,11 @@ public class CommandLineConfig implements IConfiguration {
 
     private static final Logger logger = LogManager.getLogger();
 
-    public static PrimaryApplicationCommand determineApplicationMode(String... args) {
-        if (args[0].equalsIgnoreCase("rollback")) {
-            return PrimaryApplicationCommand.ROLLBACK;
-        } else if (args[0].equalsIgnoreCase("create-sandbox")) {
-            return PrimaryApplicationCommand.CREATE_SANDBOX;
-        } else {
-            return PrimaryApplicationCommand.CORRELATION;
-        }
-    }
-
-    CommandLineConfig(String[] args) {
+    CorrelationCommandLineConfig(String[] args) {
         this(args, Collections.emptyList());
     }
 
-    CommandLineConfig(String[] args, Collection<Option> additionalOptions) {
+    CorrelationCommandLineConfig(String[] args, Collection<Option> additionalOptions) {
         OptionGroup clockChangeRateGroup = new OptionGroup();
 
         clockChangeRateGroup.addOption(Option.builder()

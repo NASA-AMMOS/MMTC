@@ -12,7 +12,6 @@ import java.util.*;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.CommandLineConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig.ClockChangeRateMode;
 import edu.jhuapl.sd.sig.mmtc.filter.ContactFilter;
@@ -91,11 +90,6 @@ public class TimeCorrelationApp {
     // The version number of the new SCLK Kernel and new SCLK/SCET file in the filenames.
     private String newVersionStr = "";
 
-    private TimeCorrelationApp(String[] args) throws Exception {
-        this.config = new TimeCorrelationAppConfig(args);
-        this.tlmSource = config.getTelemetrySource();
-    }
-
     private TimeCorrelationApp(TimeCorrelationAppConfig config) throws Exception {
         this.config = config;
         this.tlmSource = config.getTelemetrySource();
@@ -124,7 +118,7 @@ public class TimeCorrelationApp {
 
         logger.info("SPICE kernels loaded:\n" + String.join("\n", TimeConvert.getLoadedKernelNames()));
 
-        currentSclkKernel = new SclkKernel(config.getSclkKernelPath().toString());
+        currentSclkKernel = new SclkKernel(config.getInputSclkKernelPath().toString());
         logger.info("Loaded SCLK kernel: " + currentSclkKernel.getPath() + ".");
 
         // Check that the SCLK is a 2-stage clock. Only 2-stage clocks are currently supported. The number of
@@ -1234,10 +1228,18 @@ public class TimeCorrelationApp {
         logger.info(USER_NOTICE, String.format("************ %s version %s ************", MMTC_TITLE, BUILD_INFO.version));
         logger.info(USER_NOTICE, String.format("Commit %s built at %s", BUILD_INFO.commit, BUILD_INFO.buildDate));
 
-        switch (CommandLineConfig.determineApplicationMode(args)) {
+        TimeCorrelationAppConfig config = null;
+        try {
+            config = new TimeCorrelationAppConfig(args);
+        } catch (Exception e) {
+            logger.fatal("MMTC initialization failed.", e);
+            System.exit(1);
+        }
+
+        switch (config.getPrimaryCommand()) {
             case CORRELATION: {
                 try {
-                    TimeCorrelationApp app = new TimeCorrelationApp(args);
+                    TimeCorrelationApp app = new TimeCorrelationApp(config);
                     app.init();
                     try {
                         app.run();
@@ -1254,7 +1256,7 @@ public class TimeCorrelationApp {
             case ROLLBACK: {
                 logger.info(USER_NOTICE, String.format("Rollback invoked by command %s, starting rollback process", Arrays.toString(args)));
                 try {
-                    TimeCorrelationRollback rollbackInstance = new TimeCorrelationRollback();
+                    TimeCorrelationRollback rollbackInstance = new TimeCorrelationRollback(config);
                     rollbackInstance.rollback();
                 } catch (Exception e) {
                     logger.fatal("Rollback failed.", e);
@@ -1265,9 +1267,9 @@ public class TimeCorrelationApp {
             case CREATE_SANDBOX: {
                 logger.info(USER_NOTICE, String.format("Creating new sandbox at %s", Arrays.toString(args)));
                 try {
-                    TimeCorrelationSandboxCreator.createSandbox();
+                    new TimeCorrelationSandboxCreator(config).create();
                 } catch (Exception e) {
-                    logger.fatal("Sandbox creation failed failed.", e);
+                    logger.fatal("Sandbox creation failed.", e);
                     System.exit(1);
                 }
             }

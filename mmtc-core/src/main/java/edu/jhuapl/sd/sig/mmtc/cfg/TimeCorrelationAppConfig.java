@@ -75,10 +75,12 @@ public class TimeCorrelationAppConfig {
     public static final String CONSEC_MC_FRAME_FILTER = "consecutiveMasterChannelFrames";
 
     private final Path mmtcHome;
-
-    private final CommandLineConfig cmdLineConfig;
+    private final CorrelationCommandLineConfig.PrimaryApplicationCommand primaryCommand;
     private final TimeCorrelationConfig timeCorrelationConfig;
-    private final TelemetrySource telemetrySource;
+
+    private CorrelationCommandLineConfig cmdLineConfig;
+
+    private TelemetrySource telemetrySource;
 
     private GroundStationMap groundStationMap;
     private SclkPartitionMap sclkPartitionMap;
@@ -99,9 +101,30 @@ public class TimeCorrelationAppConfig {
             throw new MmtcException("Error loading " + timeCorrelationConfig.getPath());
         }
 
+        this.primaryCommand = CorrelationCommandLineConfig.determineApplicationMode(args);
+        switch(this.primaryCommand) {
+            case CORRELATION:
+                loadForCorrelation();
+                break;
+            case ROLLBACK:
+                loadForRollback();
+                break;
+            case CREATE_SANDBOX:
+                loadForSandbox();
+                break;
+            default:
+                throw new MmtcException("No such application mode: " + mode);
+        }
+    }
+
+    public CorrelationCommandLineConfig.PrimaryApplicationCommand getPrimaryCommand() {
+        return primaryCommand;
+    }
+
+    private void loadForCorrelation() throws Exception {
         this.telemetrySource = this.initTlmSource();
 
-        this.cmdLineConfig = new CommandLineConfig(args, this.telemetrySource.getAdditionalCliArguments());
+        this.cmdLineConfig = new CorrelationCommandLineConfig(args, this.telemetrySource.getAdditionalCliArguments());
 
         if (! cmdLineConfig.load()) {
             throw new MmtcException("Error parsing command line arguments.");
@@ -133,18 +156,6 @@ public class TimeCorrelationAppConfig {
         this.telemetrySource.applyConfiguration(this);
 
         logger.debug(toString());
-    }
-
-    public TimeCorrelationAppConfig() throws Exception {
-        // Minimal constructor for use during rollback
-        this.mmtcHome = Paths.get(System.getenv("MMTC_HOME")).toAbsolutePath();
-        this.timeCorrelationConfig = new TimeCorrelationXmlPropertiesConfig();
-        this.telemetrySource = null;
-        this.cmdLineConfig = null;
-
-        if (! timeCorrelationConfig.load()) {
-            throw new MmtcException("Error loading " + timeCorrelationConfig.getPath());
-        }
     }
 
     public TelemetrySource getTelemetrySource() {
@@ -509,7 +520,7 @@ public class TimeCorrelationAppConfig {
         // the file pattern given in the configuration parameters, unless spice.kernel.sclk.inputPathOverride
         // is set in the configuration parameters. The inputPathOverride parameter overrides the normal
         // previous SCLK kernel search.
-        kernels.put(getSclkKernelPath().toString(), "sclk");
+        kernels.put(getInputSclkKernelPath().toString(), "sclk");
 
         // Leap seconds kernel
         if (timeCorrelationConfig.getConfig().containsKey("spice.kernel.lsk.path")) {
@@ -827,7 +838,7 @@ public class TimeCorrelationAppConfig {
      * @return the path to the input SCLK kernel
      * @throws MmtcException if the SCLK path is invalid
      */
-    public Path getSclkKernelPath() throws MmtcException {
+    public Path getInputSclkKernelPath() throws MmtcException {
         Path result;
 
         // If the SCLK override is specified by this configuration parameter, use that SCLK kernel.
@@ -1158,19 +1169,19 @@ public class TimeCorrelationAppConfig {
     }
 
     /**
-     * Gets the full file specification (director/name) of the input Ground Stations Map file.
+     * Gets the full file specification (directory/name) of the input Ground Stations Map file.
      * @return the ground station map file path
      */
-    public String getGroundStationMapPath() {
-        return timeCorrelationConfig.getConfig().getString("groundStationMap.path");
+    public Path getGroundStationMapPath() {
+        return Paths.get(timeCorrelationConfig.getConfig().getString("groundStationMap.path"));
     }
 
     /**
-     * Gets the full file specification (director/name) of the input SCLK Partition Map file.
+     * Gets the full file specification (directory/name) of the input SCLK Partition Map file.
      * @return the SCLK partition map file path
      */
-    public String getSclkPartitionMapPath() {
-        return timeCorrelationConfig.getConfig().getString("sclkPartitionMap.path");
+    public Path getSclkPartitionMapPath() {
+        return Paths.get(timeCorrelationConfig.getConfig().getString("sclkPartitionMap.path"));
     }
 
     public List<String> getValidOscillatorIds() {

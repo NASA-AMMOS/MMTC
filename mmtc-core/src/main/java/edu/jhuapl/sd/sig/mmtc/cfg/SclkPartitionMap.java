@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -44,7 +45,7 @@ public class SclkPartitionMap extends AbstractConfig {
      * Class constructor
      * @param sclkPartionMapPath IN:the path to the SCLK partion map file
      */
-    public SclkPartitionMap(String sclkPartionMapPath) {
+    public SclkPartitionMap(Path sclkPartionMapPath) {
         super(sclkPartionMapPath);
     }
 
@@ -57,10 +58,11 @@ public class SclkPartitionMap extends AbstractConfig {
         try {
             logger.info("Loading SCLK Partition Map: " + this.path);
 
-            File file = new File(this.path);
-
-            CSVParser parser = CSVParser.parse(file, Charset.forName("utf-8"),
-                    CSVFormat.DEFAULT.withFirstRecordAsHeader().withTrim());
+            CSVParser parser = CSVParser.parse(
+                    this.path,
+                    Charset.forName("utf-8"),
+                    CSVFormat.DEFAULT.withFirstRecordAsHeader().withTrim()
+            );
 
             partitions = new TreeMap<>();
 
