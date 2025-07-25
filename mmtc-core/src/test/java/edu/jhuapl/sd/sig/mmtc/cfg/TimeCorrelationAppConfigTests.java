@@ -183,6 +183,40 @@ class TimeCorrelationAppConfigTests {
 		}
 	}
 
+	@Test
+	void testFailsConfigDueToMissingSclkScetKey() throws Exception {
+		try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
+			mockedEnvironment
+					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
+					.thenReturn("src/test/resources/ConfigTests/missingSclkScetKey");
+			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+
+			MmtcException resultingException = assertThrows(
+					MmtcException.class,
+					config::validate
+			);
+
+			assertEquals("If SCLK-SCET file creation is enabled, the following keys must be set: [product.sclkScetFile.producerId, product.sclkScetFile.scetUtcPrecision]", resultingException.getMessage());
+		}
+	}
+
+	@Test
+	void testFailsConfigDueToMissingUplinkCmdFileKey() throws Exception {
+		try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
+			mockedEnvironment
+					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
+					.thenReturn("src/test/resources/ConfigTests/missingUplinkCmdFileKey");
+			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+
+			MmtcException resultingException = assertThrows(
+					MmtcException.class,
+					config::validate
+			);
+
+			assertEquals("If uplink command file creation is enabled, the following keys must be set: [product.uplinkCmdFile.outputDir]", resultingException.getMessage());
+		}
+	}
+
 	private static Set<Integer> set(Integer... ints) {
 		return new HashSet<>(Arrays.asList(ints));
 	}

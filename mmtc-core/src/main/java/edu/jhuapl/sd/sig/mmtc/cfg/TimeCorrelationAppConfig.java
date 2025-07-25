@@ -1369,7 +1369,8 @@ public class TimeCorrelationAppConfig {
             "product.sclkScetFile.separator",
             "product.sclkScetFile.suffix",
             "product.sclkScetFile.datasetId",
-            "product.sclkScetFile.producerId"
+            "product.sclkScetFile.producerId",
+            "product.sclkScetFile.scetUtcPrecision"
     );
 
     private static final List<String> REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP = Arrays.asList(
