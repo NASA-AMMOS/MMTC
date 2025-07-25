@@ -70,7 +70,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public List<TableRecord> readRecords(RollbackEntryOption option) throws MmtcException {
         List<TableRecord> records = new ArrayList<>();
         if (!this.getFile().exists()) {
-            throw new MmtcException("No such file: " + this.getFile().toString());
+            return records;
         }
 
         resetParser();
