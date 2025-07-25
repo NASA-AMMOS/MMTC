@@ -17,8 +17,8 @@ dependencies {
         "configuration" to "precompiledClasses"
     )))
 
-    implementation("commons-beanutils:commons-beanutils:1.9.3")
-    implementation("org.apache.commons:commons-configuration2:2.4")
+    implementation("commons-beanutils:commons-beanutils:1.11.0")
+    implementation("org.apache.commons:commons-configuration2:2.12.0")
     implementation(libs.commons.cli)
     implementation(libs.commons.csv)
     implementation(libs.commons.lang3)
@@ -29,6 +29,7 @@ dependencies {
     testImplementation(testlibs.junit.jupiter.api)
     testImplementation(testlibs.junit.jupiter.params)
     testImplementation(testlibs.junit.jupiter.engine)
+    testRuntimeOnly(testlibs.junit.platform.launcher)
     testImplementation(testlibs.mockito.inline)
 }
 
