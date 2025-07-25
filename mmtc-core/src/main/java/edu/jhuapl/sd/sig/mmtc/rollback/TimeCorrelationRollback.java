@@ -52,8 +52,7 @@ public class TimeCorrelationRollback {
                         )
                 );
             } else {
-                System.out.println("SCLK-SCET file information is present in the Run History File, but SCLK-SCET configuration is not fully specified in the configuration file.");
-                throw new MmtcRollbackException("Rollback aborted due to inconsistent state, no changes made.  Please resolve and retry.");
+                throw new MmtcRollbackException("Rollback aborted due to inconsistent state: SCLK-SCET file information is present in the Run History File, but SCLK-SCET configuration is not fully specified in the configuration file.  No changes were made.  Please resolve and retry.");
             }
         } else {
             // if it hasn't, then no need to check configuration, and don't operate on them
@@ -71,8 +70,7 @@ public class TimeCorrelationRollback {
                         )
                 );
             } else {
-                System.out.println("Uplink command file information is present in the Run History File, but uplink command file configuration is not fully specified in the configuration file.");
-                throw new MmtcRollbackException("Rollback aborted due to inconsistent state, no changes made.  Please resolve and retry.");
+                throw new MmtcRollbackException("Rollback aborted due to inconsistent state: Uplink command file information is present in the Run History File, but uplink command file configuration is not fully specified in the configuration file.  No changes were made.  Please resolve and retry.");
             }
         } else {
             // if it hasn't, then no need to check configuration, and don't operate on them
