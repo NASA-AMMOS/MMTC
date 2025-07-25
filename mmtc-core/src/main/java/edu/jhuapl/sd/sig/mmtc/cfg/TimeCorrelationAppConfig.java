@@ -1294,6 +1294,12 @@ public class TimeCorrelationAppConfig {
         return timeCorrelationConfig.getConfig().getInt("telemetry.sampleSetBuildingStrategy.sampling.samplingRateMinutes");
     }
 
+    /**
+     * Validate that the configuration is complete: all required keys are present, and for any optional products that
+     * are enabled, that they have their required config keys populated
+     *
+     * @throws MmtcException if the MMTC configuration is incomplete
+     */
     public void validate() throws MmtcException {
         // Validate that all required config keys are present
         validateRequiredConfigKeys(BASE_CONFIG_FILENAME);
