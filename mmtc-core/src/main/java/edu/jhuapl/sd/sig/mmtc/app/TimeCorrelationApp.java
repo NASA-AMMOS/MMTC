@@ -576,7 +576,7 @@ public class TimeCorrelationApp {
      */
     private void recordRunHistoryFileBeforeValues() throws MmtcException {
         int newRunId;
-        List<TableRecord> prevRuns = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS);
+        List<TableRecord> prevRuns = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS);
         if (prevRuns.isEmpty()) {
             newRunId = 1;
         } else {

@@ -99,8 +99,8 @@ public class TimeCorrelationRollback {
         uplinkFiles.ifPresent(textProducts::add);
 
         Scanner scanner = new Scanner(System.in);
-        List<TableRecord> rawRunHistoryRecords = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS); // Will be used to rewrite complete RunHistoryFile
-        List<TableRecord> runHistoryRecords = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS); // Will be used for rollback and shouldn't include rolled back entries
+        List<TableRecord> rawRunHistoryRecords = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS); // Will be used to rewrite complete RunHistoryFile
+        List<TableRecord> runHistoryRecords = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS); // Will be used for rollback and shouldn't include rolled back entries
         logger.info(USER_NOTICE, String.format("...MMTC v.%s...\n", TimeCorrelationApp.BUILD_INFO.version));
         System.out.printf("Initiating rollback. %d most recent runs: \n", ROLLBACK_WINDOW_SIZE);
         for (int i = runHistoryRecords.size() - 1; i >= Math.max(runHistoryRecords.size() - ROLLBACK_WINDOW_SIZE, 0); i--) {

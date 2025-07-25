@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public enum RollbackEntryOption {
@@ -64,12 +65,12 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
      * flag.
      * @param option specifies whether RunHistory entries previously involved in rollback will also be returned
      * @return A list of existing runs/entries/rows as TableRecords or an empty list if the file doesn't exist yet
-     * @throws MmtcRollbackException if the table exists but can't be parsed
+     * @throws MmtcException if the table exists but can't be parsed
      */
-    public List<TableRecord> readRunHistoryFile(RollbackEntryOption option) throws MmtcException {
+    public List<TableRecord> readRecords(RollbackEntryOption option) throws MmtcException {
         List<TableRecord> records = new ArrayList<>();
-        if(!this.getFile().exists()) {
-            return records;
+        if (!this.getFile().exists()) {
+            throw new MmtcException("No such file: " + this.getFile().toString());
         }
 
         resetParser();
@@ -94,7 +95,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     }
 
     public Optional<String> readLatestValueOf(String columnName, RollbackEntryOption option) throws MmtcException {
-        List<TableRecord> recs = readRunHistoryFile(option);
+        List<TableRecord> recs = readRecords(option).stream().filter(r -> ! r.getValue(columnName).equals("-")).collect(Collectors.toList());
         if (! recs.isEmpty()) {
             return Optional.of(recs.get(recs.size() - 1).getValue(columnName));
         } else {
@@ -103,7 +104,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     }
 
     public boolean anyValuesInColumn(String columnName) throws MmtcException {
-        List<TableRecord> recs = readRunHistoryFile(RollbackEntryOption.INCLUDE_ROLLBACKS);
+        List<TableRecord> recs = readRecords(RollbackEntryOption.INCLUDE_ROLLBACKS);
         return recs.stream().anyMatch(r -> ! r.getValue(columnName).equals("-"));
     }
 }
