@@ -1,8 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.rollback;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.table.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import static edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp.USER_NOTICE;
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 public class TimeCorrelationRollback {
     public static final int ROLLBACK_WINDOW_SIZE = 10;
@@ -26,8 +26,8 @@ public class TimeCorrelationRollback {
     private final OutputProduct sclkscetFiles;
     private final OutputProduct uplinkFiles;
 
-    public TimeCorrelationRollback() throws Exception {
-        TimeCorrelationAppConfig config = new TimeCorrelationAppConfig();
+    public TimeCorrelationRollback(String... args) throws Exception {
+        RollbackConfig config = new RollbackConfig();
         
         this.runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath());
 
@@ -49,7 +49,6 @@ public class TimeCorrelationRollback {
         this.uplinkFiles = new OutputProduct(RunHistoryFile.POSTRUN_UPLINKCMD,
                 Paths.get(config.getUplinkCmdFileDir()).toAbsolutePath(),
                 config.getUplinkCmdFileBasename());
-
     }
 
     /**
@@ -66,7 +65,7 @@ public class TimeCorrelationRollback {
         Scanner scanner = new Scanner(System.in);
         List<TableRecord> rawRunHistoryRecords = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS); // Will be used to rewrite complete RunHistoryFile
         List<TableRecord> runHistoryRecords = runHistoryFile.readRunHistoryFile(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS); // Will be used for rollback and shouldn't include rolled back entries
-        logger.info(USER_NOTICE, String.format("...MMTC v.%s...\n", TimeCorrelationApp.BUILD_INFO.version));
+        logger.info(USER_NOTICE, String.format("...MMTC v.%s...\n", MmtcCli.BUILD_INFO.version));
         System.out.printf("Initiating rollback. %d most recent runs: \n", ROLLBACK_WINDOW_SIZE);
         for (int i = runHistoryRecords.size() - 1; i >= Math.max(runHistoryRecords.size() - ROLLBACK_WINDOW_SIZE, 0); i--) {
             TableRecord currentRecord = runHistoryRecords.get(i);

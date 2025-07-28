@@ -991,4 +991,11 @@ public class TimeConvertTests {
         kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
         TimeConvert.loadSpiceKernels(kernelsToLoad);
     }
+
+    @Test
+    public void testBeginsWithYear() {
+        assertTrue(TimeConvert.beginsWithYear("2017-342T00:00:00"));
+        assertTrue(TimeConvert.beginsWithYear("2017"));
+        assertFalse(TimeConvert.beginsWithYear("foobar"));
+    }
 }

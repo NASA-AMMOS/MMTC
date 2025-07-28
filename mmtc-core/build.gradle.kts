@@ -71,7 +71,7 @@ val uberJar = tasks.register<Jar>("uberJar") {
 
     manifest {
         attributes(
-                "Main-Class" to "edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp",
+                "Main-Class" to "edu.jhuapl.sd.sig.mmtc.app.MmtcCli",
                 "Build-Date" to Instant.now().toString(),
                 "Implementation-Version" to project.version,
                 "Implementation-Title" to project.name

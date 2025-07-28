@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
+import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig.ClockChangeRateMode;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.commons.cli.*;
@@ -93,8 +93,6 @@ public class CorrelationCommandLineConfig implements IConfiguration {
                 "Run in test mode, which allows the user to override one-way-light-time."
         );
 
-        opts.addOption("v", "version", false, "Print the MMTC version number.");
-
         opts.addOption("h", "help", false, "Print this message.");
 
         for (Option additionalOption : additionalOptions) {
@@ -129,14 +127,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
 
             // Print help and exit, regardless of any other arguments
             if (isHelpSet()) {
-                // to do: check if we need to include rollback and create-sandbox options here
-                help.printHelp("mmtc [options] <start-time> <stop-time>", opts);
-                System.exit(0);
-            }
-
-            // Else print version and exit, regardless of any other arguments
-            if (isVersionSet()) {
-                System.out.println(TimeCorrelationApp.BUILD_INFO);
+                help.printHelp("mmtc correlation [options] <start-time> <stop-time>", opts);
                 System.exit(0);
             }
 
@@ -146,10 +137,9 @@ public class CorrelationCommandLineConfig implements IConfiguration {
                 // Convert the input data start/stop times to Java OffsetDateTime.
                 startTime = formDateTime(posArgs[0]);
                 stopTime  = formDateTime(posArgs[1]);
-            }
-            else {
+            } else {
                 System.out.println("Incorrect number of command line arguments. 2 are required, " + posArgs.length + " were provided.");
-                help.printHelp("mmtc [options] <start-time> <stop-time>", opts);
+                help.printHelp("mmtc correlation [options] <start-time> <stop-time>", opts);
                 return false;
             }
         }
@@ -257,10 +247,6 @@ public class CorrelationCommandLineConfig implements IConfiguration {
 
     private boolean isHelpSet() {
         return cmdLine.hasOption("h") || cmdLine.hasOption("help");
-    }
-
-    private boolean isVersionSet() {
-        return cmdLine.hasOption("v") || cmdLine.hasOption("version");
     }
 
     /**

@@ -3,6 +3,8 @@ package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.time.OffsetDateTime;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValsReader;
@@ -101,6 +104,21 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
                         "Provides any additional CLI parameters that will be passed down to the AMPCS CLI tools."
                 )
         );
+    }
+
+    @Override
+    public Map<String, String> sandboxTelemetrySourceConfiguration(MmtcConfig mmtcConfig, Path sandboxRoot, Path sandboxConfigRoot) throws IOException {
+        final Path originalTkPacketDescriptionFilePath = Paths.get(mmtcConfig.getString("telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path"));
+        final Path newTkPacketDescriptionFilePath = sandboxConfigRoot.resolve(originalTkPacketDescriptionFilePath.getFileName());
+
+        Files.copy(
+                originalTkPacketDescriptionFilePath,
+                newTkPacketDescriptionFilePath
+        );
+
+        final Map<String, String> sandboxConfigChanges = new HashMap<>();
+        sandboxConfigChanges.put("telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path", newTkPacketDescriptionFilePath.toAbsolutePath().toString());
+        return sandboxConfigChanges;
     }
 
     /**

@@ -61,6 +61,8 @@ import spice.basic.*;
     // Regex for ISO Day Of Year (DOY) format (yyyy-doyThh:mm:ss.sssssssss).
     private static final Pattern ISO_UTC_DOY_REGEX = Pattern.compile("^(\\d{4})-(\\d{3})T(\\d{2}):(\\d{2}):(\\d{2})(\\.\\d{1,9})?[Zz]?$");
 
+    private static final Pattern BEGINS_WITH_YEAR_REGEX = Pattern.compile("^\\d{4}.*");
+
     // Formatter for ISO Day Of Year (DOY) format. Assumes UTC.
     public static final DateTimeFormatter ISO_UTC_DOY_FORMAT = DateTimeFormatter.ofPattern("yyyy-DDD'T'HH:mm:ss.SSSSSSSSS").withZone(ZoneOffset.UTC);
     public static final String ISO_UTC_DOY_FORMAT_NO_SUBSECONDS = "yyyy-DDD'T'HH:mm:ss.";
@@ -1247,5 +1249,9 @@ import spice.basic.*;
         return !eq(first, second, epsilon);
     }
 
+    public static boolean beginsWithYear(String val) {
+        Matcher matcher = BEGINS_WITH_YEAR_REGEX.matcher(val);
+        return matcher.matches();
+    }
 }
 

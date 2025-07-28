@@ -1,12 +1,16 @@
 package edu.jhuapl.sd.sig.mmtc.tlm;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import org.apache.commons.cli.Option;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -49,7 +53,7 @@ public interface TelemetrySource {
      * the telemetry that the TelemetrySource implementation can provide.  If an incompatible filter is enabled, the
      * implementation should throw an MmtcException containing information about the issue.
      * <p>
-     * This method is called once upon MMTC initialization.
+     * This method is called once during an MMTC time correlation invocation, before any correlation processing occurs.
      *
      * @param config the complete TimeCorrelationAppConfig that MMTC will use to run, sourced from a TimeCorrelationConfigProperties.xml file
      * @throws MmtcException if there is an issue configuring the TelemetrySource, or another issue that indicates time correlation should not proceed
@@ -78,6 +82,14 @@ public interface TelemetrySource {
      * @throws MmtcException if there is a problem cleanly disconnecting from the underlying source of telemetry
      */
     void disconnect() throws MmtcException;
+
+    /**
+     * Copy plugin-specific configuration to a sandbox directory and transform .  This is not called between connect/disconnect calls.
+     *
+     * @throws IOException if there is a problem copying the plugin's configuration to the sandbox directory
+     * @return a map of config keys to values to apply to the new sandbox configuration
+     */
+    Map<String, String> sandboxTelemetrySourceConfiguration(MmtcConfig mmtcConfig, Path sandboxRoot, Path sandboxConfigRoot) throws IOException;
 
     /**
      * Query the underlying source of telemetry for all timekeeping telemetry within the given range of time (always given
@@ -186,6 +198,4 @@ public interface TelemetrySource {
     default GncParms getGncTkParms(OffsetDateTime noEarlierThanScet, Double noEarlierThanTdtS) {
         return new GncParms();
     }
-
-
 }

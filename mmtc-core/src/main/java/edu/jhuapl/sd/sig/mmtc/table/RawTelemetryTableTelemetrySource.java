@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -10,6 +11,10 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.management.openmbean.InvalidOpenTypeException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -60,6 +65,21 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
 
     public void disconnect() {
         // no-op
+    }
+
+    @Override
+    public Map<String, String> sandboxTelemetrySourceConfiguration(MmtcConfig mmtcConfig, Path sandboxRoot, Path sandboxConfigRoot) throws IOException {
+        final Path originalTablePath = Paths.get(mmtcConfig.getString(RAW_TLM_TABLE_PATH_CONFIG_KEY));
+        final Path newTablePath = sandboxRoot.resolve(originalTablePath.getFileName());
+
+        Files.copy(
+                originalTablePath,
+                newTablePath
+        );
+
+        Map<String, String> sandboxConfigChanges = new HashMap<>();
+        sandboxConfigChanges.put(RAW_TLM_TABLE_PATH_CONFIG_KEY, newTablePath.toAbsolutePath().toString());
+        return sandboxConfigChanges;
     }
 
     @Override

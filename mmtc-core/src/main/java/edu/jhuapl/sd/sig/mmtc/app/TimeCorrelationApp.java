@@ -17,8 +17,6 @@ import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig.ClockChangeRateMode;
 import edu.jhuapl.sd.sig.mmtc.filter.ContactFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.products.*;
-import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
-import edu.jhuapl.sd.sig.mmtc.sandbox.TimeCorrelationSandboxCreator;
 import edu.jhuapl.sd.sig.mmtc.table.*;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -31,10 +29,10 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import spice.basic.CSPICE;
 import spice.basic.SpiceErrorException;
+
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 /**
  * <p><strong>The Multi-Mission Time Correlation System (MMTC)</strong></p>
@@ -46,11 +44,6 @@ import spice.basic.SpiceErrorException;
  * doi: 10.1109/SMC-IT.2019.00010</i></p>
  */
 public class TimeCorrelationApp {
-    public static final Marker USER_NOTICE = MarkerManager.getMarker("USER_NOTICE");
-
-    public static final String MMTC_TITLE = "Multi-Mission Time Correlation (MMTC)";
-    public static final BuildInfo BUILD_INFO = new BuildInfo();
-
     private static final Logger logger = LogManager.getLogger();
 
     private final OffsetDateTime appRunTime = OffsetDateTime.now(ZoneOffset.UTC);
@@ -90,9 +83,15 @@ public class TimeCorrelationApp {
     // The version number of the new SCLK Kernel and new SCLK/SCET file in the filenames.
     private String newVersionStr = "";
 
-    private TimeCorrelationApp(TimeCorrelationAppConfig config) throws Exception {
-        this.config = config;
-        this.tlmSource = config.getTelemetrySource();
+    public TimeCorrelationApp(String... args) throws Exception {
+        try {
+            this.config = new TimeCorrelationAppConfig(args);
+            this.tlmSource = config.getTelemetrySource();
+            init();
+        } catch (Exception e) {
+            throw new MmtcException("MMTC correlation initialization failed.", e);
+        }
+
     }
 
     /**
@@ -1020,10 +1019,14 @@ public class TimeCorrelationApp {
         }
     }
 
+    public void run() throws Exception {
+        runCorrelation();
+    }
+
     /**
      * Main application processing.
      */
-    private void run() throws Exception {
+    private void runCorrelation() throws Exception {
         logger.info(USER_NOTICE, String.format("Running time correlation between %s and %s", config.getStartTime().toString(), config.getStopTime().toString()));
 
         if (config.isTestMode()) {
@@ -1199,7 +1202,7 @@ public class TimeCorrelationApp {
         }
 
         // Write the optional Uplink Command File if selected to do so.
-        if (config.createUplinkCmdFile()) {
+        if (config.isCreateUplinkCmdFile()) {
             writeUplinkCommandFile(etG, tdtG, clockChangeRate);
         }
 
@@ -1217,62 +1220,5 @@ public class TimeCorrelationApp {
         logger.info(String.format("Run at %s recorded to %s", appRunTime, config.getRunHistoryFilePath().toString()));
 
         logger.info(USER_NOTICE, "MMTC completed successfully.");
-    }
-
-    /**
-     * Entry point of the application.
-     *
-     * @param args command line arguments
-     */
-    public static void main(String[] args) {
-        logger.info(USER_NOTICE, String.format("************ %s version %s ************", MMTC_TITLE, BUILD_INFO.version));
-        logger.info(USER_NOTICE, String.format("Commit %s built at %s", BUILD_INFO.commit, BUILD_INFO.buildDate));
-
-        TimeCorrelationAppConfig config = null;
-        try {
-            config = new TimeCorrelationAppConfig(args);
-        } catch (Exception e) {
-            logger.fatal("MMTC initialization failed.", e);
-            System.exit(1);
-        }
-
-        switch (config.getPrimaryCommand()) {
-            case CORRELATION: {
-                try {
-                    TimeCorrelationApp app = new TimeCorrelationApp(config);
-                    app.init();
-                    try {
-                        app.run();
-                    } catch (Exception ex) {
-                        logger.fatal("MMTC run failed.", ex);
-                        System.exit(1);
-                    }
-                } catch (Exception ex) {
-                    logger.fatal("MMTC initialization failed.", ex);
-                    System.exit(1);
-                }
-                break;
-            }
-            case ROLLBACK: {
-                logger.info(USER_NOTICE, String.format("Rollback invoked by command %s, starting rollback process", Arrays.toString(args)));
-                try {
-                    TimeCorrelationRollback rollbackInstance = new TimeCorrelationRollback(config);
-                    rollbackInstance.rollback();
-                } catch (Exception e) {
-                    logger.fatal("Rollback failed.", e);
-                    System.exit(1);
-                }
-                break;
-            }
-            case CREATE_SANDBOX: {
-                logger.info(USER_NOTICE, String.format("Creating new sandbox at %s", Arrays.toString(args)));
-                try {
-                    new TimeCorrelationSandboxCreator(config).create();
-                } catch (Exception e) {
-                    logger.fatal("Sandbox creation failed.", e);
-                    System.exit(1);
-                }
-            }
-        }
     }
 }
