@@ -1,0 +1,205 @@
+\begintext
+
+FILENAME = "new-horizons_1000.tsc"
+CREATION_DATE = "22-Jan-2021"
+
+Copied and truncated from new-horizons_1600.tsc for testing MMTC
+NEW HORIZONS Spacecraft Clock Kernel (SCLK)
+===========================================================================
+
+     This file is a SPICE spacecraft clock (SCLK) kernel containing
+     information required for time conversions involving the on-board
+     NEW HORIZONS spacecraft clock.
+ 
+Version
+--------------------------------------------------------
+
+     NEW HORIZONS SCLK Kernel Version:
+
+     Version 1.04 -- March 1, 2011 -- Stan Cooper
+        Following processing of all ACO4 data in Partition #2, manually 
+        added the first Partition #3 record (for October 31, 2010), to
+        accommodate the Timekeeping System ground software.
+
+     Version 1.03 -- December 16, 2010 -- Stan Cooper
+        Partition #2 start shifted ten seconds earlier per request by Eric
+        Melin.  Start time was set too late.
+
+     Version 1.02 -- November 15, 2010 -- Stan Cooper
+        Partition #3 created in response to unplanned November 1st
+        resynchronization of software MET to BC hardware MET.  Effectively,
+        the software MET has jumped one second back.
+
+     Version 1.01 -- August 12, 2010 -- Stan Cooper
+        Paritition #2 created in response to July 2nd loss of software 
+        MET synchronization with BC hardware MET.  Software MET is now
+        one second larger than BC hardware MET.  Effectively, the
+        software MET has jumped one second ahead.
+
+     Version 1.0 -- December 14, 2005 -- Stan Cooper
+        Initial (seed) time coefficients triplet set for a launch time
+        of 2006-011-14:11:00 EST, which equals 2006-011-19:11:00 UTC.
+        Note that this was set using the new value of 33 leap seconds
+        that comes into effect a few days before launch.
+
+     Version 0.4 -- November 15, 2005 -- Stan Cooper
+        Corrected the statement "SPICE uses linear interpolation" to
+        "SPICE uses linear extrapolation".  This was confirmed earlier
+        with Scott Turner as noted in the MESSENGER SCLK kernels.
+
+     Version 0.3 -- May 11, 2005 -- Stan Cooper
+        Modified file header to avoid loss of header text when kernel
+        is automatically updated.  Also, added FILENAME and
+        CREATION_DATE fields that are automatically updated.
+
+     Version 0.2 -- June 25, 2003 -- Scott Turner
+
+        The number of digits representing fractional seconds present
+        in the TDT component of the SCLK coefficient triples were 
+        inadequate for NEW HORIZONS' requirements.  The field now
+        contains 6 digits instead of 3.
+
+     Version 0.1 -- June 24, 2003 -- Scott Turner
+
+        This kernel was created as an initial input to the NEW HORIZONS
+        SCLK update process.  It provides values for the fields 
+        required to handle the SCLK string format, as well as the
+        baseline units of the clock correlation coefficients that
+        the update process is to introduce or correct.  The initial
+        clock rate established in this file assumes no drift from 
+        the parallel time system (TDT).  Further the clock coefficients 
+        indicate the clock starts on the following epoch:
+
+                   1/0:0                         (SCLK)
+                   01-JAN-2003-00:01:04.184       (TDT) 
+
+        The end of the first partition is currently defined as the value
+        in ticks of the rollover of the spacecraft clock.
+ 
+Usage
+--------------------------------------------------------
+
+     This file is used by the SPICE system as follows: programs that
+     make use of this SCLK kernel must 'load' the kernel, normally
+     during program initialization.  Loading the kernel associates
+     the data items with their names in a data structure called the
+     'kernel pool'.  The SPICELIB routine FURNSH loads text kernel
+     files, such as this one, into the pool as shown below:
+
+        FORTRAN:
+
+                  CALL FURNSH ( SCLK_kernel_name )
+
+        C:
+
+                  furnsh_c ( SCLK_kernel_name );
+
+     Once loaded, the SCLK time conversion routines will be able to
+     access the necessary data located in this kernel for their 
+     designed purposes.
+
+References
+--------------------------------------------------------
+ 
+         1.   "SCLK Required Reading"
+
+Inquiries
+--------------------------------------------------------
+
+     If you have any questions regarding this file or its usage, 
+     contact:
+
+           Scott Turner
+           (443)778-1693
+           Scott.Turner@jhuapl.edu
+
+Kernel Data
+--------------------------------------------------------
+
+     The first block of keyword equals value assignments define the
+     type, parallel time system, and format of the spacecraft clock.
+     These fields are invariant from SCLK kernel update to SCLK 
+     kernel update.    
+
+     The NEW HORIZONS spacecraft clock is represented by the SPICE
+     type 1 SCLK kernel.  It uses TDT, Terrestrial Dynamical Time,
+     as its parallel time system.
+
+\begindata
+
+SCLK_KERNEL_ID             = ( @2018-08-07T00:46:59 )
+SCLK_DATA_TYPE_98          = (        1 )
+SCLK01_TIME_SYSTEM_98      = (        2 )
+
+
+\begintext
+
+     In a particular partition of the NEW HORIZONS spacecraft clock,
+     the clock read-out consists of two separate stages:
+
+                           1/18424652:24251
+
+     The first stage, a 32 bit field, represents the spacecraft
+     clock seconds count.  The second, a 16 bit field, represents
+     counts of 20 microsecond increments of the spacecraft clock.
+
+     The following keywords and their values establish this structure:
+
+\begindata
+
+SCLK01_N_FIELDS_98         = (            2 )
+SCLK01_MODULI_98           = (   4294967296       50000 )
+SCLK01_OFFSETS_98          = (            0           0 )
+SCLK01_OUTPUT_DELIM_98     = (            2 )
+
+
+\begintext
+
+     This concludes the invariant portion of the SCLK kernel data.  The
+     remaining sections of the kernel may require updates as the clock
+     correlation coefficients evolve in time.  The first section below
+     establishes the clock partitions.  The data in this section consists
+     of two parallel arrays, which denote the start and end values in 
+     ticks of each partition of the spacecraft clock.
+
+     SPICE utilizes these two arrays to map from spacecraft clock ticks,
+     determined with the usual modulo arithmetic, to encoded SCLK--the
+     internal, monotonically increasing sequence used to tag various 
+     data sources with spacecraft clock.
+
+\begindata
+
+SCLK_PARTITION_START_98    = ( 0.00000000000000e+00
+                               7.01906790000000e+12
+                               7.54337430000000e+12 )
+
+SCLK_PARTITION_END_98      = ( 7.01906785000000e+12
+                               7.54337435000000e+12
+                               2.14748364799999e+14 )
+
+\begintext
+
+     The remaining section of the SCLK kernel defines the clock correlation
+     coefficients.  Each line contains a 'coefficient triple':
+
+         Encoded SCLK at which Rate is introduced.
+         Corresponding TDT Epoch at which Rate is introduced.
+         Rate in TDT (seconds) / most significant clock count (~seconds).
+
+     SPICE uses linear extrapolation to convert between the parallel time
+     system and encoded SCLK.  The triples are stored in the array defined
+     below.
+
+     The first time triplet below was entered manually and represents the
+     approximate time (in TDT) at which MET is set to zero.  The plan for
+     New Horizons is that MET will be set to roll over to zero at the
+     beginning of the daily launch window.  Note that the conversion from
+     UTC to TDT used 33 leap seconds.
+
+\begindata
+
+SCLK01_COEFFICIENTS_98     = ( 
+
+                   0     @19-JAN-2006-18:09:05.184000     1.00000000000       
+          2766250000     @20-JAN-2006-09:31:12.483494     1.00000000905
+)

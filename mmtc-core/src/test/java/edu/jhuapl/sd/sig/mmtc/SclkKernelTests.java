@@ -139,4 +139,16 @@ public class SclkKernelTests {
         File tscfd = new File(tscDir+File.separator+newTscName);
         assertTrue(tscfd.exists());        
     }
+
+    @Test
+    void testGetVersionString() {
+        SclkKernel kernel = new SclkKernel("src/test/resources/SclkKernelTests", "src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc");
+        assertEquals("1454", kernel.getVersionString("new-horizons", "_"));
+
+        kernel = new SclkKernel("src/test/resources/SclkKernelTests", "src/test/resources/nh_kernels/sclk/new-horizons_0001.tsc");
+        assertEquals("0001", kernel.getVersionString("new-horizons", "_"));
+
+        kernel = new SclkKernel("src/test/resources/SclkKernelTests", "src/test/resources/nh_kernels/sclk/new_horizons_0001.tsc");
+        assertEquals("0001", kernel.getVersionString("new_horizons", "_"));
+    }
 }

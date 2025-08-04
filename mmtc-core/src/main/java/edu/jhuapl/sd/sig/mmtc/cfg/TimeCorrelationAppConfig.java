@@ -689,13 +689,13 @@ public class TimeCorrelationAppConfig {
     /**
      * Gets the location of the output Raw Telemetry Table.
      * @return the path to the output Raw Telemetry Table
-     * @throws MmtcException if the location cannot be accessed
      */
-    public URI getRawTelemetryTableUri() throws MmtcException {
+    public URI getRawTelemetryTableUri() {
         try {
             return new URI(timeCorrelationConfig.getConfig().getString("table.rawTelemetryTable.uri"));
         } catch (URISyntaxException ex) {
-            throw new MmtcException("Unable to parse URI", ex);
+            // throw new MmtcException("Unable to parse URI", ex);
+            throw new RuntimeException(ex);
         }
     }
 
@@ -802,14 +802,13 @@ public class TimeCorrelationAppConfig {
     /**
      * Gets the location of the output Time History File.
      * @return the path to the output Time History File
-     * @throws MmtcException if the location cannot be accessed
      */
-    public URI getTimeHistoryFileUri() throws MmtcException {
+    public URI getTimeHistoryFileUri() {
         try {
             return new URI(timeCorrelationConfig.getConfig().getString("table.timeHistoryFile.uri"));
         }
         catch (URISyntaxException ex) {
-            throw new MmtcException("Unable to parse URI", ex);
+            throw new RuntimeException("Unable to parse URI", ex);
         }
     }
 
@@ -1383,7 +1382,7 @@ public class TimeCorrelationAppConfig {
         List<String> missingKeys = checkForMissingKeysInGroup(REQD_SCLK_SCET_CONFIG_KEY_GROUP);
 
         if (! missingKeys.isEmpty()) {
-            throw new MmtcException("If SCLK-SCET file creation is enabled, the following keys must be set: " + missingKeys.toString());
+            throw new MmtcException("SCLK-SCET operations require the following keys to be set: " + missingKeys.toString());
         }
     }
 
@@ -1391,7 +1390,7 @@ public class TimeCorrelationAppConfig {
         List<String> missingKeys = checkForMissingKeysInGroup(REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP);
 
         if (! missingKeys.isEmpty()) {
-            throw new MmtcException("If uplink command file creation is enabled, the following keys must be set: " + missingKeys.toString());
+            throw new MmtcException("Uplink command file operations require the following keys to be set: " + missingKeys.toString());
         }
     }
 
