@@ -416,6 +416,8 @@ public class TimeCorrelationApp {
                     logger.warn(String.format("Magnitude of computed error in TDT(S) of %f exceeds threshold of %f. Warning noted in TimeHistoryFile.", tdtSError, config.getTdtSErrorWarningThresholdMs().get()));
                     timeHistoryFileWarnings.add("TDT(S)_Error_threshold_exceeded!");
                 }
+            } else {
+                logger.warn("Not checking TDT(S) Error value against any threshold, as no value was specified for its threshold in MMTC configuration.");
             }
 
             // Set the Warnings in the TimeHistoryFile (nominally, these will be blank).
@@ -589,36 +591,15 @@ public class TimeCorrelationApp {
         runHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,              System.getProperty("user.name"));
         runHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,              String.join(" ",cliArgs));
 
-        // SCLK Kernel
+        // Output products
+        // handle the SCLK kernel uniquely, as the seed kernel is already in place before any MMTC run is executed
         runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SCLK,           getLatestFileCounterByPrefix(config.getSclkKernelOutputDir(), config.getSclkKernelBasename(), SclkKernel.FILE_SUFFIX));
 
-        // TimeHistoryFile
-        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_TIMEHIST,       String.valueOf(timeHistoryFile.getLastLineNumber()));
-
-        // RawTlmTable
-        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_RAWTLMTABLE,    String.valueOf(rawTlmTable.getLastLineNumber()));
-
-        // SCLKSCET File
-        String latestSclkScetFileCounter;
-        if (config.createSclkScetFile()) {
-            // if this run is creating a SCLK-SCET file, assume the associated configuration is populated and read it
-            latestSclkScetFileCounter = getLatestFileCounterByPrefix(config.getSclkScetOutputDir(), config.getSclkScetFileBasename(), config.getSclkScetFileSuffix());
-        } else {
-            // else, if this run is not creating a SCLK-SCET file, then use the prior value, if any exists, or "-" otherwise
-            latestSclkScetFileCounter = runHistoryFile.readLatestValueOf(RunHistoryFile.POSTRUN_SCLKSCET, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-");
-        }
-        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SCLKSCET, latestSclkScetFileCounter);
-
-        // Uplink Command File
-        String latestUplinkCmdFileCounter;
-        if (config.createUplinkCmdFile()) {
-            // if this run is creating an uplink command file, assume the associated configuration is populated and read it
-            latestUplinkCmdFileCounter = getLatestFileCounterByPrefix(Paths.get(config.getUplinkCmdFileDir()), config.getUplinkCmdFileBasename(), UplinkCmdFile.FILE_SUFFIX);
-        } else {
-            // else, if this run is not creating an uplink command file, then use the prior value, if any exists, or "-" otherwise
-            latestUplinkCmdFileCounter = runHistoryFile.readLatestValueOf(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-");
-        }
-        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_UPLINKCMD, latestUplinkCmdFileCounter);
+        // all the other products are only created after at least a single run of MMTC, so we can reuse the postrun values from the prior run here
+        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_TIMEHIST,       runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_TIMEHIST, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
+        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_RAWTLMTABLE,    runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_RAWTLMTABLE, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
+        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_SCLKSCET,       runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_SCLKSCET, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
+        runHistoryFileRecord.setValue(RunHistoryFile.PRERUN_UPLINKCMD,      runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
     }
 
     /**
@@ -638,17 +619,17 @@ public class TimeCorrelationApp {
 
         // SCLKSCET file
         if (config.createSclkScetFile()) {
-            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLKSCET, newVersionStr);
+            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLKSCET,  newVersionStr);
         } else {
             // else, if this run did not create a SCLK-SCET file, then use the prior value, if any exists, or "-" otherwise
-            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLKSCET, runHistoryFile.readLatestValueOf(RunHistoryFile.POSTRUN_SCLKSCET, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
+            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_SCLKSCET,  runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_SCLKSCET, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
         }
 
         // Uplink Command File
         if (config.createUplinkCmdFile()) {
             runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_UPLINKCMD, getLatestFileCounterByPrefix(Paths.get(config.getUplinkCmdFileDir()), config.getUplinkCmdFileBasename(), UplinkCmdFile.FILE_SUFFIX));
         } else {
-            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_UPLINKCMD, runHistoryFile.readLatestValueOf(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
+            runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_UPLINKCMD, runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
         }
 
         runHistoryFile.writeRecord(runHistoryFileRecord);
