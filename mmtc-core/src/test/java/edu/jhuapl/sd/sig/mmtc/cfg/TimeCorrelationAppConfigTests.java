@@ -196,7 +196,7 @@ class TimeCorrelationAppConfigTests {
 					config::validate
 			);
 
-			assertEquals("If SCLK-SCET file creation is enabled, the following keys must be set: [product.sclkScetFile.producerId, product.sclkScetFile.scetUtcPrecision]", resultingException.getMessage());
+			assertEquals("SCLK-SCET operations require the following keys to be set: [product.sclkScetFile.producerId, product.sclkScetFile.scetUtcPrecision]", resultingException.getMessage());
 		}
 	}
 
@@ -213,7 +213,7 @@ class TimeCorrelationAppConfigTests {
 					config::validate
 			);
 
-			assertEquals("If uplink command file creation is enabled, the following keys must be set: [product.uplinkCmdFile.outputDir]", resultingException.getMessage());
+			assertEquals("Uplink command file operations require the following keys to be set: [product.uplinkCmdFile.outputDir]", resultingException.getMessage());
 		}
 	}
 

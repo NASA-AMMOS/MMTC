@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.math.RoundingMode;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -365,5 +366,9 @@ public class SclkKernel extends TextProduct {
         if (this.endDataNum < 1) {
             throw new TextProductException("Invalid input SCLK Kernel. No time correlation records found.");
         }
+    }
+
+    public String getVersionString(final String sclkBaseName, final String separator) {
+        return Paths.get(getPath()).getFileName().toString().replace(sclkBaseName + separator, "").replace(FILE_SUFFIX, "");
     }
 }

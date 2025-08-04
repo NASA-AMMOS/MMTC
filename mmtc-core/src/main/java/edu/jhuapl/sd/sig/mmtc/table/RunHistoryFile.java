@@ -2,21 +2,18 @@ package edu.jhuapl.sd.sig.mmtc.table;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.function.Function;
 
 public class RunHistoryFile extends AbstractTimeCorrelationTable {
-    public enum RollbackEntryOption {
-        IGNORE_ROLLBACKS,
-        INCLUDE_ROLLBACKS
-    }
+    public static final RunHistoryOutputProductDefinitions OUTPUT_PRODUCT_DEFINITIONS = new RunHistoryOutputProductDefinitions();
 
     public static final String RUN_TIME = "Run Time";
     public static final String RUN_ID = "Run ID";
@@ -33,6 +30,11 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public static final String POSTRUN_RAWTLMTABLE = "Latest RawTlmTable Line Post-run";
     public static final String PRERUN_UPLINKCMD = "Latest Uplink Command File Pre-run";
     public static final String POSTRUN_UPLINKCMD = "Latest Uplink Command File Post-run";
+
+    public enum RollbackEntryOption {
+        IGNORE_ROLLBACKS,
+        INCLUDE_ROLLBACKS
+    }
 
     public RunHistoryFile(URI uri) {
         super(uri);
@@ -94,17 +96,176 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
         return records;
     }
 
-    public Optional<String> readLatestValueOf(String columnName, RollbackEntryOption option) throws MmtcException {
-        List<TableRecord> recs = readRecords(option).stream().filter(r -> ! r.getValue(columnName).equals("-")).collect(Collectors.toList());
-        if (! recs.isEmpty()) {
-            return Optional.of(recs.get(recs.size() - 1).getValue(columnName));
-        } else {
+    private TableRecord getRunHistoryRowForRunId(String runId) throws MmtcException {
+        return readRecords(RollbackEntryOption.INCLUDE_ROLLBACKS).stream()
+                .filter(r -> r.getValue(RUN_ID).equals(runId))
+                .findFirst()
+                .orElseThrow(() -> new MmtcException(String.format("Run ID %s not found in run history file.", runId)));
+    }
+
+    public Optional<String> getValueOfColForRun(String runId, String columnName) throws MmtcException {
+        return valToOptional(getRunHistoryRowForRunId(runId).getValue(columnName));
+    }
+
+    private Optional<String> valToOptional(String val) {
+        if (val.equals("-")) {
             return Optional.empty();
+        } else {
+            return Optional.of(val);
         }
+    }
+
+    public Optional<String> getLatestValueOfCol(String columnName, RollbackEntryOption option) throws MmtcException {
+        Optional<String> rec = readRecords(option).stream()
+                .map(r -> r.getValue(columnName))
+                .reduce((a,b) -> b);
+
+        if (rec.equals(Optional.of("-"))) {
+            return Optional.empty();
+        } else {
+            return rec;
+        }
+    }
+
+    public Optional<String> getLatestNonEmptyValueOfCol(String columnName, RollbackEntryOption option) throws MmtcException {
+        Optional<String> rec = readRecords(option).stream()
+                .filter(r -> ! (r.getValue(columnName).equals("-")))
+                .map(r -> r.getValue(columnName))
+                .reduce((a,b) -> b);
+
+        return rec;
     }
 
     public boolean anyValuesInColumn(String columnName) throws MmtcException {
         List<TableRecord> recs = readRecords(RollbackEntryOption.INCLUDE_ROLLBACKS);
         return recs.stream().anyMatch(r -> ! r.getValue(columnName).equals("-"));
+    }
+
+    @FunctionalInterface
+    public interface ConfiguredOutputProductDefinitionConverter {
+        ConfiguredOutputProductDefinition apply(TimeCorrelationAppConfig conf) throws MmtcException;
+    }
+
+    public static class OutputProductTypeDefinition {
+        public enum Type {
+            LINE_APPENDED_CSV,
+            ENTIRE_FILE
+        }
+
+        public final String preRunOutputProductColName;
+        public final String postRunOutputProductColName;
+        public final Type productType;
+        public final ConfiguredOutputProductDefinitionConverter toConfiguredOutputProductDefinition;
+
+        public OutputProductTypeDefinition(String preRunOutputProductColName, String postRunOutputProductColName, Type productType, ConfiguredOutputProductDefinitionConverter toConfiguredOutputProductDefinition) {
+            this.preRunOutputProductColName = preRunOutputProductColName;
+            this.postRunOutputProductColName = postRunOutputProductColName;
+            this.productType = productType;
+            this.toConfiguredOutputProductDefinition = toConfiguredOutputProductDefinition;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            OutputProductTypeDefinition that = (OutputProductTypeDefinition) o;
+            return Objects.equals(preRunOutputProductColName, that.preRunOutputProductColName) && Objects.equals(postRunOutputProductColName, that.postRunOutputProductColName) && productType == that.productType;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(preRunOutputProductColName, postRunOutputProductColName, productType);
+        }
+    }
+
+    public static class RunHistoryOutputProductDefinitions {
+        public final List<OutputProductTypeDefinition> all;
+
+        public RunHistoryOutputProductDefinitions() {
+            all = Collections.unmodifiableList(Arrays.asList(
+                    new OutputProductTypeDefinition(
+                            PRERUN_SCLK,
+                            POSTRUN_SCLK,
+                            OutputProductTypeDefinition.Type.ENTIRE_FILE,
+                            (conf) -> new ConfiguredEntireFileOutputProductDefinition(
+                                    conf.getSclkKernelOutputDir().toAbsolutePath(),
+                                    conf.getSclkKernelBasename()
+                            )
+                    ),
+
+                    new OutputProductTypeDefinition(
+                            PRERUN_SCLKSCET,
+                            POSTRUN_SCLKSCET,
+                            OutputProductTypeDefinition.Type.ENTIRE_FILE,
+                            (conf) -> {
+                                conf.validateSclkScetConfiguration();
+
+                                return new ConfiguredEntireFileOutputProductDefinition(
+                                        conf.getSclkScetOutputDir().toAbsolutePath(),
+                                        conf.getSclkScetFileBasename()
+                                );
+                            }
+                    ),
+
+
+                    new OutputProductTypeDefinition(
+                            PRERUN_RAWTLMTABLE,
+                            POSTRUN_RAWTLMTABLE,
+                            OutputProductTypeDefinition.Type.LINE_APPENDED_CSV,
+                            (conf) -> new ConfiguredAppendedCsvOutputProductDefinition(
+                                    Paths.get(conf.getRawTelemetryTableUri().toString().replace("file://", "")),
+                                    new RawTelemetryTable(conf.getRawTelemetryTableUri()
+                                    )
+                            )
+                    ),
+
+                    new OutputProductTypeDefinition(
+                            PRERUN_TIMEHIST,
+                            POSTRUN_TIMEHIST,
+                            OutputProductTypeDefinition.Type.LINE_APPENDED_CSV,
+                            (conf) -> new ConfiguredAppendedCsvOutputProductDefinition(
+                                        Paths.get(conf.getTimeHistoryFileUri().toString().replace("file://", "")),
+                                        new TimeHistoryFile(conf.getTimeHistoryFileUri()
+                                        )
+                            )
+                    ),
+
+                    new OutputProductTypeDefinition(
+                            PRERUN_UPLINKCMD,
+                            POSTRUN_UPLINKCMD,
+                            OutputProductTypeDefinition.Type.ENTIRE_FILE,
+                            (conf) -> {
+                                conf.validateUplinkCmdFileConfiguration();
+
+                                return new ConfiguredEntireFileOutputProductDefinition(
+                                        Paths.get(conf.getUplinkCmdFileDir()).toAbsolutePath(),
+                                        conf.getUplinkCmdFileBasename()
+                                );
+                            }
+                    )
+            ));
+        }
+    }
+
+    public interface ConfiguredOutputProductDefinition {
+    }
+
+    public static class ConfiguredEntireFileOutputProductDefinition implements ConfiguredOutputProductDefinition {
+        public final Path containingDirectory;
+        public final String basename;
+
+        public ConfiguredEntireFileOutputProductDefinition(Path containingDirectory, String basename) {
+            this.containingDirectory = containingDirectory;
+            this.basename = basename;
+        }
+    }
+
+    public static class ConfiguredAppendedCsvOutputProductDefinition implements ConfiguredOutputProductDefinition {
+        public final Path pathToProduct;
+        public final AbstractTimeCorrelationTable table;
+
+        public ConfiguredAppendedCsvOutputProductDefinition(Path pathToProduct, AbstractTimeCorrelationTable table) {
+            this.pathToProduct = pathToProduct;
+            this.table = table;
+        }
     }
 }
