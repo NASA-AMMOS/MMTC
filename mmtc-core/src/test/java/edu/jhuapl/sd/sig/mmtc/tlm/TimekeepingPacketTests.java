@@ -3,6 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -194,22 +195,22 @@ public class TimekeepingPacketTests {
     @BeforeAll
     public static void instantiateParser()
             throws JAXBException, SAXException, URISyntaxException, IOException {
-        nullParser = new TimekeepingPacketParser(TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml").toURI(), (byte[])null);
-        emptyParser = new TimekeepingPacketParser(TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml").toURI(), new byte[] {});
-        arrayParser = new TimekeepingPacketParser(TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml").toURI(), packet1);
+        nullParser = new TimekeepingPacketParser(Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml"), (byte[])null);
+        emptyParser = new TimekeepingPacketParser(Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml"), new byte[] {});
+        arrayParser = new TimekeepingPacketParser(Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml"), packet1);
         fileParser = new TimekeepingPacketParser(
-                TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml").toURI(),
+                Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml"),
                 TimekeepingPacketTests.class.getResource("/TkPacketTests/tkpacket_uintDownlink.dat").toURI());
-        multipacketArrayParser = new TimekeepingPacketParser(TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml").toURI(), packet2);
-        multipacketArrayWithBadLengthParser = new TimekeepingPacketParser(TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml").toURI(), packet3);
+        multipacketArrayParser = new TimekeepingPacketParser(Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml"), packet2);
+        multipacketArrayWithBadLengthParser = new TimekeepingPacketParser(Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml"), packet3);
         multipacketFileParser = new TimekeepingPacketParser(
-                TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml").toURI(),
+                Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml"),
                 TimekeepingPacketTests.class.getResource("/TkPacketTests/tkpacket_2_floatDownlinks.dat").toURI());
         floatDownlinkPacketParser = new TimekeepingPacketParser(
-                TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml").toURI(),
+                Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml"),
                 TimekeepingPacketTests.class.getResource("/TkPacketTests/tkpacket_floatDownlink.dat").toURI());
         doubleDownlinkPacketParser = new TimekeepingPacketParser(
-                TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_double_downlink.xml").toURI(), packet4);
+                Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_double_downlink.xml"), packet4);
     }
 
 
@@ -335,14 +336,14 @@ public class TimekeepingPacketTests {
     public void testHandlingExcessivelyLongField() throws URISyntaxException, MalformedURLException, JAXBException, SAXException {
         AtomicReference<TimekeepingPacketParser> parser = null;
         assertThrows(IllegalStateException.class, () -> { parser.set(new TimekeepingPacketParser(
-                TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_incorrect_downlink_size.xml").toURI(), packet4)); });
+                Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_incorrect_downlink_size.xml"), packet4)); });
 
     }
 
     @Test
     public void parseMultipacketArrayWithUints() throws URISyntaxException, MalformedURLException, JAXBException, SAXException {
         TimekeepingPacketParser parser = new TimekeepingPacketParser(
-                TimekeepingPacketTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml").toURI(), packet5);
+                Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_uint_downlink.xml"), packet5);
         Iterator<TimekeepingRecord> packets = parser.iterator();
         packet6Tests(packets);
     }

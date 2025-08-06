@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -141,13 +142,13 @@ public class AmpcsTlmArchive extends AmpcsTelemetrySource {
             final String PKTLEN      = ampcsConfig.getTkPacketLengthFieldName();
 
             // Get the information on the TK packet binary file.
-            URI pktDescriptionSource;
+            Path pktDescriptionSource;
             URI binaryPktFile;
             try {
-                pktDescriptionSource = new URI(ampcsConfig.getTkPacketDescriptionFile());
+                pktDescriptionSource = ampcsConfig.getTkPacketDescriptionFilePath();
                 binaryPktFile        = new URI("file://" + packetOutputFilename);
             } catch (URISyntaxException e) {
-                throw new MmtcException("Unable to open packet description file " + ampcsConfig.getTkPacketDescriptionFile());
+                throw new MmtcException("Unable to open packet description file " + ampcsConfig.getTkPacketDescriptionFilePath());
             }
 
             TimekeepingPacketParser parser;

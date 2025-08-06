@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,7 +16,7 @@ public class RunHistoryFileTests {
     @Test
     public void testRunHistoryFileBasicRead() throws URISyntaxException, MmtcException {
         // with no rollbacks, with every column at least partially populated
-        final RunHistoryFile runHistoryFile = new RunHistoryFile(new URI("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh.csv"));
+        final RunHistoryFile runHistoryFile = new RunHistoryFile(Paths.get("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh.csv"));
         assertEquals(4, runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS).size());
         assertEquals(4, runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).size());
 
@@ -27,7 +28,7 @@ public class RunHistoryFileTests {
         assertEquals("1734040773", lastRec.getValue(RunHistoryFile.POSTRUN_UPLINKCMD));
 
         // with no rollbacks, with the uplink cmd file columns not populated
-        final RunHistoryFile runHistoryFileNoUplink = new RunHistoryFile(new URI("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh-no-uplink.csv"));
+        final RunHistoryFile runHistoryFileNoUplink = new RunHistoryFile(Paths.get("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh-no-uplink.csv"));
         assertEquals(4, runHistoryFileNoUplink.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS).size());
         assertEquals(4, runHistoryFileNoUplink.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).size());
 
@@ -39,7 +40,7 @@ public class RunHistoryFileTests {
         assertEquals("-", lastRec.getValue(RunHistoryFile.POSTRUN_UPLINKCMD));
 
         // with a rollback
-        final RunHistoryFile runHistoryFileRollback = new RunHistoryFile(new URI("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh-rollback.csv"));
+        final RunHistoryFile runHistoryFileRollback = new RunHistoryFile(Paths.get("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh-rollback.csv"));
         assertEquals(6, runHistoryFileRollback.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS).size());
         assertEquals(4, runHistoryFileRollback.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).size());
 
@@ -54,26 +55,22 @@ public class RunHistoryFileTests {
     @Test
     public void testRunHistoryFileValueQueries() throws URISyntaxException, MmtcException {
         // with no rollbacks, with every column at least partially populated
-        final RunHistoryFile runHistoryFile = new RunHistoryFile(new URI("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh.csv"));
+        final RunHistoryFile runHistoryFile = new RunHistoryFile(Paths.get("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh.csv"));
         assertEquals(Optional.of("1734040773"), runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS));
         assertTrue(runHistoryFile.anyValuesInColumn(RunHistoryFile.POSTRUN_UPLINKCMD));
         assertEquals(Optional.of("1002"), runHistoryFile.getValueOfColForRun("00002", RunHistoryFile.POSTRUN_SCLK));
         assertEquals(Optional.of("1004"), runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_SCLK, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS));
 
         // with no rollbacks, with the uplink cmd file columns not populated
-        final RunHistoryFile runHistoryFileNoUplink = new RunHistoryFile(new URI("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh-no-uplink.csv"));
+        final RunHistoryFile runHistoryFileNoUplink = new RunHistoryFile(Paths.get("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh-no-uplink.csv"));
         assertEquals(Optional.empty(), runHistoryFileNoUplink.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS));
         assertEquals(Optional.empty(), runHistoryFileNoUplink.getLatestValueOfCol(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS));
         assertFalse(runHistoryFileNoUplink.anyValuesInColumn(RunHistoryFile.POSTRUN_UPLINKCMD));
 
         // with a rollback
-        final RunHistoryFile runHistoryFileRollback = new RunHistoryFile(new URI("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh-rollback.csv"));
+        final RunHistoryFile runHistoryFileRollback = new RunHistoryFile(Paths.get("src/test/resources/RunHistoryFileTests/RunHistoryFile-nh-rollback.csv"));
         assertEquals(Optional.of("1753199537"), runHistoryFileRollback.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS));
         assertEquals(Optional.of("1753199537"), runHistoryFileRollback.getLatestValueOfCol(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS));
         assertTrue(runHistoryFileRollback.anyValuesInColumn(RunHistoryFile.POSTRUN_UPLINKCMD));
-
-
     }
-
-
 }

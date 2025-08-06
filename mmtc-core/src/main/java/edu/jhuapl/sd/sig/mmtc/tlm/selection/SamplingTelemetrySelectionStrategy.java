@@ -13,7 +13,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp.USER_NOTICE;
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrategy {
 

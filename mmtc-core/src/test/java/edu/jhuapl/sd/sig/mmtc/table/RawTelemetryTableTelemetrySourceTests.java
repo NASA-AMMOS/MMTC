@@ -23,7 +23,7 @@ public class RawTelemetryTableTelemetrySourceTests {
 
     void loadConfigAndTlmSource(String[] args, String rawTlmTablePath) throws Exception {
         config = spy(new TimeCorrelationAppConfig(args));
-        when(config.getString("telemetry.source.plugin.rawTlmTable.tableFile.uri")).thenReturn(rawTlmTablePath);
+        when(config.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(rawTlmTablePath);
 
         try {
             tableTlmSource = new RawTelemetryTableTelemetrySource();
@@ -119,7 +119,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         Map<String, TimeCorrelationFilter> enabledFilters = new HashMap<>();
         enabledFilters.put(TimeCorrelationAppConfig.VALID_FILTER, new ValidFilter());
         when(mockedConfig.getFilters()).thenReturn(enabledFilters);
-        when(mockedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.uri")).thenReturn("src/test/resources/tables/RawTelemetryTable_empty.csv");
+        when(mockedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn("src/test/resources/tables/RawTelemetryTable_empty.csv");
 
         RawTelemetryTableTelemetrySource tlmArchive = new RawTelemetryTableTelemetrySource();
 
