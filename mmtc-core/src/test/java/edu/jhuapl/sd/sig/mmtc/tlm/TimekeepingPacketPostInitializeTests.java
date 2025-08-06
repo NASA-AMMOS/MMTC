@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -101,11 +102,10 @@ public class TimekeepingPacketPostInitializeTests {
     }
 
     @BeforeAll
-    public static void instantiateParser()
-            throws MalformedURLException, JAXBException, SAXException, URISyntaxException {
-        //NOTE TimekeepingPacketParser is supposed to be reusable.
-        //We test that by instantiating it only once and sharing it among tests.
-        parser = new TimekeepingPacketParser(TimekeepingPacketPostInitializeTests.class.getResource("/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml").toURI());
+    public static void instantiateParser() throws MalformedURLException, JAXBException, SAXException {
+        // NOTE TimekeepingPacketParser is designed to be reusable.
+        // We test that by instantiating it only once and sharing it among tests.
+        parser = new TimekeepingPacketParser(Paths.get("src/test/resources/TkPacketTests/PacketDefs/generic_tk_pkt_float_downlink.xml"));
     }
 
     /**

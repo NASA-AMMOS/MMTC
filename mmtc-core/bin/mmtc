@@ -27,6 +27,8 @@ then
     echo "TK_CONFIG_PATH environment variable not set; defaulting to ${TK_CONFIG_PATH}"
 fi
 
+echo
+
 exec ${JAVA_HOME}/bin/java \
     -jar \
     -Djava.library.path=${MMTC_HOME}/lib/naif/JNISpice/lib \

@@ -45,7 +45,7 @@ public abstract class BaseTelemetrySelectionStrategyTest {
     protected static TelemetrySource getSpiedRawTelemetrySourceFor(TimeCorrelationAppConfig config, String path) throws Exception {
         RawTelemetryTableTelemetrySource rawTlmTable = new RawTelemetryTableTelemetrySource();
         TimeCorrelationAppConfig spiedConfig = Mockito.spy(config);
-        when(spiedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.uri")).thenReturn(path);
+        when(spiedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(path);
         rawTlmTable.applyConfiguration(spiedConfig);
         return Mockito.spy(rawTlmTable);
     }

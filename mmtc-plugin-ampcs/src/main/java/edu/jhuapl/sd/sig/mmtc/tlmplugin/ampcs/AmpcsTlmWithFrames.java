@@ -12,6 +12,7 @@ import org.apache.commons.csv.CSVRecord;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -139,15 +140,15 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
             final String FRAME_VCFC  = ampcsConfig.getFrameVcfcFieldName();
 
             // Get the information on the TK packet binary file.
-            URI pktDescriptionSource;
+            Path pktDescriptionSource;
             URI binaryPktFile;
             TimekeepingPacketParser parser;
             try {
-                pktDescriptionSource = new URI(ampcsConfig.getTkPacketDescriptionFile());
+                pktDescriptionSource = ampcsConfig.getTkPacketDescriptionFilePath();
                 binaryPktFile        = new URI("file://" + packetOutputFilename);
             } catch (URISyntaxException e) {
                 throw new MmtcException("Unable to open packet description file " +
-                        ampcsConfig.getTkPacketDescriptionFile());
+                        ampcsConfig.getTkPacketDescriptionFilePath());
             }
             try {
                 parser = new TimekeepingPacketParser(pktDescriptionSource);

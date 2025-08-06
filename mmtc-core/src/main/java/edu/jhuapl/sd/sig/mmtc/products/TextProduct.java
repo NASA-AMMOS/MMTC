@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.products;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
@@ -349,7 +350,7 @@ abstract class TextProduct {
             throw new TextProductException("Error creating new Time Correlation file \"" + newFilePath + "\".", e);
         }
 
-        logger.info(TimeCorrelationApp.USER_NOTICE, "Created new time correlation product file: " + newFilePath);
+        logger.info(MmtcCli.USER_NOTICE, "Created new time correlation product file: " + newFilePath);
     }
 
 

@@ -4,11 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import javax.xml.XMLConstants;
@@ -48,7 +47,7 @@ public class TimekeepingPacketParser implements Iterable<TimekeepingRecord> {
      * @throws SAXException if a SAX exception occurred while parsing the TK packet description file
      * @throws MalformedURLException if the TK packet description file could not be accessed
      */
-    public TimekeepingPacketParser(URI packetDefinitionFile) throws JAXBException, SAXException, MalformedURLException, IllegalStateException {
+    public TimekeepingPacketParser(Path packetDefinitionFile) throws JAXBException, SAXException, MalformedURLException, IllegalStateException {
         logger.trace("TimekeepingPacketParser: Instantiating XML parser");
         try {
             unmarshaller = JAXBContext.newInstance(PacketDefinition.class).createUnmarshaller();
@@ -64,15 +63,9 @@ public class TimekeepingPacketParser implements Iterable<TimekeepingRecord> {
         }
 
         logger.trace("TimekeepingPacketParser: parsing XML packet definition [" + packetDefinitionFile + "]");
-        URL url;
+
         try {
-            url = new URL(packetDefinitionFile.toString()); // NOTE: we use this because at least when the URI scheme/protocol is missing, the exception message is more useful than URI.toURl()
-        } catch (IllegalArgumentException | MalformedURLException e) {
-            logger.error("Error locating XML packet definition file. Configuration value [" + packetDefinitionFile + "] is not a valid URL and cannot be converted to one.", e);
-            throw e;
-        }
-        try {
-            packetDefinition = (PacketDefinition) unmarshaller.unmarshal(url);
+            packetDefinition = (PacketDefinition) unmarshaller.unmarshal(packetDefinitionFile.toFile());
             if (isValidPacketDef(packetDefinition)) {
                 logger.trace("Packet definition validated successfully");
             }
@@ -96,7 +89,7 @@ public class TimekeepingPacketParser implements Iterable<TimekeepingRecord> {
      * @throws JAXBException if a JAXB exception occurred while parsing the TK packet description file
      * @throws SAXException if a SAX exception occurred while parsing the TK packet description file
      */
-    public TimekeepingPacketParser(URI packetDefinitionFile, URI packetFile) throws IOException, JAXBException, SAXException {
+    public TimekeepingPacketParser(Path packetDefinitionFile, URI packetFile) throws IOException, JAXBException, SAXException {
         this(packetDefinitionFile);
         packets = Files.readAllBytes(new File(packetFile).toPath());
     }
@@ -111,7 +104,7 @@ public class TimekeepingPacketParser implements Iterable<TimekeepingRecord> {
      * @throws SAXException if a SAX exception occurred while parsing the TK packet description file
      * @throws MalformedURLException if the TK packet description file could not be accessed
      */
-    public TimekeepingPacketParser(URI packetDefinitionFile, byte[] packets)
+    public TimekeepingPacketParser(Path packetDefinitionFile, byte[] packets)
             throws MalformedURLException, JAXBException, SAXException {
         this(packetDefinitionFile);
         this.packets = packets;

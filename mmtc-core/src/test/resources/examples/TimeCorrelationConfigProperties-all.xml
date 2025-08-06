@@ -34,7 +34,7 @@
     <!--entry key="telemetry.source.pluginJarPrefix">mmtc-plugin-ampcs</entry-->
 
     <!-- Options for built-in Raw TLM Table telemetry source -->
-    <entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri"></entry>
+    <entry key="telemetry.source.plugin.rawTlmTable.tableFile.path"></entry>
     <entry key="telemetry.source.plugin.rawTlmTable.readDownlinkDataRate"></entry>
 
     <entry key="telemetry.tkOscTempWindowSec"></entry>
@@ -82,10 +82,10 @@
     <entry key="filter.dataRate.maxDataRateBps"></entry>
 
     <!-- Output Files -->
-    <entry key="table.runHistoryFile.uri"></entry>
-    <entry key="table.rawTelemetryTable.uri"></entry>
+    <entry key="table.runHistoryFile.path"></entry>
+    <entry key="table.rawTelemetryTable.path"></entry>
     <entry key="table.rawTelemetryTable.dateTimePattern"></entry>
-        <entry key="table.timeHistoryFile.uri"></entry>
+    <entry key="table.timeHistoryFile.path"></entry>
     <entry key="table.timeHistoryFile.excludeColumns"></entry>
     <entry key="table.timeHistoryFile.scetUtcPrecision"></entry>
 
@@ -107,7 +107,7 @@
 
     <!-- timekeeping packet configuration -->
     <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketSizeBytes"></entry>
-    <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri"></entry>
+    <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path"></entry>
     <entry key="telemetry.source.plugin.ampcs.tkpacket.apid"></entry>
     <entry key="telemetry.source.plugin.ampcs.tkpacket.apidFieldName"></entry>
     <entry key="telemetry.source.plugin.ampcs.tkpacket.scetFieldName"></entry>

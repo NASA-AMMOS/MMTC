@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
-import java.net.URI;
+import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -25,8 +25,8 @@ public class RawTelemetryTable extends AbstractTimeCorrelationTable {
     public static final String DATA_RATE_BPS = "Data Rate BPS";
     public static final String FRAME_SIZE_BITS = "Frame Size Bits";
 
-    public RawTelemetryTable(URI uri) {
-        super(uri);
+    public RawTelemetryTable(Path path) {
+        super(path);
     }
 
     public List<String> getHeaders() {

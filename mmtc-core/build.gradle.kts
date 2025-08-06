@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.log4j.api)
     implementation(libs.log4j.core)
     implementation(libs.log4j.jcl)
+    implementation(libs.commons.io)
 
     testImplementation(testlibs.junit.jupiter.api)
     testImplementation(testlibs.junit.jupiter.params)
@@ -71,7 +72,7 @@ val uberJar = tasks.register<Jar>("uberJar") {
 
     manifest {
         attributes(
-                "Main-Class" to "edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp",
+                "Main-Class" to "edu.jhuapl.sd.sig.mmtc.app.MmtcCli",
                 "Build-Date" to Instant.now().toString(),
                 "Implementation-Version" to project.version,
                 "Implementation-Title" to project.name
