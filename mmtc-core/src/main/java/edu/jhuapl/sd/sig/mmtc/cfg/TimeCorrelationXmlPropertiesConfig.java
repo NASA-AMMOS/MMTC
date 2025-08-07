@@ -12,12 +12,16 @@ import org.apache.logging.log4j.Logger;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Provides access to the time correlation properties configuration file
  * parameters.
  */
 public class TimeCorrelationXmlPropertiesConfig extends TimeCorrelationConfig {
+    public static final String TIME_COR_CONFIG_PROPERTIES_FILENAME = "TimeCorrelationConfigProperties.xml";
+
     private FileBasedConfigurationBuilder<LocatedXMLPropertiesConfiguration> builder;
 
     private static final Logger logger = LogManager.getLogger();
@@ -34,19 +38,18 @@ public class TimeCorrelationXmlPropertiesConfig extends TimeCorrelationConfig {
      */
     public boolean load() {
         try {
-            final String fileName = "TimeCorrelationConfigProperties.xml";
             String basePath = Environment.getEnvironmentVariable("TK_CONFIG_PATH");
             Parameters params = new Parameters();
 
-            logger.info(String.format("Attempting to load configuration file %s from $TK_CONFIG_PATH (%s).", fileName, basePath));
+            logger.info(String.format("Attempting to load configuration file %s from $TK_CONFIG_PATH (%s).", TIME_COR_CONFIG_PROPERTIES_FILENAME, basePath));
             builder = new FileBasedConfigurationBuilder<>(LocatedXMLPropertiesConfiguration.class)
                     .configure(params.properties()
                     .setBasePath(basePath)
-                    .setFileName(fileName)
+                    .setFileName(TIME_COR_CONFIG_PROPERTIES_FILENAME)
                     .setLocationStrategy(new BasePathLocationStrategy())
                     .setListDelimiterHandler(new DefaultListDelimiterHandler(',')));
 
-            setPath(basePath + File.separator + fileName);
+            setPath(Paths.get(basePath, TIME_COR_CONFIG_PROPERTIES_FILENAME));
 
             final LocatedXMLPropertiesConfiguration config = builder.getConfiguration();
             final boolean success = config != null;
@@ -54,7 +57,7 @@ public class TimeCorrelationXmlPropertiesConfig extends TimeCorrelationConfig {
             if (success) {
                 String urlString = config.getURLString();
                 logger.info("Loaded configuration from: " + urlString);
-                setPath(urlString);
+                setPath(Paths.get(urlString));
             }
 
             return success;

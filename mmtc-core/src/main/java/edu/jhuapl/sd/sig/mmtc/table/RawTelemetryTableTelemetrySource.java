@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -10,8 +11,11 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import javax.management.openmbean.InvalidOpenTypeException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -23,7 +27,7 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
 
     private static final ZoneOffset ZONE_OFFSET = ZoneOffset.UTC;
 
-    private static final String RAW_TLM_TABLE_URI_CONFIG_KEY = "telemetry.source.plugin.rawTlmTable.tableFile.uri";
+    private static final String RAW_TLM_TABLE_PATH_CONFIG_KEY = "telemetry.source.plugin.rawTlmTable.tableFile.path";
 
     private TimeCorrelationAppConfig config;
     private RawTelemetryTable rawTlmTable;
@@ -48,11 +52,11 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
 
         this.config = config;
 
-        try {
-            this.rawTlmTable = new RawTelemetryTable(new URI(config.getString(RAW_TLM_TABLE_URI_CONFIG_KEY)));
-        } catch (URISyntaxException e) {
-            throw new MmtcException("Invalid URI syntax given in " + RAW_TLM_TABLE_URI_CONFIG_KEY, e);
+        if (! config.containsKey(RAW_TLM_TABLE_PATH_CONFIG_KEY)) {
+            throw new MmtcException("To use the Raw Telemetry Table source, you must specify a value for config key " + RAW_TLM_TABLE_PATH_CONFIG_KEY);
         }
+
+        this.rawTlmTable = new RawTelemetryTable(Paths.get(config.getString(RAW_TLM_TABLE_PATH_CONFIG_KEY)));
     }
 
     @Override
@@ -66,6 +70,21 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
 
     public void disconnect() {
         // no-op
+    }
+
+    @Override
+    public Map<String, String> sandboxTelemetrySourceConfiguration(MmtcConfig mmtcConfig, Path sandboxRoot, Path sandboxConfigRoot) throws IOException {
+        final Path originalTablePath = Paths.get(mmtcConfig.getString(RAW_TLM_TABLE_PATH_CONFIG_KEY));
+        final Path newTablePath = sandboxRoot.resolve(originalTablePath.getFileName());
+
+        Files.copy(
+                originalTablePath,
+                newTablePath
+        );
+
+        Map<String, String> sandboxConfigChanges = new HashMap<>();
+        sandboxConfigChanges.put(RAW_TLM_TABLE_PATH_CONFIG_KEY, newTablePath.toAbsolutePath().toString());
+        return sandboxConfigChanges;
     }
 
     @Override

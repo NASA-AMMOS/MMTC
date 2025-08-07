@@ -8,8 +8,8 @@ import java.time.format.DateTimeParseException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class CommandLineConfigTests {
-    private CommandLineConfig config;
+class CorrelationCommandLineConfigTests {
+    private CorrelationCommandLineConfig config;
 
     @Test
     @DisplayName("CommandLineConfig.formDateTime Test 1")
@@ -18,7 +18,7 @@ class CommandLineConfigTests {
         String args[] = new String[2];
         args[0] = "2019-183T02:14:00.0";
         args[1] = "2019-183T04:016:00.0";
-        CommandLineConfig config = new CommandLineConfig(args);
+        CorrelationCommandLineConfig config = new CorrelationCommandLineConfig(args);
 
         String datetimeStr1 = "2019-183T02:14:00.0";
         OffsetDateTime dateTime1 = config.formDateTime(datetimeStr1);

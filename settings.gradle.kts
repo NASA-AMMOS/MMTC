@@ -16,6 +16,7 @@ dependencyResolutionManagement {
             library("commons-csv", "org.apache.commons:commons-csv:1.14.0")
             library("commons-lang3", "org.apache.commons:commons-lang3:3.18.0")
             library("commons-cli", "commons-cli:commons-cli:1.9.0")
+            library("commons-io", "commons-io:commons-io:2.19.0")
 
             library("log4j-api", "org.apache.logging.log4j:log4j-api:2.25.1")
             library("log4j-core", "org.apache.logging.log4j:log4j-core:2.25.1")

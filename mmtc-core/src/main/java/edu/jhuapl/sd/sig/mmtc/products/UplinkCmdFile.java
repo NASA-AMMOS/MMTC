@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.products;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +38,6 @@ public class UplinkCmdFile {
         writer = new BufferedWriter(new FileWriter(filespec));
         writer.write(commandString.toString());
         writer.close();
-        logger.info(TimeCorrelationApp.USER_NOTICE, "Wrote new uplink command file at: " + Paths.get(filespec));
+        logger.info(MmtcCli.USER_NOTICE, "Wrote new uplink command file at: " + Paths.get(filespec));
     }
 }

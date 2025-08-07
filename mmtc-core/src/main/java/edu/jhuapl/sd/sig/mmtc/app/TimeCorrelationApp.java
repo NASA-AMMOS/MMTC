@@ -17,7 +17,6 @@ import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig.ClockChangeRateMode;
 import edu.jhuapl.sd.sig.mmtc.filter.ContactFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.products.*;
-import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.table.*;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -30,30 +29,23 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import spice.basic.CSPICE;
 import spice.basic.SpiceErrorException;
+
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 /**
  * <p><strong>The Multi-Mission Time Correlation System (MMTC)</strong></p>
  * <p>Developed at the Johns Hopkins Applied Physics Laboratory in Laurel, Maryland</p>
- * TimeCorrelationApp is the top-level class in the MMTC application.
  *
  * MMTC is described in:
  * <p><i>M. R. Reid and S. B. Cooper, "The Multi-mission Time Correlation System," 2019 IEEE International Conference on Space Mission Challenges for Information Technology (SMC-IT), Pasadena, CA, USA, 2019, pp. 41-46.
  * doi: 10.1109/SMC-IT.2019.00010</i></p>
  */
 public class TimeCorrelationApp {
-    public static final Marker USER_NOTICE = MarkerManager.getMarker("USER_NOTICE");
-
-    public static final String MMTC_TITLE = "Multi-Mission Time Correlation (MMTC)";
-    public static final BuildInfo BUILD_INFO = new BuildInfo();
-
     private static final Logger logger = LogManager.getLogger();
 
     private final OffsetDateTime appRunTime = OffsetDateTime.now(ZoneOffset.UTC);
-    private final String[] cliArgs;
     private final List<String> timeHistoryFileWarnings = new ArrayList<>();
 
     private final TimeCorrelationAppConfig config;
@@ -85,22 +77,21 @@ public class TimeCorrelationApp {
     // The version number of the new SCLK Kernel and new SCLK/SCET file in the filenames.
     private String newVersionStr = "";
 
-    /**
-     * Create the configuration objects.
-     *
-     * @param args the incoming command line arguments
-     */
-    private TimeCorrelationApp(String[] args) throws Exception {
-        config = new TimeCorrelationAppConfig(args);
-        tlmSource = config.getTelemetrySource();
-        cliArgs = args;
+    public TimeCorrelationApp(String... args) throws Exception {
+        try {
+            this.config = new TimeCorrelationAppConfig(args);
+            this.tlmSource = config.getTelemetrySource();
+            init();
+        } catch (Exception e) {
+            throw new MmtcException("MMTC correlation initialization failed.", e);
+        }
+
     }
 
     /**
      * Initialize the time correlation application by loading configuration and
      * the specified SPICE kernels. Load the SCLK kernel separately.
      *
-     * @return true if successful, false otherwise
      */
     private void init() throws Exception {
         config.validate();
@@ -111,7 +102,7 @@ public class TimeCorrelationApp {
 
         logger.info("SPICE kernels loaded:\n" + String.join("\n", TimeConvert.getLoadedKernelNames()));
 
-        currentSclkKernel = new SclkKernel(config.getSclkKernelPath().toString());
+        currentSclkKernel = new SclkKernel(config.getInputSclkKernelPath().toString());
         logger.info("Loaded SCLK kernel: " + currentSclkKernel.getPath() + ".");
 
         // Check that the SCLK is a 2-stage clock. Only 2-stage clocks are currently supported. The number of
@@ -124,12 +115,12 @@ public class TimeCorrelationApp {
         }
         currentSclkKernel.readSourceProduct();
 
-        rawTlmTable = new RawTelemetryTable(config.getRawTelemetryTableUri());
+        rawTlmTable = new RawTelemetryTable(config.getRawTelemetryTablePath());
 
-        timeHistoryFile = new TimeHistoryFile(config.getTimeHistoryFileUri(), config.getTimeHistoryFileExcludeColumns());
+        timeHistoryFile = new TimeHistoryFile(config.getTimeHistoryFilePath(), config.getTimeHistoryFileExcludeColumns());
         timeHistoryFileRecord = new TableRecord(timeHistoryFile.getHeaders());
 
-        runHistoryFile = new RunHistoryFile(config.getRunHistoryFileUri());
+        runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath());
         runHistoryFileRecord = new TableRecord(runHistoryFile.getHeaders());
         recordRunHistoryFileBeforeValues();
 
@@ -589,7 +580,7 @@ public class TimeCorrelationApp {
         runHistoryFileRecord.setValue(RunHistoryFile.RUN_ID,                String.format("%05d",newRunId));
         runHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,            "false");
         runHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,              System.getProperty("user.name"));
-        runHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,              String.join(" ",cliArgs));
+        runHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,              String.join(" ", config.getCliArgs()));
 
         // Output products
         // handle the SCLK kernel uniquely, as the seed kernel is already in place before any MMTC run is executed
@@ -626,7 +617,7 @@ public class TimeCorrelationApp {
         }
 
         // Uplink Command File
-        if (config.createUplinkCmdFile()) {
+        if (config.isCreateUplinkCmdFile()) {
             runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_UPLINKCMD, getLatestFileCounterByPrefix(Paths.get(config.getUplinkCmdFileDir()), config.getUplinkCmdFileBasename(), UplinkCmdFile.FILE_SUFFIX));
         } else {
             runHistoryFileRecord.setValue(RunHistoryFile.POSTRUN_UPLINKCMD, runHistoryFile.getLatestNonEmptyValueOfCol(RunHistoryFile.POSTRUN_UPLINKCMD, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
@@ -1001,7 +992,7 @@ public class TimeCorrelationApp {
     /**
      * Main application processing.
      */
-    private void run() throws Exception {
+    public void run() throws Exception {
         logger.info(USER_NOTICE, String.format("Running time correlation between %s and %s", config.getStartTime().toString(), config.getStopTime().toString()));
 
         if (config.isTestMode()) {
@@ -1175,7 +1166,7 @@ public class TimeCorrelationApp {
         }
 
         // Write the optional Uplink Command File if selected to do so.
-        if (config.createUplinkCmdFile()) {
+        if (config.isCreateUplinkCmdFile()) {
             writeUplinkCommandFile(etG, tdtG, clockChangeRate);
         }
 
@@ -1189,43 +1180,8 @@ public class TimeCorrelationApp {
         );
 
         writeRunHistoryFileAfterRun();
-        logger.info(String.format("Run at %s recorded to %s", appRunTime, config.getRunHistoryFileUri().toString()));
+        logger.info(String.format("Run at %s recorded to %s", appRunTime, config.getRunHistoryFilePath().toString()));
 
         logger.info(USER_NOTICE, "MMTC completed successfully.");
-    }
-
-    /**
-     * Entry point of the application.
-     *
-     * @param args command line arguments
-     */
-    public static void main(String[] args) {
-        logger.info(USER_NOTICE, String.format("************ %s version %s ************", MMTC_TITLE, BUILD_INFO.version));
-        logger.info(USER_NOTICE, String.format("Commit %s built at %s", BUILD_INFO.commit, BUILD_INFO.buildDate));
-
-        if (args[0].equalsIgnoreCase("rollback")) {
-            logger.info(USER_NOTICE, String.format("Rollback invoked by command %s, starting rollback process", Arrays.toString(args)));
-            try {
-                TimeCorrelationRollback rollbackInstance = new TimeCorrelationRollback();
-                rollbackInstance.rollback();
-            } catch (Exception e) {
-                logger.fatal("Rollback failed.", e);
-                System.exit(1);
-            }
-        } else {
-            try {
-                TimeCorrelationApp app = new TimeCorrelationApp(args);
-                app.init();
-                try {
-                    app.run();
-                } catch (Exception ex) {
-                    logger.fatal("MMTC run failed.", ex);
-                    System.exit(1);
-                }
-            } catch (Exception ex) {
-                logger.fatal("MMTC initialization failed.", ex);
-                System.exit(1);
-            }
-        }
     }
 }

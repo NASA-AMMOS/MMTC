@@ -2,15 +2,16 @@ package edu.jhuapl.sd.sig.mmtc.table;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.function.Function;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public static final RunHistoryOutputProductDefinitions OUTPUT_PRODUCT_DEFINITIONS = new RunHistoryOutputProductDefinitions();
@@ -36,8 +37,8 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
         INCLUDE_ROLLBACKS
     }
 
-    public RunHistoryFile(URI uri) {
-        super(uri);
+    public RunHistoryFile(Path path) {
+        super(path);
     }
 
     @Override
@@ -143,7 +144,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
 
     @FunctionalInterface
     public interface ConfiguredOutputProductDefinitionConverter {
-        ConfiguredOutputProductDefinition apply(TimeCorrelationAppConfig conf) throws MmtcException;
+        ConfiguredOutputProductDefinition apply(MmtcConfig conf) throws MmtcException;
     }
 
     public static class OutputProductTypeDefinition {
@@ -212,8 +213,8 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
                             POSTRUN_RAWTLMTABLE,
                             OutputProductTypeDefinition.Type.LINE_APPENDED_CSV,
                             (conf) -> new ConfiguredAppendedCsvOutputProductDefinition(
-                                    Paths.get(conf.getRawTelemetryTableUri().toString().replace("file://", "")),
-                                    new RawTelemetryTable(conf.getRawTelemetryTableUri()
+                                    Paths.get(conf.getRawTelemetryTablePath().toString().replace("file://", "")),
+                                    new RawTelemetryTable(conf.getRawTelemetryTablePath()
                                     )
                             )
                     ),
@@ -223,8 +224,8 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
                             POSTRUN_TIMEHIST,
                             OutputProductTypeDefinition.Type.LINE_APPENDED_CSV,
                             (conf) -> new ConfiguredAppendedCsvOutputProductDefinition(
-                                        Paths.get(conf.getTimeHistoryFileUri().toString().replace("file://", "")),
-                                        new TimeHistoryFile(conf.getTimeHistoryFileUri()
+                                        Paths.get(conf.getTimeHistoryFilePath().toString().replace("file://", "")),
+                                        new TimeHistoryFile(conf.getTimeHistoryFilePath()
                                         )
                             )
                     ),

@@ -32,7 +32,7 @@
   <!--entry key="telemetry.source.pluginJarPrefix">mmtc-plugin-ampcs</entry-->
 
   <!-- Options for built-in Raw TLM Table telemetry source -->
-  <entry key="telemetry.source.plugin.rawTlmTable.tableFile.uri">file:///absolute/path/to/RawTelemetryTable_NH_reformatted.csv</entry>
+  <entry key="telemetry.source.plugin.rawTlmTable.tableFile.path">/absolute/path/to/RawTelemetryTable_NH_reformatted.csv</entry>
 
 
 
@@ -98,9 +98,9 @@
   <entry key="filter.dataRate.maxDataRateBps">1000000</entry>
 
   <!-- Output Files -->
-  <entry key="table.rawTelemetryTable.uri">file:///opt/local/mmtc/output/RawTlmTable.csv</entry>
+  <entry key="table.rawTelemetryTable.path">/opt/local/mmtc/output/RawTlmTable.csv</entry>
   <entry key="table.rawTelemetryTable.dateTimePattern">yyyy-DDD'T'HH:mm:ss.SSSSSS</entry>
-    <entry key="table.timeHistoryFile.uri">file:///opt/local/mmtc/output/TimeHistoryFile.csv</entry>
+  <entry key="table.timeHistoryFile.path">/opt/local/mmtc/output/TimeHistoryFile.csv</entry>
   <entry key="table.timeHistoryFile.excludeColumns"></entry>
   <entry key="table.timeHistoryFile.scetUtcPrecision">6</entry>
 

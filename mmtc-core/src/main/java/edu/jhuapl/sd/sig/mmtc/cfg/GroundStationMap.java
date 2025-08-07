@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,7 +45,7 @@ class GroundStationMap extends AbstractConfig {
      * Class constructor
      * @param groundStationMapPath IN:the path to the ground stations map file
      */
-    GroundStationMap(String groundStationMapPath) {
+    GroundStationMap(Path groundStationMapPath) {
         super(groundStationMapPath);
     }
 
@@ -57,10 +58,11 @@ class GroundStationMap extends AbstractConfig {
         try {
             logger.info("Loading Ground Station Map: " + this.path);
 
-            File file = new File(this.path);
-
-            CSVParser parser = CSVParser.parse(file, Charset.forName("utf-8"),
-                    CSVFormat.DEFAULT.withFirstRecordAsHeader().withTrim());
+            CSVParser parser = CSVParser.parse(
+                    this.path,
+                    Charset.forName("utf-8"),
+                    CSVFormat.DEFAULT.withFirstRecordAsHeader().withTrim()
+            );
 
             records = new HashMap<>();
 

@@ -1,6 +1,5 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig.ClockChangeRateMode;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.commons.cli.*;
@@ -8,9 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -22,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * Defines the command line configuration options for the MMTC application.
  */
-public class CommandLineConfig implements IConfiguration {
+public class CorrelationCommandLineConfig implements IConfiguration {
     private HelpFormatter help = new HelpFormatter();
     private Options opts = new Options();
     private CommandLine cmdLine;
@@ -40,11 +37,11 @@ public class CommandLineConfig implements IConfiguration {
 
     private static final Logger logger = LogManager.getLogger();
 
-    CommandLineConfig(String[] args) {
+    CorrelationCommandLineConfig(String[] args) {
         this(args, Collections.emptyList());
     }
 
-    CommandLineConfig(String[] args, Collection<Option> additionalOptions) {
+    CorrelationCommandLineConfig(String[] args, Collection<Option> additionalOptions) {
         OptionGroup clockChangeRateGroup = new OptionGroup();
 
         clockChangeRateGroup.addOption(Option.builder()
@@ -95,8 +92,6 @@ public class CommandLineConfig implements IConfiguration {
                 "Run in test mode, which allows the user to override one-way-light-time."
         );
 
-        opts.addOption("v", "version", false, "Print the MMTC version number.");
-
         opts.addOption("h", "help", false, "Print this message.");
 
         for (Option additionalOption : additionalOptions) {
@@ -114,6 +109,10 @@ public class CommandLineConfig implements IConfiguration {
         return opts.hasShortOption(option.getOpt()) || opts.hasLongOption(option.getLongOpt());
     }
 
+    public String[] getArgs() {
+        return Arrays.copyOf(this.args, this.args.length);
+    }
+
     public boolean load() {
         try {
             logger.info("Command line arguments: ["
@@ -127,13 +126,7 @@ public class CommandLineConfig implements IConfiguration {
 
             // Print help and exit, regardless of any other arguments
             if (isHelpSet()) {
-                help.printHelp("mmtc [options] <start-time> <stop-time>", opts);
-                System.exit(0);
-            }
-
-            // Else print version and exit, regardless of any other arguments
-            if (isVersionSet()) {
-                System.out.println(TimeCorrelationApp.BUILD_INFO);
+                help.printHelp("mmtc correlation [options] <start-time> <stop-time>", opts);
                 System.exit(0);
             }
 
@@ -143,10 +136,9 @@ public class CommandLineConfig implements IConfiguration {
                 // Convert the input data start/stop times to Java OffsetDateTime.
                 startTime = formDateTime(posArgs[0]);
                 stopTime  = formDateTime(posArgs[1]);
-            }
-            else {
+            } else {
                 System.out.println("Incorrect number of command line arguments. 2 are required, " + posArgs.length + " were provided.");
-                help.printHelp("mmtc [options] <start-time> <stop-time>", opts);
+                help.printHelp("mmtc correlation [options] <start-time> <stop-time>", opts);
                 return false;
             }
         }
@@ -254,10 +246,6 @@ public class CommandLineConfig implements IConfiguration {
 
     private boolean isHelpSet() {
         return cmdLine.hasOption("h") || cmdLine.hasOption("help");
-    }
-
-    private boolean isVersionSet() {
-        return cmdLine.hasOption("v") || cmdLine.hasOption("version");
     }
 
     /**

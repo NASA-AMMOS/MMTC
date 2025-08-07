@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp.USER_NOTICE;
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrategy {
     private static final Logger logger = LogManager.getLogger();

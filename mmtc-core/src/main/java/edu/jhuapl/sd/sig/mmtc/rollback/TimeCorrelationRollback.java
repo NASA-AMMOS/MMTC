@@ -1,8 +1,9 @@
 package edu.jhuapl.sd.sig.mmtc.rollback;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
+import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.table.*;
 import org.apache.logging.log4j.LogManager;
@@ -16,13 +17,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp.USER_NOTICE;
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 public class TimeCorrelationRollback {
     public static final int ROLLBACK_WINDOW_SIZE = 10;
     private static final Logger logger = LogManager.getLogger();
 
-    private final TimeCorrelationAppConfig config;
+    private final RollbackConfig config;
     private final RunHistoryFile runHistoryFile;
 
     // stateful with operations of rollback
@@ -31,9 +32,9 @@ public class TimeCorrelationRollback {
     private List<TableRecord> rawRunHistoryRecords;
     private RollbackOperations rollbackOps;
 
-    public TimeCorrelationRollback() throws Exception {
-        this.config = new TimeCorrelationAppConfig();
-        this.runHistoryFile = new RunHistoryFile(config.getRunHistoryFileUri());
+    public TimeCorrelationRollback(String... args) throws Exception {
+        this.config = new RollbackConfig(args);
+        this.runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath());
 
         if (! runHistoryFile.exists()) {
             throw new MmtcRollbackException("Run History File not found; MMTC must have run at least one correlation that is recorded in its Run History File to use rollback.");
@@ -48,6 +49,8 @@ public class TimeCorrelationRollback {
      * (this includes products being modified between rollback being initiated and deletion confirmation being given by the user)
      */
     public void rollback() throws MmtcRollbackException {
+
+
         try {
             prepareRollback();
         } catch (Exception e) {
@@ -70,7 +73,7 @@ public class TimeCorrelationRollback {
             throw new MmtcException("Cannot execute a rollback, as there are no available correlation runs to roll back to.  Please reference the Run History File for more details.");
         }
 
-        logger.info(USER_NOTICE, String.format("...MMTC v.%s...\n", TimeCorrelationApp.BUILD_INFO.version));
+        logger.info(USER_NOTICE, String.format("...MMTC v.%s...\n", MmtcCli.BUILD_INFO.version));
         System.out.printf("Initiating rollback. %d most recent runs: \n", ROLLBACK_WINDOW_SIZE);
         for (int i = runHistoryRecords.size() - 1; i >= Math.max(runHistoryRecords.size() - ROLLBACK_WINDOW_SIZE, 0); i--) {
             TableRecord currentRecord = runHistoryRecords.get(i);
@@ -195,7 +198,7 @@ public class TimeCorrelationRollback {
             this.rollbackOperations = Collections.unmodifiableList(rollbackOperations);
         }
 
-        public static RollbackOperations fromRunHistoryFile(RunHistoryFile runHistoryFile, TimeCorrelationAppConfig config, String newRunIdThatWouldBeCurrentAfterRollback) throws MmtcException {
+        public static RollbackOperations fromRunHistoryFile(RunHistoryFile runHistoryFile, RollbackConfig config, String newRunIdThatWouldBeCurrentAfterRollback) throws MmtcException {
             List<ProductRollbackOperation> calculatedRollbackOperations = new ArrayList<>();
 
             for (RunHistoryFile.OutputProductTypeDefinition def : RunHistoryFile.OUTPUT_PRODUCT_DEFINITIONS.all) {
@@ -212,7 +215,7 @@ public class TimeCorrelationRollback {
             return new RollbackOperations(calculatedRollbackOperations);
         }
 
-        public static RollbackOperations toInitialState(RunHistoryFile runHistoryFile, TimeCorrelationAppConfig config) throws MmtcException {
+        public static RollbackOperations toInitialState(RunHistoryFile runHistoryFile, RollbackConfig config) throws MmtcException {
             List<ProductRollbackOperation> calculatedRollbackOperations = new ArrayList<>();
 
             for (RunHistoryFile.OutputProductTypeDefinition def : RunHistoryFile.OUTPUT_PRODUCT_DEFINITIONS.all) {
@@ -272,7 +275,7 @@ public class TimeCorrelationRollback {
             this.configuredDef = configuredDef;
         }
 
-        public static Optional<ProductRollbackOperation> calculateFor(RunHistoryFile.OutputProductTypeDefinition def, TimeCorrelationAppConfig config, Optional<String> currentLatestProductVersion, Optional<String> newLatestProductVersion) throws MmtcException {
+        public static Optional<ProductRollbackOperation> calculateFor(RunHistoryFile.OutputProductTypeDefinition def, RollbackConfig config, Optional<String> currentLatestProductVersion, Optional<String> newLatestProductVersion) throws MmtcException {
             if (currentLatestProductVersion.equals(newLatestProductVersion)) {
                 return Optional.empty();
             } else {
@@ -334,8 +337,8 @@ public class TimeCorrelationRollback {
         @Override
         public List<String> perform() {
             try {String message = String.format("Removed %d lines from %s",
-                        configuredDef.table.truncateRecords(Integer.parseInt(newLatestProductVersion)),
-                        configuredDef.pathToProduct);
+                    configuredDef.table.truncateRecords(Integer.parseInt(newLatestProductVersion)),
+                    configuredDef.pathToProduct);
                 logger.info(USER_NOTICE, message);
                 return Collections.emptyList();
             } catch (Exception e) {

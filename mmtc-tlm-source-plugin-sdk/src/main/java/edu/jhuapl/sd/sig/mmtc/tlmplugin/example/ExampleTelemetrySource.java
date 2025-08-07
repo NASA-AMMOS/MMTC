@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.example;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -8,6 +9,8 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.cli.Option;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.Duration;
@@ -16,7 +19,7 @@ import java.util.*;
 
 public class ExampleTelemetrySource implements TelemetrySource {
     // some constants to help in generating fake telemetry
-    // a typical implementation of a telemetry source will not need to know such values, as they should be read directly from the underyling source
+    // a typical implementation of a telemetry source will not need to know such values, as they should be read directly from the underlying source
     final int MAX_VCFC = 2048;
 
     private TimeCorrelationAppConfig config;
@@ -25,7 +28,7 @@ public class ExampleTelemetrySource implements TelemetrySource {
     public String getName() {
         /*
          * This is the first call that MMTC makes to any given TelemetrySource during a correlation run.
-         * It is used to determine the unique name for a TelemetrySource implementation, and is used to select the configured TelemetrySource among all available implementaitons for the run.
+         * It is used to determine the unique name for a TelemetrySource implementation, and is used to select the configured TelemetrySource among all available implementations for the run.
          */
         return "ExampleTelemetrySource";
     }
@@ -93,6 +96,15 @@ public class ExampleTelemetrySource implements TelemetrySource {
          * This is called after a call to `connect()` and one or many `get` methods. It may be called multiple times, one time for each call to `connect()`.
          * This example implementation is a no-op.
          */
+    }
+
+    /**
+     * This is called if/when MMTC has been instructed to create a sandboxed copy of itself.  This method is a hook for plugins to be able to copy their specific plugin files, if any,
+     * to the new sandboxed location, and to return a map of updated configuration key/value pairs that should be applied to the new (sandboxed) MMTC configuration.
+     */
+    @Override
+    public Map<String, String> sandboxTelemetrySourceConfiguration(MmtcConfig mmtcConfig, Path sandboxRoot, Path sandboxConfigRoot) throws IOException {
+        return Collections.emptyMap();
     }
 
     @Override
