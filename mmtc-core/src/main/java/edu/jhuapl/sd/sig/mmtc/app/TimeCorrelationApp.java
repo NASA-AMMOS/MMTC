@@ -801,18 +801,6 @@ public class TimeCorrelationApp {
 
         logger.debug("computePredictedClkChgRate(): sclk0 = " + sclk0 + ", tdt_g0 = " + tdt_g0 + ", sclk = " + sclk + ", tdt_g = " + tdt_g);
 
-        if (sclk0 >= sclk) {
-            throw new MmtcException("ERROR: Input data sample SCLK (" + sclk +
-                    " is earlier than or the same as the lookback SCLK (" + sclk0 + ") record in SCLK Kernel. Make sure that" +
-                    " the start time is later than the last time correlation record in the input SCLK Kernel.");
-        }
-
-        if (tdt_g0 >= tdt_g) {
-            throw new MmtcException("ERROR: Input data sample TDT(G) (" + tdt_g +
-                    " is earlier than or the same as the lookback TDT(G) (" + tdt_g0 + ") record in SCLK kernel. Make sure that" +
-                    " the start time is later than the last time correlation record in the input SCLK Kernel.");
-        }
-
         // Check that the selected look back record from the input SCLK Kernel is not older than the time of the current
         // sample minus the maximum number of look back hours as specified in the configuration parameters.  If it is,
         // throw an exception. Processing should not continue. The user should check that the input SCLK Kernel is
@@ -873,11 +861,6 @@ public class TimeCorrelationApp {
         logger.debug("computeInterpolatedClkChgRate(): sclk0 = " + sclk0 + ", tdt_g0 = " + tdt_g0 +
                 ", sclk = " + sclk + ", tdt_g = " + tdt_g);
 
-        if (sclk0 >= sclk) {
-            logger.error("Start/Stop time interval of current run overlaps that of the last run. Current run Start Time " +
-                    "must be later than the last time correlation record in the input SCLK Kernel.");
-            throw new MmtcException("ERROR: input data sample SCLK is earlier than or the same as the last record in SCLK kernel.");
-        }
         return computeClkChgRate(sclk0, tdt_g0, sclk, tdt_g);
     }
 
@@ -1030,7 +1013,7 @@ public class TimeCorrelationApp {
         logger.debug("TargetSample:\n");
         logger.debug(targetSample.toString());
 
-        double owlt = tcTarget.getTargetSampleOwlt();
+        final double owlt = tcTarget.getTargetSampleOwlt();
         if (config.isTestMode()) {
             // In test mode, a user may supply the OWLT rather than having the application compute it from ephemeris.
             // There are test environment scenarios where a user might want to supply a negative OWLT to make test
@@ -1045,25 +1028,25 @@ public class TimeCorrelationApp {
         // Record OWLT
         timeHistoryFileRecord.setValue(TimeHistoryFile.OWLT_SEC, String.format("%.6f", owlt));
 
-        double encSclk = tcTarget.getTargetSampleEncSclk();
+        final double encSclk = tcTarget.getTargetSampleEncSclk();
         logger.debug("Encoded SCLK from supplemental sample coarse TK SCLK: " + encSclk);
 
-        double etG = tcTarget.getTargetSampleEtG();
+        final double etG = tcTarget.getTargetSampleEtG();
         logger.debug(tcTarget.getTargetSampleErtGCalcLogStatement());
         logger.debug("ET(G) = " + etG);
         this.tf_offset = tcTarget.getTargetSampleTfOffset();
 
         // Compute TDT(G) from ERT in ET form.
-        double tdtG = tcTarget.getTargetSampleTdtG();
+        final double tdtG = tcTarget.getTargetSampleTdtG();
         logger.debug("TDT(G) value computed using ET(G): " + tdtG);
 
         String tdtGStr = TimeConvert.tdtToTdtStr(tdtG);
 
         // Record the ground computed TDT and ET values. These are the ground time equivalents of the SCLK.
-        DecimalFormat tdf = new DecimalFormat("#.000000");
+        final DecimalFormat tdf = new DecimalFormat("#.000000");
         tdf.setRoundingMode(RoundingMode.HALF_UP);
-        String tdt_g_numericStr = tdf.format(tdtG);
-        String et_numericStr    = tdf.format(etG);
+        final String tdt_g_numericStr = tdf.format(tdtG);
+        final String et_numericStr    = tdf.format(etG);
 
         timeHistoryFileRecord.setValue(TimeHistoryFile.TDT_G, tdt_g_numericStr);
         timeHistoryFileRecord.setValue(TimeHistoryFile.TDT_G_STR, tdtGStr);
@@ -1077,31 +1060,41 @@ public class TimeCorrelationApp {
         // Compute and record interval between new and previous TDT(G).
 
         // The TDT(G) value can be either a calendar string or a numeric value.
-        String tdtGPrevStr = currentSclkKernel.getLastRecValue(SclkKernel.TDTG);
-        double tdtGPrev;
-        if (SclkKernel.isNumVal(tdtGPrevStr)) {
-            tdtGPrev = Double.parseDouble(tdtGPrevStr);
-        }
-        else {
-            tdtGPrev = TimeConvert.tdtStrToTdt(tdtGPrevStr.replace("@", ""));
-        }
-
-        double dt = (tdtG - tdtGPrev) / TimeConvert.SECONDS_PER_DAY;
-        if (dt < 0.000000) {
-            throw new MmtcException("ERROR: TDT(G) of the last record in SCLK kernel is later than the input data sample.");
+        final String prevTdtGStr = currentSclkKernel.getLastRecValue(SclkKernel.TDTG);
+        final double prevTdtG;
+        if (SclkKernel.isNumVal(prevTdtGStr)) {
+            prevTdtG = Double.parseDouble(prevTdtGStr);
+        } else {
+            prevTdtG = TimeConvert.tdtStrToTdt(prevTdtGStr.replace("@", ""));
         }
 
-        timeHistoryFileRecord.setValue(TimeHistoryFile.DT, String.format("%.2f", dt));
+        // sanity checks that we're adding records that have strictly increasing TDT(G) and SCLK values
+        if (! (tdtG > prevTdtG)) {
+            throw new MmtcException(String.format(
+                    "Error: the target sample has an earlier or equal TDT(G) as compared to the last triplet in the input SCLK kernel; new correlations must have subsequent SCLK and TDT(G) values that are strictly increasing. Target sample TDT(G): %s; SCLK kernel's latest TDT(G): %s",
+                    TimeConvert.tdtToTdtStr(tdtG),
+                    prevTdtGStr
+                    ));
+        }
 
-        double epMs = computeTdtPredictionErrorMs(encSclk, tdtG);
+        final double prevEncSclk = Double.parseDouble(currentSclkKernel.getLastRecValue(SclkKernel.ENCSCLK));
+        if (! (tcTarget.getTargetSampleEncSclk() > prevEncSclk)) {
+            throw new MmtcException(String.format(
+                    "Error: the target sample has an earlier or equal SCLK as compared to the last triplet in the input SCLK kernel; new correlations must have subsequent SCLK and TDT(G) values that are strictly increasing. Target sample enc SCLK: %f; SCLK kernel's latest enc SCLK: %f",
+                    tcTarget.getTargetSampleEncSclk(),
+                    prevEncSclk
+                    ));
+        }
+
+        final double delta_tdt_g_from_prior_triplet = (tdtG - prevTdtG) / TimeConvert.SECONDS_PER_DAY;
+
+        timeHistoryFileRecord.setValue(TimeHistoryFile.DT, String.format("%.2f", delta_tdt_g_from_prior_triplet));
+
+        final double epMs = computeTdtPredictionErrorMs(encSclk, tdtG);
         timeHistoryFileRecord.setValue(TimeHistoryFile.EP, String.format("%.3f", epMs));
 
         // Compute and record TDT error (ms) / TDT interval
-        timeHistoryFileRecord.setValue(TimeHistoryFile.EP_DT, String.format("%.3f", Math.abs(epMs / dt)));
-
-        // Provide the clock change rate for the new time correlation record based on the method specified
-        // by the user.
-        double clockChangeRate;
+        timeHistoryFileRecord.setValue(TimeHistoryFile.EP_DT, String.format("%.3f", Math.abs(epMs / delta_tdt_g_from_prior_triplet)));
 
         // Get the user-specified method for computing the CLKRATE. If this is the very first run of the application
         // for a mission, the input SCLK Kernel is assumed to be the seed kernel. In this case and ONLY in this case,
@@ -1133,6 +1126,8 @@ public class TimeCorrelationApp {
                 throw new MmtcException("Can't compute or record interpolated clock change rate.", ex);
             }
         }
+
+        final double clockChangeRate;
 
         switch (actualClkChgRateMode) {
             case NO_DRIFT:
