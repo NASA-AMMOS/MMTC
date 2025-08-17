@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import edu.jhuapl.sd.sig.mmtc.products.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.TelemetrySelectionStrategy;
 
@@ -89,6 +89,9 @@ public abstract class MmtcConfig {
 
     /**
      * Use Java ServiceLoader to find and load a telemetry source
+     *
+     * @return the initialized telemetry source
+     * @throws Exception if the configured plugin can not be found or initialized
      */
     protected TelemetrySource initTlmSource() throws Exception {
         TelemetrySource tlmSource = null;
@@ -916,7 +919,7 @@ public abstract class MmtcConfig {
      * @return the subseconds modulus in ticks per second
      */
     public Integer getSclkModulusOverride() {
-        // If this parameter is not found or cannot be retrieved, handle the exception and return a null value.
+        // If this parameter is not found or cannot be retrieved, handle the exception and return a negative value.
         try {
             return timeCorrelationConfig.getConfig().getInt("spacecraft.sclkModulusOverride");
         } catch (Exception e) {

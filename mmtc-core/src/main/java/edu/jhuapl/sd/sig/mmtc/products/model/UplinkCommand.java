@@ -1,4 +1,4 @@
-package edu.jhuapl.sd.sig.mmtc.products;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;

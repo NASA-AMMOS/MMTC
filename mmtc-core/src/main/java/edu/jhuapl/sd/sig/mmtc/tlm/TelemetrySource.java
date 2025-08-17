@@ -64,7 +64,7 @@ public interface TelemetrySource {
      * If the Telemetry Source needs to make any long-lived 'connection' to the underlying source of telemetry,
      * it should do so in this method.  MMTC will call this method at least once during nominal MMTC time correlation
      * operations (before one or many calls to getSamplesInRange()), and possibly again before calling other
-     * methods to retrieve ancillary telemetry.
+     * methods to retrieve ancillary telemetry.  These calls will always be followed by a call to disconnect().
      * <p>
      * Implementations of this class are expected to be able to support multiple connect and disconnect calls,
      * ordered as such.
@@ -85,6 +85,10 @@ public interface TelemetrySource {
 
     /**
      * Copy plugin-specific configuration to a sandbox directory and transform .  This is not called between connect/disconnect calls.
+     *
+     * @param mmtcConfig the original, pre-sandboxed MMTC configuration that is active for this 'create-sandbox' MMTC invocation
+     * @param sandboxRoot the path of the new MMTC sandbox (that would become the new $MMTC_HOME)
+     * @param sandboxConfigRoot the path of the new MMTC sandbox's config directory
      *
      * @throws IOException if there is a problem copying the plugin's configuration to the sandbox directory
      * @return a map of config keys to values to apply to the new sandbox configuration

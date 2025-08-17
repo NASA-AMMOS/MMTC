@@ -4,8 +4,7 @@ import edu.jhuapl.sd.sig.mmtc.TestHelper;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
-import edu.jhuapl.sd.sig.mmtc.table.RawTelemetryTable;
-import edu.jhuapl.sd.sig.mmtc.table.RawTelemetryTableTelemetrySource;
+import edu.jhuapl.sd.sig.mmtc.tlm.RawTelemetryTableTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -14,8 +13,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.mockito.Mockito;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 

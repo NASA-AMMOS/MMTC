@@ -1,14 +1,13 @@
 package edu.jhuapl.sd.sig.mmtc;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
-import edu.jhuapl.sd.sig.mmtc.products.SclkScet;
-import edu.jhuapl.sd.sig.mmtc.products.SclkScetFile;
-import edu.jhuapl.sd.sig.mmtc.products.TextProductException;
+import edu.jhuapl.sd.sig.mmtc.products.model.SclkScet;
+import edu.jhuapl.sd.sig.mmtc.products.model.SclkScetFile;
+import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import spice.basic.KernelDatabase;

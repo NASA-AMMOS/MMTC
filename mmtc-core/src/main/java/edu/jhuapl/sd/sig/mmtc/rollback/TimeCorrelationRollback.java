@@ -4,8 +4,10 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
 import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
-import edu.jhuapl.sd.sig.mmtc.table.*;
+import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
+import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
+import static edu.jhuapl.sd.sig.mmtc.util.FileUtils.fileExistsAndIsWritable;
 
 public class TimeCorrelationRollback {
     public static final int ROLLBACK_WINDOW_SIZE = 10;
@@ -49,8 +52,6 @@ public class TimeCorrelationRollback {
      * (this includes products being modified between rollback being initiated and deletion confirmation being given by the user)
      */
     public void rollback() throws MmtcRollbackException {
-
-
         try {
             prepareRollback();
         } catch (Exception e) {
@@ -81,7 +82,8 @@ public class TimeCorrelationRollback {
                     currentRecord.getValue(RunHistoryFile.RUN_ID),
                     currentRecord.getValue(RunHistoryFile.RUN_TIME),
                     currentRecord.getValue(RunHistoryFile.RUN_USER),
-                    currentRecord.getValue(RunHistoryFile.POSTRUN_SCLK));
+                    currentRecord.getValue(RunHistoryFile.getPostRunProductColNameFor(new SclkKernelProductDefinition()))
+            );
         }
 
         final TableRecord latestRun = runHistoryRecords.get(runHistoryRecords.size() - 1);
@@ -192,21 +194,23 @@ public class TimeCorrelationRollback {
     }
 
     public static class RollbackOperations {
-        private final List<ProductRollbackOperation> rollbackOperations;
+        private final List<ProductRollbackOperation<?>> rollbackOperations;
 
-        private RollbackOperations(List<ProductRollbackOperation> rollbackOperations) {
+        private RollbackOperations(List<ProductRollbackOperation<?>> rollbackOperations) {
             this.rollbackOperations = Collections.unmodifiableList(rollbackOperations);
         }
 
         public static RollbackOperations fromRunHistoryFile(RunHistoryFile runHistoryFile, RollbackConfig config, String newRunIdThatWouldBeCurrentAfterRollback) throws MmtcException {
-            List<ProductRollbackOperation> calculatedRollbackOperations = new ArrayList<>();
+            List<ProductRollbackOperation<?>> calculatedRollbackOperations = new ArrayList<>();
 
-            for (RunHistoryFile.OutputProductTypeDefinition def : RunHistoryFile.OUTPUT_PRODUCT_DEFINITIONS.all) {
-                Optional<ProductRollbackOperation> operation = ProductRollbackOperation.calculateFor(
-                        def,
+            for (OutputProductDefinition<?> outputProductDef : OutputProductDefinition.all()) {
+                String postRunOutputProductColName = RunHistoryFile.getPostRunProductColNameFor(outputProductDef);
+
+                Optional<ProductRollbackOperation<?>> operation = ProductRollbackOperation.calculateFor(
+                        outputProductDef,
                         config,
-                        runHistoryFile.getLatestValueOfCol(def.postRunOutputProductColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS),
-                        runHistoryFile.getValueOfColForRun(newRunIdThatWouldBeCurrentAfterRollback, def.postRunOutputProductColName)
+                        runHistoryFile.getLatestValueOfCol(postRunOutputProductColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS),
+                        runHistoryFile.getValueOfColForRun(newRunIdThatWouldBeCurrentAfterRollback, postRunOutputProductColName)
                 );
 
                 operation.ifPresent(calculatedRollbackOperations::add);
@@ -216,14 +220,17 @@ public class TimeCorrelationRollback {
         }
 
         public static RollbackOperations toInitialState(RunHistoryFile runHistoryFile, RollbackConfig config) throws MmtcException {
-            List<ProductRollbackOperation> calculatedRollbackOperations = new ArrayList<>();
+            List<ProductRollbackOperation<?>> calculatedRollbackOperations = new ArrayList<>();
 
-            for (RunHistoryFile.OutputProductTypeDefinition def : RunHistoryFile.OUTPUT_PRODUCT_DEFINITIONS.all) {
-                Optional<ProductRollbackOperation> operation = ProductRollbackOperation.calculateFor(
-                        def,
+            for (OutputProductDefinition<?> outputProductDef : OutputProductDefinition.all()) {
+                String preRunOutputProductColName = RunHistoryFile.getPreRunProductColNameFor(outputProductDef);
+                String postRunOutputProductColName = RunHistoryFile.getPostRunProductColNameFor(outputProductDef);
+
+                Optional<ProductRollbackOperation<?>> operation = ProductRollbackOperation.calculateFor(
+                        outputProductDef,
                         config,
-                        runHistoryFile.getLatestValueOfCol(def.postRunOutputProductColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS),
-                        runHistoryFile.getValueOfColForRun(runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).get(0).getValue(RunHistoryFile.RUN_ID), def.preRunOutputProductColName)
+                        runHistoryFile.getLatestValueOfCol(postRunOutputProductColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS),
+                        runHistoryFile.getValueOfColForRun(runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).get(0).getValue(RunHistoryFile.RUN_ID), preRunOutputProductColName)
                 );
 
                 operation.ifPresent(calculatedRollbackOperations::add);
@@ -256,9 +263,7 @@ public class TimeCorrelationRollback {
         public Optional<String> performAll() {
             List<String> errors = new ArrayList<>();
 
-            rollbackOperations.forEach(op -> {
-                errors.addAll((List<String>) op.perform());
-            });
+            rollbackOperations.forEach(op -> errors.addAll(op.perform()));
 
             if (errors.isEmpty()) {
                 return Optional.empty();
@@ -268,55 +273,29 @@ public class TimeCorrelationRollback {
         }
     }
 
-    public static abstract class ProductRollbackOperation<T extends RunHistoryFile.ConfiguredOutputProductDefinition> {
+    public static abstract class ProductRollbackOperation<T extends OutputProductDefinition.ResolvedProductLocation> {
         public final T configuredDef;
 
         public ProductRollbackOperation(T configuredDef) {
             this.configuredDef = configuredDef;
         }
 
-        public static Optional<ProductRollbackOperation> calculateFor(RunHistoryFile.OutputProductTypeDefinition def, RollbackConfig config, Optional<String> currentLatestProductVersion, Optional<String> newLatestProductVersion) throws MmtcException {
+        public static Optional<ProductRollbackOperation<?>> calculateFor(OutputProductDefinition<?> outputProductDef, RollbackConfig config, Optional<String> currentLatestProductVersion, Optional<String> newLatestProductVersion) throws MmtcException {
             if (currentLatestProductVersion.equals(newLatestProductVersion)) {
                 return Optional.empty();
             } else {
                 // here, we purposefully lazily retrieve config values (only reading it when necessary, so we don't e.g. read SCLK-SCET output product config keys if we're not rolling back a SCLK-SCET file)
-                RunHistoryFile.ConfiguredOutputProductDefinition configuredDef = def.toConfiguredOutputProductDefinition.apply(config);
-
-                if (def.productType.equals(RunHistoryFile.OutputProductTypeDefinition.Type.ENTIRE_FILE)) {
-                    return Optional.of(new MultiFileDeletionOperation(
-                            (RunHistoryFile.ConfiguredEntireFileOutputProductDefinition) configuredDef,
-                            newLatestProductVersion
-                    ));
-                } else if (def.productType.equals(RunHistoryFile.OutputProductTypeDefinition.Type.LINE_APPENDED_CSV)) {
-                    if (! newLatestProductVersion.isPresent()) {
-                        // if we're rolling back to the initial state, then delete the entire file
-                        return Optional.of(new SingleFileDeletionOperation(
-                                (RunHistoryFile.ConfiguredAppendedCsvOutputProductDefinition) configuredDef
-                        ));
-                    } else {
-                        // otherwise, truncate it
-                        return Optional.of(new TableTruncationOperation(
-                                (RunHistoryFile.ConfiguredAppendedCsvOutputProductDefinition) configuredDef,
-                                newLatestProductVersion
-                        ));
-                    }
-                } else {
-                    throw new MmtcException("Unknown product type: " + def.productType);
-                }
+                return Optional.of(outputProductDef.getRollbackOperation(config, newLatestProductVersion));
             }
         }
 
         public abstract List<String> perform();
     }
 
-    private static boolean fileExistsAndIsWritable(Path p) {
-        return Files.exists(p) && Files.isWritable(p);
-    }
-
-    public static class TableTruncationOperation extends ProductRollbackOperation<RunHistoryFile.ConfiguredAppendedCsvOutputProductDefinition> {
+    public static class TableTruncationOperation extends ProductRollbackOperation<OutputProductDefinition.ResolvedProductPath> {
         private final String newLatestProductVersion;
 
-        public TableTruncationOperation(RunHistoryFile.ConfiguredAppendedCsvOutputProductDefinition configuredDef, Optional<String> newLatestProductVersion) throws MmtcException {
+        public TableTruncationOperation(OutputProductDefinition.ResolvedProductPath configuredDef, Optional<String> newLatestProductVersion) throws MmtcException {
             super(configuredDef);
             this.newLatestProductVersion = newLatestProductVersion.orElseThrow(() -> new MmtcException("A table truncation operation must be given a non-empty row number to truncate the file to"));
 
@@ -343,15 +322,15 @@ public class TimeCorrelationRollback {
                 return Collections.emptyList();
             } catch (Exception e) {
                 logger.error(String.format("Failed to truncate file %s", configuredDef.pathToProduct.toString()), e);
-                return Arrays.asList("Failed to remove " + configuredDef.pathToProduct.toString() + "; see logged exception for more information.");
+                return Arrays.asList("Failed to remove " + configuredDef.pathToProduct + "; see logged exception for more information.");
             }
         }
     }
 
-    public static class MultiFileDeletionOperation extends ProductRollbackOperation<RunHistoryFile.ConfiguredEntireFileOutputProductDefinition> {
+    public static class MultiFileDeletionOperation extends ProductRollbackOperation<OutputProductDefinition.ResolvedProductDirAndPrefix> {
         private final Optional<String> newLatestProductVersion;
 
-        public MultiFileDeletionOperation(RunHistoryFile.ConfiguredEntireFileOutputProductDefinition configuredDef, Optional<String> newLatestProductVersion) throws MmtcException {
+        public MultiFileDeletionOperation(OutputProductDefinition.ResolvedProductDirAndPrefix configuredDef, Optional<String> newLatestProductVersion) throws MmtcException {
             super(configuredDef);
             this.newLatestProductVersion = newLatestProductVersion;
 
@@ -370,7 +349,7 @@ public class TimeCorrelationRollback {
          */
         public List<File> getOutputProductFilesToDelete() {
             List<File> filesToDelete = new ArrayList<>();
-            FilenameFilter fileFilter = (dir1, name) -> name.startsWith(configuredDef.basename);
+            FilenameFilter fileFilter = (dir1, name) -> name.startsWith(configuredDef.filenamePrefix);
             File[] foundFiles = configuredDef.containingDirectory.toFile().listFiles(fileFilter);
 
             if (foundFiles == null) {
@@ -413,8 +392,8 @@ public class TimeCorrelationRollback {
         }
     }
 
-    public static class SingleFileDeletionOperation extends ProductRollbackOperation<RunHistoryFile.ConfiguredAppendedCsvOutputProductDefinition> {
-        public SingleFileDeletionOperation(RunHistoryFile.ConfiguredAppendedCsvOutputProductDefinition configuredDef) throws MmtcException {
+    public static class SingleFileDeletionOperation extends ProductRollbackOperation<OutputProductDefinition.ResolvedProductPath> {
+        public SingleFileDeletionOperation(OutputProductDefinition.ResolvedProductPath configuredDef) throws MmtcException {
             super(configuredDef);
 
             // check to ensure file is present

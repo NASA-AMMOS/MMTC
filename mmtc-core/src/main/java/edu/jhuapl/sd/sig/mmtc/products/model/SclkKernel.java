@@ -1,5 +1,8 @@
-package edu.jhuapl.sd.sig.mmtc.products;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
+import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.lang3.StringUtils;
@@ -7,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.math.RoundingMode;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.time.OffsetDateTime;
@@ -18,6 +22,11 @@ import java.util.ArrayList;
  */
 public class SclkKernel extends TextProduct {
     public static final String FILE_SUFFIX = ".tsc";
+
+    /* Indices for the fields in a triplet record. */
+    public static final int ENCSCLK    = 0;
+    public static final int TDTG       = 1;
+    public static final int CLKCHGRATE = 2;
 
     /* Encoded SCLK value for the new time correlation record. */
     private Double encSclk;
@@ -42,11 +51,6 @@ public class SclkKernel extends TextProduct {
 
     /* The number of fields in an SCLK kernel triplet time correlation record. */
     private int numFieldsInRecord = 3;
-
-    /* Indices for the fields in a triplet record. */
-    public static final int ENCSCLK    = 0;
-    public static final int TDTG       = 1;
-    public static final int CLKCHGRATE = 2;
 
 
     /**
@@ -370,5 +374,43 @@ public class SclkKernel extends TextProduct {
 
     public String getVersionString(final String sclkBaseName, final String separator) {
         return Paths.get(getPath()).getFileName().toString().replace(sclkBaseName + separator, "").replace(FILE_SUFFIX, "");
+    }
+
+    /**
+     * Writes a new SCLK Kernel
+     * @param ctx the current time correlation context from which to pull information for the output product
+     *
+     * @throws MmtcException if the SCLK Kernel cannot be written
+     * @return the ProductWriteResult describing the newly-written product
+     */
+    public static OutputProductDefinition.ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+        try {
+            final SclkKernel newSclkKernel = new SclkKernel(ctx.currentSclkKernel.get());
+
+            newSclkKernel.setProductCreationTime(ctx.appRunTime);
+            newSclkKernel.setDir(ctx.config.getSclkKernelOutputDir().toString());
+            newSclkKernel.setName(ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc");
+            newSclkKernel.setNewTriplet(
+                    ctx.correlation.target.get().getTargetSampleEncSclk(),
+                    TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG()),
+                    ctx.correlation.predicted_clock_change_rate.get()
+            );
+
+            if (ctx.correlation.interpolated_clock_change_rate.isSet()) {
+                newSclkKernel.setReplacementClockChgRate(ctx.correlation.interpolated_clock_change_rate.get());
+            }
+
+            newSclkKernel.createFile();
+
+            final Path path = Paths.get(newSclkKernel.getPath());
+            ctx.newSclkKernelPath.set(path);
+
+            return new OutputProductDefinition.ProductWriteResult(
+                    path,
+                    ctx.newSclkVersionString.get()
+            );
+        } catch (TextProductException | TimeConvertException ex) {
+            throw new MmtcException("Unable to write SCLK kernel", ex);
+        }
     }
 }
