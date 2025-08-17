@@ -1,17 +1,15 @@
-package edu.jhuapl.sd.sig.mmtc.table;
+package edu.jhuapl.sd.sig.mmtc.tlm;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
-import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
-import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
+import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
 import edu.jhuapl.sd.sig.mmtc.util.CdsTimeCode;
 import org.apache.commons.cli.Option;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.management.openmbean.InvalidOpenTypeException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlm;
 
-import edu.jhuapl.sd.sig.mmtc.table.TableRecord;
+import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
 import edu.jhuapl.sd.sig.mmtc.util.CdsTimeCode;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
@@ -12,7 +12,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.List;
 
-import static edu.jhuapl.sd.sig.mmtc.table.RawTelemetryTable.*;
+import static edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable.*;
 
 /**
  * An instance of this class contains data needed for time correlation, which is primarily 'about' a single frame/packet

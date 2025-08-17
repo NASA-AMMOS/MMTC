@@ -41,6 +41,8 @@ public class CorrelationCommandLineConfig implements IConfiguration {
         this(args, Collections.emptyList());
     }
 
+    // mmtc-10 should products also be able to add command-line options?
+
     CorrelationCommandLineConfig(String[] args, Collection<Option> additionalOptions) {
         OptionGroup clockChangeRateGroup = new OptionGroup();
 

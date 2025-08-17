@@ -250,6 +250,7 @@ public class TimeCorrelationAppConfig extends MmtcConfig{
     public Map<String, TimeCorrelationFilter> getFilters() throws MmtcException {
         Map<String, TimeCorrelationFilter> filters = new LinkedHashMap<>();
 
+        // purposefully disincludes the Contact Filter, as this is handled as a special case elsewhere
         String[] expectedFilterNames = {
                 TimeCorrelationAppConfig.MIN_DATARATE_FILTER,
                 TimeCorrelationAppConfig.MAX_DATARATE_FILTER,

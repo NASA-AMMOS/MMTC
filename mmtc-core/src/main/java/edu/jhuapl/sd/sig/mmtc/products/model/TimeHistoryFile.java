@@ -1,4 +1,4 @@
-package edu.jhuapl.sd.sig.mmtc.table;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import java.nio.file.Path;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package edu.jhuapl.sd.sig.mmtc.table;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 
@@ -20,7 +20,7 @@ public abstract class AbstractTimeCorrelationTable {
     public static final String RUN_TIME = "Run Time";
 
     private File file;
-    CSVParser parser;
+    public CSVParser parser;
 
     /**
      * Create the table file object from the specified path.
@@ -257,7 +257,7 @@ public abstract class AbstractTimeCorrelationTable {
      *
      * @throws MmtcException when the table is unable to be read
      */
-    void resetParser() throws MmtcException {
+    public void resetParser() throws MmtcException {
         try {
             parser = CSVParser.parse(
                     file,

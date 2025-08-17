@@ -1,7 +1,6 @@
-package edu.jhuapl.sd.sig.mmtc.products;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.nio.file.*;
-import java.util.stream.Stream;
 
 /**
  * The TextProduct class is an abstract base class that provides basic functions that derived classes use to
@@ -175,8 +173,8 @@ abstract class TextProduct {
      * @throws TextProductException if the file cannot be created
      * @throws TimeConvertException if an error occurred in a computation
      */
-    public void createFile() throws TextProductException, TimeConvertException {
-        createFile(sourceFilespec, dirname, filename);
+    public Path createFile() throws TextProductException, TimeConvertException {
+        return createFile(sourceFilespec, dirname, filename);
     }
 
 
@@ -192,8 +190,7 @@ abstract class TextProduct {
      * @throws TextProductException if the file cannot be created
      * @throws TimeConvertException if an error occurred during a computation
      */
-    public void createFile(String sourceFilespec, String dirname, String filename)
-            throws TextProductException, TimeConvertException {
+    public Path createFile(String sourceFilespec, String dirname, String filename) throws TextProductException, TimeConvertException {
 
         this.sourceFilespec = sourceFilespec;
         this.dirname        = dirname;
@@ -203,8 +200,7 @@ abstract class TextProduct {
             /* Read the source file */
             readSourceProduct();
             createNewProduct();   /* <-- Abstract method defined in derived class. */
-            writeNewProduct();
-
+            return writeNewProduct();
         } catch (IOException e) {
             throw new TextProductException("Unable to read source product \"" + sourceFilespec + "\".", e);
         }
@@ -335,7 +331,7 @@ abstract class TextProduct {
      *
      * @throws TextProductException if the file could not be written to.
      */
-    protected void writeNewProduct() throws TextProductException {
+    protected Path writeNewProduct() throws TextProductException {
 
         String newFilePath = dirname + pathSep + filename;
         Path newFile       = Paths.get(newFilePath);
@@ -351,6 +347,8 @@ abstract class TextProduct {
         }
 
         logger.info(MmtcCli.USER_NOTICE, "Created new time correlation product file: " + newFilePath);
+
+        return newFile;
     }
 
 

@@ -1,4 +1,4 @@
-package edu.jhuapl.sd.sig.mmtc.products;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
 /**
  * Defines an exception class for use with the classes in the Time Correlation products package.

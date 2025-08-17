@@ -1,9 +1,10 @@
-package edu.jhuapl.sd.sig.mmtc.products;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
@@ -613,9 +614,9 @@ public class SclkScetFile extends TextProduct {
      * @throws TextProductException if the SCLK/SCET file could not be created
      * @throws TimeConvertException if a computational error occurs
      */
-    public void createNewSclkScetFile(String originalFilespec) throws TextProductException, TimeConvertException {
+    public Path createNewSclkScetFile(String originalFilespec) throws TextProductException, TimeConvertException {
         setSourceFilespec(originalFilespec);
-        createFile();
+        return createFile();
     }
 
 }

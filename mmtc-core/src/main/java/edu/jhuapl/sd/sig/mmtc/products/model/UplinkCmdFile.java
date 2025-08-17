@@ -1,14 +1,13 @@
-package edu.jhuapl.sd.sig.mmtc.products;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -34,10 +33,11 @@ public class UplinkCmdFile {
      * @param commandString the uplink command parameters
      * @throws IOException if the file cannot be written
      */
-    public void write(UplinkCommand commandString) throws IOException  {
+    public Path write(UplinkCommand commandString) throws IOException  {
         writer = new BufferedWriter(new FileWriter(filespec));
         writer.write(commandString.toString());
         writer.close();
         logger.info(MmtcCli.USER_NOTICE, "Wrote new uplink command file at: " + Paths.get(filespec));
+        return Paths.get(filespec);
     }
 }

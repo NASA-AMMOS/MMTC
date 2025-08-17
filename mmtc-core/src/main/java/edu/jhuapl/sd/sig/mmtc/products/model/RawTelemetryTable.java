@@ -1,6 +1,10 @@
-package edu.jhuapl.sd.sig.mmtc.table;
+package edu.jhuapl.sd.sig.mmtc.products.model;
+
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 
 import java.nio.file.Path;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 /**
@@ -47,5 +51,21 @@ public class RawTelemetryTable extends AbstractTimeCorrelationTable {
                 DATA_RATE_BPS,
                 FRAME_SIZE_BITS
         );
+    }
+
+
+    /**
+     * Write the sample set to the raw telemetry table.
+     *
+     * @param samples    the current sample set
+     * @param appRunTime
+     * @throws MmtcException when a record cannot be written
+     */
+    public void writeRawTelemetryTable(List<FrameSample> samples, OffsetDateTime appRunTime) throws MmtcException {
+        for (FrameSample sample : samples) {
+            TableRecord rec = sample.toRawTelemetryTableRecord(getHeaders());
+            rec.setValue(RawTelemetryTable.RUN_TIME, appRunTime.toString());
+            writeRecord(rec);
+        }
     }
 }

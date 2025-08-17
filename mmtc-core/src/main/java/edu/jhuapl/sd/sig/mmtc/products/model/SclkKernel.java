@@ -1,5 +1,7 @@
-package edu.jhuapl.sd.sig.mmtc.products;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.lang3.StringUtils;
