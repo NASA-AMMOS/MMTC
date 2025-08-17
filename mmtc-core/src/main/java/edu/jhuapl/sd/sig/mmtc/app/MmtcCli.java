@@ -37,7 +37,7 @@ public class MmtcCli {
         }
     }
 
-    private static ApplicationInvocation determineApplicationCommand(String... cliArgs) throws MmtcException {
+    private static ApplicationInvocation determineApplicationCommand(String... cliArgs) {
         if (Arrays.asList("-v", "--version").contains(cliArgs[0])) {
             System.out.println(MmtcCli.BUILD_INFO);
             System.exit(0);
@@ -84,7 +84,7 @@ public class MmtcCli {
      *
      * @param args command line arguments
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         logger.info(String.format("************ %s version %s ************", MMTC_TITLE, BUILD_INFO.version));
         logger.info(String.format("Commit %s built at %s", BUILD_INFO.commit, BUILD_INFO.buildDate));
 

@@ -126,17 +126,4 @@ publishing {
             from(components["java"])
         }
     }
-
-    repositories {
-        maven {
-            name = "sdArtifactory"
-            credentials(PasswordCredentials::class)
-
-            if (version.toString().endsWith("SNAPSHOT")) {
-                url = uri("https://sd-artifactory.jhuapl.edu/artifactory/libs-snapshot-local")
-            } else {
-                url = uri("https://sd-artifactory.jhuapl.edu/artifactory/libs-release-local")
-            }
-        }
-    }
 }

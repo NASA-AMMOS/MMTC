@@ -1,4 +1,9 @@
-package edu.jhuapl.sd.sig.mmtc.table;
+package edu.jhuapl.sd.sig.mmtc.products.model;
+
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
+import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -46,6 +51,29 @@ public class RawTelemetryTable extends AbstractTimeCorrelationTable {
                 TARGET_FRAME_UTC,
                 DATA_RATE_BPS,
                 FRAME_SIZE_BITS
+        );
+    }
+
+    /**
+     * Write the current time correlation's sample set to the raw telemetry table.
+     *
+     * @param context the current time correlation context from which to pull information for the output product
+     *
+     * @throws MmtcException if there's an unhandled issue writing the raw telemetry table
+     * @return a ProductWriteResult describing the updated product
+     */
+    public static OutputProductDefinition.ProductWriteResult appendCorrelationFrameSamplesToRawTelemetryTable(TimeCorrelationContext context) throws MmtcException {
+        final RawTelemetryTable rawTlmTable = new RawTelemetryTable(context.config.getRawTelemetryTablePath());
+
+        for (FrameSample sample : context.correlation.target.get().getSampleSet()) {
+            TableRecord rec = sample.toRawTelemetryTableRecord(rawTlmTable.getHeaders());
+            rec.setValue(RawTelemetryTable.RUN_TIME, context.appRunTime.toString());
+            rawTlmTable.writeRecord(rec);
+        }
+
+        return new OutputProductDefinition.ProductWriteResult(
+                context.config.getRawTelemetryTablePath(),
+                rawTlmTable.getLastLineNumber()
         );
     }
 }

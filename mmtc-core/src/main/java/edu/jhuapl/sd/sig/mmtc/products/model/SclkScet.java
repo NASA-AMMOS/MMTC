@@ -1,4 +1,4 @@
-package edu.jhuapl.sd.sig.mmtc.products;
+package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import java.math.RoundingMode;

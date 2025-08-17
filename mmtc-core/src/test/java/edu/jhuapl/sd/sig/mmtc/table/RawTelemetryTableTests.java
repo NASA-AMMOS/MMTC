@@ -2,9 +2,9 @@ package edu.jhuapl.sd.sig.mmtc.table;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 
+import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
 import org.junit.jupiter.api.*;
 
-import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,8 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc;
 
 
-import edu.jhuapl.sd.sig.mmtc.products.SclkKernel;
-import edu.jhuapl.sd.sig.mmtc.products.TextProductException;
+import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
