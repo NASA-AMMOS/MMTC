@@ -1,11 +1,16 @@
 package edu.jhuapl.sd.sig.mmtc.products.definition;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
 import edu.jhuapl.sd.sig.mmtc.products.model.*;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Describes the set of SCLK kernel output products that MMTC performs operations on.
@@ -17,12 +22,13 @@ public class UplinkCommandFileProductDefinition extends EntireFileOutputProductD
     }
 
     @Override
-    public ResolvedProductDirAndPrefix resolveLocation(RollbackConfig conf) throws MmtcException {
+    public ResolvedProductDirPrefixSuffix resolveLocation(MmtcConfig conf) throws MmtcException {
         conf.validateUplinkCmdFileConfiguration();
 
-        return new ResolvedProductDirAndPrefix(
+        return new ResolvedProductDirPrefixSuffix(
                 Paths.get(conf.getUplinkCmdFileDir()).toAbsolutePath(),
-                conf.getUplinkCmdFileBasename()
+                conf.getUplinkCmdFileBasename(),
+                UplinkCmdFile.FILE_SUFFIX
         );
     }
 
@@ -40,5 +46,12 @@ public class UplinkCommandFileProductDefinition extends EntireFileOutputProductD
     @Override
     public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         return UplinkCmdFile.writeNewProduct(ctx);
+    }
+
+    @Override
+    public Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputDir) {
+        final Map<String, String> confUpdates = new HashMap<>();
+        confUpdates.put("product.uplinkCmdFile.outputDir", newProductOutputDir.toAbsolutePath().toString());
+        return confUpdates;
     }
 }

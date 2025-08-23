@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.lang3.StringUtils;
@@ -383,7 +383,7 @@ public class SclkKernel extends TextProduct {
      * @throws MmtcException if the SCLK Kernel cannot be written
      * @return the ProductWriteResult describing the newly-written product
      */
-    public static OutputProductDefinition.ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         try {
             final SclkKernel newSclkKernel = new SclkKernel(ctx.currentSclkKernel.get());
 
@@ -405,7 +405,7 @@ public class SclkKernel extends TextProduct {
             final Path path = Paths.get(newSclkKernel.getPath());
             ctx.newSclkKernelPath.set(path);
 
-            return new OutputProductDefinition.ProductWriteResult(
+            return new ProductWriteResult(
                     path,
                     ctx.newSclkVersionString.get()
             );

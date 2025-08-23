@@ -44,7 +44,7 @@ public class Owlt {
      * @return true if the SPICE library has already been loaded
      */
     public static boolean isInitialized() {
-        return TimeConvert.spiceLibLoaded() & TimeConvert.kernelsLoaded();
+        return TimeConvert.spiceLibLoaded() && TimeConvert.kernelsLoaded();
     }
 
 

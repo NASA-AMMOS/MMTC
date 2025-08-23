@@ -11,6 +11,7 @@ import edu.jhuapl.sd.sig.mmtc.filter.ContactFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.model.*;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -90,7 +91,7 @@ public class TimeCorrelationApp {
             ctx.currentSclkKernel.set(currentSclkKernel);
         }
 
-        runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath());
+        runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath(), config.getAllOutputProductDefs());
         newRunHistoryFileRecord = new TableRecord(runHistoryFile.getHeaders());
         recordRunHistoryFilePreRunValues();
 
@@ -195,6 +196,8 @@ public class TimeCorrelationApp {
             newRunId = Integer.parseInt(prevRuns.get(prevRuns.size()-1).getValue("Run ID")) + 1;
         }
 
+        ctx.runId.set(newRunId);
+
         // Run info
         newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_TIME,              ctx.appRunTime.toString());
         newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_ID,                String.format("%05d",newRunId));
@@ -203,7 +206,7 @@ public class TimeCorrelationApp {
         newRunHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,              String.join(" ", config.getCliArgs()));
 
         // Output products
-        for (OutputProductDefinition<?> prodDef : OutputProductDefinition.all()) {
+        for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
             final String preRunProdColName = RunHistoryFile.getPreRunProductColNameFor(prodDef);
             final String postRunProdColName = RunHistoryFile.getPostRunProductColNameFor(prodDef);
 
@@ -479,13 +482,12 @@ public class TimeCorrelationApp {
 
         // Write all output products
         ctx.newSclkVersionString.set(getNextSclkKernelVersionString());
-        for (OutputProductDefinition<?> prodDef : OutputProductDefinition.all()) {
+        for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
             final String postRunColProdColName = RunHistoryFile.getPostRunProductColNameFor(prodDef);
 
             if (prodDef.shouldBeWritten(ctx)) {
-                final OutputProductDefinition.ProductWriteResult res = prodDef.write(ctx);
+                final ProductWriteResult res = prodDef.write(ctx);
                 newRunHistoryFileRecord.setValue(postRunColProdColName, res.newVersion);
-
             } else {
                 newRunHistoryFileRecord.setValue(postRunColProdColName,  runHistoryFile.getLatestNonEmptyValueOfCol(postRunColProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
             }

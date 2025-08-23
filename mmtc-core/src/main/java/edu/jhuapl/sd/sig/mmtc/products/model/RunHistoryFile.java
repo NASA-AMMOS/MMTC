@@ -25,51 +25,17 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public static final String RUN_USER = "Run User";
     public static final String CLI_ARGS = "MMTC Invocation Args Used";
 
-    /*
-    public static final String PRERUN_SCLK = "Latest SCLK Kernel Pre-run";
-    public static final String POSTRUN_SCLK = "Latest SCLK Kernel Post-run";
-    public static final String PRERUN_SCLKSCET = "Latest SCLKSCET File Pre-run";
-    public static final String POSTRUN_SCLKSCET = "Latest SCLKSCET File Post-run";
-    public static final String PRERUN_TIMEHIST = "Latest TimeHistoryFile Line Pre-run";
-    public static final String POSTRUN_TIMEHIST = "Latest TimeHistoryFile Line Post-run";
-    public static final String PRERUN_RAWTLMTABLE = "Latest RawTlmTable Line Pre-run";
-    public static final String POSTRUN_RAWTLMTABLE = "Latest RawTlmTable Line Post-run";
-    public static final String PRERUN_UPLINKCMD = "Latest Uplink Command File Pre-run";
-    public static final String POSTRUN_UPLINKCMD = "Latest Uplink Command File Post-run";
-     */
+    private final List<String> headers;
 
     public enum RollbackEntryOption {
         IGNORE_ROLLBACKS,
         INCLUDE_ROLLBACKS
     }
 
-    public RunHistoryFile(Path path) {
+    public RunHistoryFile(Path path, List<OutputProductDefinition<?>> allOutputProdDefs) {
         super(path);
-    }
 
-    public static String getPreRunProductColNameFor(OutputProductDefinition<?> def) {
-        if (def instanceof EntireFileOutputProductDefinition) {
-            return String.format("Latest %s Pre-run", def.name);
-        } else if (def instanceof AppendedFileOutputProductDefinition) {
-            return String.format("Latest %s Line Pre-run", def.name);
-        } else {
-            throw new IllegalArgumentException("Unknown product type: " + def.getClass().getSimpleName());
-        }
-    }
-
-    public static String getPostRunProductColNameFor(OutputProductDefinition<?> def) {
-        if (def instanceof EntireFileOutputProductDefinition) {
-            return String.format("Latest %s Post-run", def.name);
-        } else if (def instanceof AppendedFileOutputProductDefinition) {
-            return String.format("Latest %s Line Post-run", def.name);
-        } else {
-            throw new IllegalArgumentException("Unknown product type: " + def.getClass().getSimpleName());
-        }
-    }
-
-    @Override
-    public List<String> getHeaders() {
-        List<String> headers =  new ArrayList<>(Arrays.asList(
+        final List<String> headers = new ArrayList<>(Arrays.asList(
                 RUN_TIME,
                 RUN_ID,
                 ROLLEDBACK,
@@ -77,13 +43,36 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
                 CLI_ARGS
         ));
 
-        OutputProductDefinition.all().forEach(def -> {
+        allOutputProdDefs.forEach(def -> {
             headers.add(getPreRunProductColNameFor(def));
             headers.add(getPostRunProductColNameFor(def));
         });
 
-        logger.info("Run History File headers: " + headers.toString());
+        this.headers = Collections.unmodifiableList(headers);
+    }
 
+    public static String getPreRunProductColNameFor(OutputProductDefinition<?> def) {
+        if (def instanceof EntireFileOutputProductDefinition) {
+            return String.format("Latest %s Pre-run", def.getName());
+        } else if (def instanceof AppendedFileOutputProductDefinition) {
+            return String.format("Latest %s Line Pre-run", def.getName());
+        } else {
+            throw new IllegalArgumentException("Unknown product type: " + def.getClass().getSimpleName());
+        }
+    }
+
+    public static String getPostRunProductColNameFor(OutputProductDefinition<?> def) {
+        if (def instanceof EntireFileOutputProductDefinition) {
+            return String.format("Latest %s Post-run", def.getName());
+        } else if (def instanceof AppendedFileOutputProductDefinition) {
+            return String.format("Latest %s Line Post-run", def.getName());
+        } else {
+            throw new IllegalArgumentException("Unknown product type: " + def.getClass().getSimpleName());
+        }
+    }
+
+    @Override
+    public List<String> getHeaders() {
         return headers;
     }
 
