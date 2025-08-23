@@ -41,7 +41,7 @@ dependencies {
 
 group = "edu.jhuapl.sd.sig"
 version = "1.0.0-SNAPSHOT"
-description = "mmtc-plugin-example"
+description = "mmtc-tlm-plugin-example"
 
 java {
     withJavadocJar()

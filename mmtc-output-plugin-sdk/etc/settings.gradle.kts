@@ -1,4 +1,4 @@
-rootProject.name = "mmtc-tlm-plugin-example"
+rootProject.name = "mmtc-output-plugin-example"
 
 dependencyResolutionManagement {
     versionCatalogs {

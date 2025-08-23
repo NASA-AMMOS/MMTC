@@ -46,8 +46,9 @@ public interface TelemetrySource {
     /**
      * This method is called when MMTC configuration has been fully initialized and validated, and provides a chance for
      * TelemetrySource implementations to save a reference to the entire MMTC TimeCorrelationAppConfig instance or parts
-     * therein.  It also provides an opportunity for TelemetrySource implementations to perform their own validation
-     * before continuing.  A thrown MmtcException from this method will log the issue and prevent further processing.
+     * therein.  It also provides an opportunity for TelemetrySource implementations to perform their own initialization or
+     * configuration validation before continuing.  A thrown MmtcException from this method will log the issue and
+     * prevent further time correlation processing.
      * <p>
      * For instance, an implementation should likely check whether the enabled set of MMTC filters is compatible with
      * the telemetry that the TelemetrySource implementation can provide.  If an incompatible filter is enabled, the

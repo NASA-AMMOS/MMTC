@@ -68,5 +68,5 @@ touch $DEMO_DIR/output/.keep
 cp -r mmtc-core/src/test/resources/nh_kernels                                       $DEMO_DIR/kernels
 
 cd $DEMO_DIR
-zip -r ./mmtc-$1-demo.zip                         .
+zip -qr ./mmtc-$1-demo.zip                         .
 cp mmtc-$1-demo.zip ../distributions
