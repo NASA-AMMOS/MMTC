@@ -3,7 +3,9 @@ package edu.jhuapl.sd.sig.mmtc.sandbox;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcSandboxCreatorConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.PluginProvidedProductConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationXmlPropertiesConfig;
+import edu.jhuapl.sd.sig.mmtc.products.definition.*;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,6 +44,8 @@ public class MmtcSandboxCreator {
     private final MmtcConfig originalTkConfig;
 
     private final Path sandboxedMmtcHomeDir;
+    private final Path sandboxedOutputDir;
+    private final Path sandboxedPluginDir;
     private Path sandboxedTkConfDir;
     private Path sandboxedTkConfigPath;
     private Document sandboxedTkConfig;
@@ -54,11 +58,16 @@ public class MmtcSandboxCreator {
 
         this.originalMmtcHomeDir = Paths.get(System.getenv("MMTC_HOME"));
         this.originalTkConfigDir = Paths.get(System.getenv("TK_CONFIG_PATH"));
-        this.originalTkConfig = config; // new TimeCorrelationAppConfig();
+        this.originalTkConfig = config;
 
         this.sandboxedMmtcHomeDir = config.getNewSandboxPath();
+        this.sandboxedPluginDir = sandboxedMmtcHomeDir.resolve(Paths.get("lib", "plugins"));
+        this.sandboxedOutputDir = sandboxedMmtcHomeDir.resolve("output");
     }
 
+    /*
+     * Creates a new sandbox at the configured path.
+     */
     public void create() throws Exception {
         logger.info(USER_NOTICE, String.format("Creating new sandbox at %s", this.sandboxedMmtcHomeDir));
 
@@ -108,6 +117,8 @@ public class MmtcSandboxCreator {
                     sandboxedMmtcHomeDir.resolve(reqdSubDir).toFile()
             );
         }
+
+        Files.createDirectories(sandboxedPluginDir);
     }
 
     private void copyDocsDir() throws IOException {
@@ -143,12 +154,10 @@ public class MmtcSandboxCreator {
         // Telemetry source plugins
         {
             // the plugin copying below handles the fact that the plugin directory may already exist from the above copying of the 'lib' directory
-            final Path newTlmSourcePluginDir = Files.createDirectories(sandboxedMmtcHomeDir.resolve(Paths.get("lib", "plugins")));
-            List<Path> pluginJarsToCopy = Files.list(originalTkConfig.getTelemetrySourcePluginDirectory()).filter(p -> p.startsWith(originalTkConfig.getTelemetrySourcePluginJarPrefix())).collect(Collectors.toList());
-            for (Path pluginJar : pluginJarsToCopy) {
-                Files.copy(pluginJar, newTlmSourcePluginDir.resolve(pluginJar.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+            for (Path pluginJar : findJarsMatching(originalTkConfig.getTelemetrySourcePluginDirectory(), originalTkConfig.getTelemetrySourcePluginJarPrefix())) {
+                Files.copy(pluginJar, sandboxedPluginDir.resolve(pluginJar.getFileName()), StandardCopyOption.REPLACE_EXISTING);
             }
-            setConfigEntryVal(sandboxedTkConfig, "telemetry.source.pluginDirectory", newTlmSourcePluginDir.toString());
+            setConfigEntryVal(sandboxedTkConfig, "telemetry.source.pluginDirectory", sandboxedPluginDir.toString());
 
             Map<String, String> configKeysToUpdate = config.getTelemetrySource().sandboxTelemetrySourceConfiguration(config, sandboxedMmtcHomeDir, sandboxedTkConfDir);
             for (Map.Entry<String, String> updatedKeyVal : configKeysToUpdate.entrySet()) {
@@ -235,31 +244,126 @@ public class MmtcSandboxCreator {
         }
     }
 
-    private void copyOutputs() throws IOException {
-        final Path newOutputDir = sandboxedMmtcHomeDir.resolve("output");
+    /*
+    private void copyAppendedFileOutputProduct(final AppendedFileOutputProductDefinition def, final Path newOutputDir, final String configKeyPathToUpdate) throws IOException {
+        final Path newProductPath;
+        if (def.getPath().startsWith(originalMmtcHomeDir)) {
+            newProductPath = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(def.getPath()));
+        } else {
+            newProductPath = newOutputDir.resolve(def.getPath().getFileName());
+        }
 
-        // SCLK kernels
-        {
-            final Path originalSclkOutputDir = originalTkConfig.getSclkKernelOutputDir().toAbsolutePath();
-            final Path newSclkOutputDir;
-            if (originalSclkOutputDir.startsWith(originalMmtcHomeDir)) {
-                newSclkOutputDir = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalSclkOutputDir));
+        Files.createDirectories(newProductPath.getParent());
+        copyIfExists(
+                def.getPath(),
+                newProductPath
+        );
+
+        setConfigEntryVal(sandboxedTkConfig, configKeyPathToUpdate, newProductPath.toString());
+    }
+
+    private void copyEntireFileOutputProducts(final EntireFileOutputProductDefinition def, final Path containingDir, final String configKeyPathToUpdate) throws IOException {
+        final Path originalSclkOutputDir = def.getRollbackOperation() originalTkConfig.getSclkKernelOutputDir().toAbsolutePath();
+        final Path newSclkOutputDir;
+        if (originalSclkOutputDir.startsWith(originalMmtcHomeDir)) {
+            newSclkOutputDir = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalSclkOutputDir));
+        } else {
+            newSclkOutputDir = newOutputDir.resolve("sclk");
+        }
+
+        Files.createDirectories(newSclkOutputDir);
+        List<Path> sclkKernelsToCopy = Files.list(originalSclkOutputDir)
+                .filter(p -> p.getFileName().toString().startsWith(originalTkConfig.getSclkKernelBasename()))
+                .filter(p -> p.getFileName().toString().endsWith(SclkKernel.FILE_SUFFIX))
+                .collect(Collectors.toList());
+        for (Path sclkKernel : sclkKernelsToCopy) {
+            Files.copy(
+                    sclkKernel,
+                    newSclkOutputDir.resolve(sclkKernel.getFileName())
+            );
+        }
+        setConfigEntryVal(sandboxedTkConfig, "spice.kernel.sclk.kerneldir", newSclkOutputDir.toString());
+    }
+
+     */
+
+    private void copyProductsToSandbox(AppendedFileOutputProductDefinition def) throws MmtcException, IOException {
+        final Path originalProductPath = def.resolveLocation(originalTkConfig).pathToProduct.toAbsolutePath();
+
+        final Path newProductPath;
+        if (originalProductPath.startsWith(originalMmtcHomeDir)) {
+            newProductPath = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalProductPath));
+        } else {
+            newProductPath = sandboxedOutputDir.resolve(originalProductPath.getFileName());
+        }
+
+        Files.createDirectories(newProductPath.getParent());
+        copyIfExists(
+                originalProductPath,
+                newProductPath
+        );
+
+        updateProductConfig(def.getName(), def.isBuiltIn(), def.getSandboxConfigUpdates(originalTkConfig, newProductPath));
+    }
+
+    private void copyProductsToSandbox(EntireFileOutputProductDefinition def) throws MmtcException, IOException {
+        final BaseOutputProductDefinition.ResolvedProductDirPrefixSuffix resolvedDirAndPrefix = def.resolveLocation(originalTkConfig);
+
+        final Path originalProductOutputDir = resolvedDirAndPrefix.containingDirectory;
+        final Path newProductOutputDir;
+        if (originalProductOutputDir.startsWith(originalMmtcHomeDir)) {
+            newProductOutputDir = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalProductOutputDir));
+        } else {
+            newProductOutputDir = sandboxedOutputDir.resolve(def.getName());
+        }
+
+        Files.createDirectories(newProductOutputDir);
+        List<Path> filePathsToCopy = Files.list(originalProductOutputDir)
+                .filter(p -> p.getFileName().toString().startsWith(resolvedDirAndPrefix.filenamePrefix))
+                .filter(p -> p.getFileName().toString().endsWith(resolvedDirAndPrefix.filenameSuffix))
+                .collect(Collectors.toList());
+        for (Path file : filePathsToCopy) {
+            Files.copy(
+                    file,
+                    newProductOutputDir.resolve(file.getFileName())
+            );
+        }
+
+        updateProductConfig(def.getName(), def.isBuiltIn(), def.getSandboxConfigUpdates(originalTkConfig, newProductOutputDir));
+    }
+
+    private void updateProductConfig(String productName, boolean builtIn, Map<String, String> sandboxConfigUpdates) throws MmtcException, IOException {
+        if (builtIn) {
+            // query for updated config, and apply them without restriction
+            sandboxConfigUpdates.forEach((k, v) -> setConfigEntryVal(sandboxedTkConfig, k, v));
+        } else {
+            // copy output plugin jar to the new lib/plugin directory
+            final PluginProvidedProductConfig originalPluginConfig = PluginProvidedProductConfig.createFrom(originalTkConfig, productName);
+
+            for (Path pluginJar : findJarsMatching(originalPluginConfig.pluginDir, originalPluginConfig.pluginJarPrefix)) {
+                Files.copy(pluginJar, sandboxedPluginDir.resolve(pluginJar.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+            }
+            setConfigEntryVal(sandboxedTkConfig, String.format("product.plugin.%s.pluginDirectory", productName), sandboxedPluginDir.toAbsolutePath().toString());
+
+            // query for updated config, and apply them limited to their own key namespace
+            sandboxConfigUpdates.forEach((k, v) -> {
+                if (!k.startsWith(String.format("product.plugin.%s.config.", productName))) {
+                    throw new IllegalArgumentException("Plugin may not update config key: " + k);
+                }
+                setConfigEntryVal(sandboxedTkConfig, k, v);
+            });
+        }
+    }
+
+    private void copyOutputs() throws IOException, MmtcException {
+        for (OutputProductDefinition<?> def : originalTkConfig.getAllOutputProductDefs()) {
+            if (def instanceof AppendedFileOutputProductDefinition) {
+                copyProductsToSandbox((AppendedFileOutputProductDefinition) def);
+            } else if (def instanceof EntireFileOutputProductDefinition) {
+                copyProductsToSandbox((EntireFileOutputProductDefinition) def);
             } else {
-                newSclkOutputDir = newOutputDir.resolve("sclk");
+                throw new IllegalStateException("An OutputProductDefinition must inherit from either AppendedFileOutputProductDefintion or EntireFileOutputProductDefinition");
             }
-
-            Files.createDirectories(newSclkOutputDir);
-            List<Path> sclkKernelsToCopy = Files.list(originalSclkOutputDir)
-                    .filter(p -> p.getFileName().toString().startsWith(originalTkConfig.getSclkKernelBasename()))
-                    .filter(p -> p.getFileName().toString().endsWith(SclkKernel.FILE_SUFFIX))
-                    .collect(Collectors.toList());
-            for (Path sclkKernel : sclkKernelsToCopy) {
-                Files.copy(
-                        sclkKernel,
-                        newSclkOutputDir.resolve(sclkKernel.getFileName())
-                );
-            }
-            setConfigEntryVal(sandboxedTkConfig, "spice.kernel.sclk.kerneldir", newSclkOutputDir.toString());
         }
 
         // Run History file
@@ -268,7 +372,7 @@ public class MmtcSandboxCreator {
             if (originalTkConfig.getRunHistoryFilePath().startsWith(originalMmtcHomeDir)) {
                 newRunHistoryFilePath = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalTkConfig.getRunHistoryFilePath()));
             } else {
-                newRunHistoryFilePath = newOutputDir.resolve(originalTkConfig.getRunHistoryFilePath().getFileName());
+                newRunHistoryFilePath = sandboxedOutputDir.resolve(originalTkConfig.getRunHistoryFilePath().getFileName());
             }
 
             Files.createDirectories(newRunHistoryFilePath.getParent());
@@ -277,93 +381,6 @@ public class MmtcSandboxCreator {
                     newRunHistoryFilePath
             );
             setConfigEntryVal(sandboxedTkConfig, "table.runHistoryFile.path", newRunHistoryFilePath.toString());
-        }
-
-        // Raw Telemetry Table
-        {
-            final Path newRawTelemetryTablePath;
-            if (originalTkConfig.getRawTelemetryTablePath().startsWith(originalMmtcHomeDir)) {
-                newRawTelemetryTablePath = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalTkConfig.getRawTelemetryTablePath()));
-            } else {
-                newRawTelemetryTablePath = newOutputDir.resolve(originalTkConfig.getRawTelemetryTablePath().getFileName());
-            }
-
-            Files.createDirectories(newRawTelemetryTablePath.getParent());
-            copyIfExists(
-                    originalTkConfig.getRawTelemetryTablePath(),
-                    newRawTelemetryTablePath
-            );
-            setConfigEntryVal(sandboxedTkConfig, "table.rawTelemetryTable.path", newRawTelemetryTablePath.toString());
-        }
-
-        // Time History File
-        {
-            final Path newTimeHistoryFilePath;
-            if (originalTkConfig.getTimeHistoryFilePath().startsWith(originalMmtcHomeDir)) {
-                newTimeHistoryFilePath = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalTkConfig.getTimeHistoryFilePath()));
-            } else {
-                newTimeHistoryFilePath = newOutputDir.resolve(originalTkConfig.getTimeHistoryFilePath().getFileName());
-            }
-
-            Files.createDirectories(newTimeHistoryFilePath.getParent());
-            copyIfExists(
-                    originalTkConfig.getTimeHistoryFilePath(),
-                    newTimeHistoryFilePath
-            );
-            setConfigEntryVal(sandboxedTkConfig, "table.timeHistoryFile.path", newTimeHistoryFilePath.toString());
-        }
-
-        // SCLK-SCET files
-        {
-            // todo change this to see if any sclk-scet files have ever been produced
-            if (originalTkConfig.createSclkScetFile()) {
-                final Path originalSclkScetOutputDir = originalTkConfig.getSclkScetOutputDir().toAbsolutePath();
-                final Path newSclkScetOutputDir;
-                if (originalSclkScetOutputDir.startsWith(originalMmtcHomeDir)) {
-                    newSclkScetOutputDir = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalSclkScetOutputDir));
-                } else {
-                    newSclkScetOutputDir = newOutputDir.resolve("sclkscet");
-                }
-
-                Files.createDirectories(newSclkScetOutputDir);
-                List<Path> sclkScetFilesToCopy = Files.list(originalSclkScetOutputDir)
-                        .filter(p -> p.getFileName().toString().startsWith(originalTkConfig.getSclkScetFileBasename()))
-                        .filter(p -> p.getFileName().toString().endsWith(originalTkConfig.getSclkScetFileSuffix()))
-                        .collect(Collectors.toList());
-                for (Path sclkScetFile : sclkScetFilesToCopy) {
-                    Files.copy(
-                            sclkScetFile,
-                            newSclkScetOutputDir.resolve(sclkScetFile.getFileName())
-                    );
-                }
-                setConfigEntryVal(sandboxedTkConfig, "product.sclkScetFile.dir", newSclkScetOutputDir.toString());
-            }
-        }
-
-        // uplink cmd files
-        {
-            // todo change this to see if any uplink command files have ever been produced
-            if (originalTkConfig.containsKey("product.uplinkCmdFile.outputDir")) {
-                final Path originalUplinkCmdFileOutputDir = Paths.get(originalTkConfig.getUplinkCmdFileDir()).toAbsolutePath();
-                final Path newUplinkCmdFileOutputDir;
-                if (originalUplinkCmdFileOutputDir.startsWith(originalMmtcHomeDir)) {
-                    newUplinkCmdFileOutputDir = sandboxedMmtcHomeDir.resolve(originalMmtcHomeDir.relativize(originalUplinkCmdFileOutputDir));
-                } else {
-                    newUplinkCmdFileOutputDir = newOutputDir.resolve("uplinkCmd");
-                }
-
-                Files.createDirectories(newUplinkCmdFileOutputDir);
-                List<Path> uplinkCmdFilesToCopy = Files.list(originalUplinkCmdFileOutputDir)
-                        .filter(p -> p.getFileName().toString().startsWith(originalTkConfig.getUplinkCmdFileBasename()))
-                        .collect(Collectors.toList());
-                for (Path uplinkCmdFile : uplinkCmdFilesToCopy) {
-                    Files.copy(
-                            uplinkCmdFile,
-                            newUplinkCmdFileOutputDir.resolve(uplinkCmdFile.getFileName())
-                    );
-                }
-                setConfigEntryVal(sandboxedTkConfig, "product.uplinkCmdFile.outputDir", newUplinkCmdFileOutputDir.toString());
-            }
         }
     }
 
@@ -428,5 +445,9 @@ public class MmtcSandboxCreator {
         } catch (TransformerException e) {
             throw new IOException(e);
         }
+    }
+
+    private static List<Path> findJarsMatching(Path containingDir, String jarPrefix) throws IOException {
+        return Files.list(containingDir).filter(p -> p.startsWith(jarPrefix)).collect(Collectors.toList());
     }
 }

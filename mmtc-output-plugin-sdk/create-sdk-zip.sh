@@ -41,4 +41,4 @@ cp -r ../gradlew                                                    $SDK_DIR
 cp -r ../gradle                                                     $SDK_DIR
 
 cd $SDK_DIR
-zip -qr ../mmtc-$1-tlm-source-plugin-sdk.zip                         .
+zip -qr ../mmtc-$1-output-plugin-sdk.zip                         .

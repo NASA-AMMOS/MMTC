@@ -1,9 +1,13 @@
 package edu.jhuapl.sd.sig.mmtc.products.definition;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
+
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Describes the set of SCLK kernel output products that MMTC performs operations on.
@@ -15,10 +19,11 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     }
 
     @Override
-    public ResolvedProductDirAndPrefix resolveLocation(RollbackConfig conf) {
-        return new ResolvedProductDirAndPrefix(
+    public ResolvedProductDirPrefixSuffix resolveLocation(MmtcConfig conf) {
+        return new ResolvedProductDirPrefixSuffix(
                 conf.getSclkKernelOutputDir().toAbsolutePath(),
-                conf.getSclkKernelBasename()
+                conf.getSclkKernelBasename(),
+                SclkKernel.FILE_SUFFIX
         );
     }
 
@@ -36,5 +41,12 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     @Override
     public boolean shouldBeWritten(TimeCorrelationContext context) {
         return true;
+    }
+
+    @Override
+    public Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputDir) {
+        final Map<String, String> confUpdates = new HashMap<>();
+        confUpdates.put("spice.kernel.sclk.kerneldir", newProductOutputDir.toAbsolutePath().toString());
+        return confUpdates;
     }
 }

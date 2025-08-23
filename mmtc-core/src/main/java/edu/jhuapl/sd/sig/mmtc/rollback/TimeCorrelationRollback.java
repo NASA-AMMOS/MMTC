@@ -4,17 +4,19 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
 import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
+import edu.jhuapl.sd.sig.mmtc.products.definition.BaseOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
+import edu.jhuapl.sd.sig.mmtc.util.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -37,7 +39,7 @@ public class TimeCorrelationRollback {
 
     public TimeCorrelationRollback(String... args) throws Exception {
         this.config = new RollbackConfig(args);
-        this.runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath());
+        this.runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath(), config.getAllOutputProductDefs());
 
         if (! runHistoryFile.exists()) {
             throw new MmtcRollbackException("Run History File not found; MMTC must have run at least one correlation that is recorded in its Run History File to use rollback.");
@@ -203,7 +205,7 @@ public class TimeCorrelationRollback {
         public static RollbackOperations fromRunHistoryFile(RunHistoryFile runHistoryFile, RollbackConfig config, String newRunIdThatWouldBeCurrentAfterRollback) throws MmtcException {
             List<ProductRollbackOperation<?>> calculatedRollbackOperations = new ArrayList<>();
 
-            for (OutputProductDefinition<?> outputProductDef : OutputProductDefinition.all()) {
+            for (OutputProductDefinition<?> outputProductDef : config.getAllOutputProductDefs()) {
                 String postRunOutputProductColName = RunHistoryFile.getPostRunProductColNameFor(outputProductDef);
 
                 Optional<ProductRollbackOperation<?>> operation = ProductRollbackOperation.calculateFor(
@@ -222,7 +224,7 @@ public class TimeCorrelationRollback {
         public static RollbackOperations toInitialState(RunHistoryFile runHistoryFile, RollbackConfig config) throws MmtcException {
             List<ProductRollbackOperation<?>> calculatedRollbackOperations = new ArrayList<>();
 
-            for (OutputProductDefinition<?> outputProductDef : OutputProductDefinition.all()) {
+            for (OutputProductDefinition<?> outputProductDef : config.getAllOutputProductDefs()) {
                 String preRunOutputProductColName = RunHistoryFile.getPreRunProductColNameFor(outputProductDef);
                 String postRunOutputProductColName = RunHistoryFile.getPostRunProductColNameFor(outputProductDef);
 
@@ -273,7 +275,7 @@ public class TimeCorrelationRollback {
         }
     }
 
-    public static abstract class ProductRollbackOperation<T extends OutputProductDefinition.ResolvedProductLocation> {
+    public static abstract class ProductRollbackOperation<T extends BaseOutputProductDefinition.ResolvedProductLocation> {
         public final T configuredDef;
 
         public ProductRollbackOperation(T configuredDef) {
@@ -292,10 +294,10 @@ public class TimeCorrelationRollback {
         public abstract List<String> perform();
     }
 
-    public static class TableTruncationOperation extends ProductRollbackOperation<OutputProductDefinition.ResolvedProductPath> {
+    public static class TableTruncationOperation extends ProductRollbackOperation<BaseOutputProductDefinition.ResolvedProductPath> {
         private final String newLatestProductVersion;
 
-        public TableTruncationOperation(OutputProductDefinition.ResolvedProductPath configuredDef, Optional<String> newLatestProductVersion) throws MmtcException {
+        public TableTruncationOperation(BaseOutputProductDefinition.ResolvedProductPath configuredDef, Optional<String> newLatestProductVersion) throws MmtcException {
             super(configuredDef);
             this.newLatestProductVersion = newLatestProductVersion.orElseThrow(() -> new MmtcException("A table truncation operation must be given a non-empty row number to truncate the file to"));
 
@@ -309,14 +311,18 @@ public class TimeCorrelationRollback {
             return String.format("%s (%d rows truncated)", configuredDef.pathToProduct.toAbsolutePath(), calcLinesToTruncate());
         }
 
-        public Integer calcLinesToTruncate() {
-            return configuredDef.table.getLastLineNumber() - Integer.parseInt(newLatestProductVersion);
+        public Long calcLinesToTruncate() {
+            try {
+                return FileUtils.countNumLinesInFile(configuredDef.pathToProduct) - Integer.parseInt(newLatestProductVersion);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         @Override
         public List<String> perform() {
             try {String message = String.format("Removed %d lines from %s",
-                    configuredDef.table.truncateRecords(Integer.parseInt(newLatestProductVersion)),
+                    FileUtils.truncateLinesTo(configuredDef.pathToProduct, Integer.parseInt(newLatestProductVersion)),
                     configuredDef.pathToProduct);
                 logger.info(USER_NOTICE, message);
                 return Collections.emptyList();
@@ -327,10 +333,10 @@ public class TimeCorrelationRollback {
         }
     }
 
-    public static class MultiFileDeletionOperation extends ProductRollbackOperation<OutputProductDefinition.ResolvedProductDirAndPrefix> {
+    public static class MultiFileDeletionOperation extends ProductRollbackOperation<BaseOutputProductDefinition.ResolvedProductDirPrefixSuffix> {
         private final Optional<String> newLatestProductVersion;
 
-        public MultiFileDeletionOperation(OutputProductDefinition.ResolvedProductDirAndPrefix configuredDef, Optional<String> newLatestProductVersion) throws MmtcException {
+        public MultiFileDeletionOperation(BaseOutputProductDefinition.ResolvedProductDirPrefixSuffix configuredDef, Optional<String> newLatestProductVersion) throws MmtcException {
             super(configuredDef);
             this.newLatestProductVersion = newLatestProductVersion;
 
@@ -349,7 +355,7 @@ public class TimeCorrelationRollback {
          */
         public List<File> getOutputProductFilesToDelete() {
             List<File> filesToDelete = new ArrayList<>();
-            FilenameFilter fileFilter = (dir1, name) -> name.startsWith(configuredDef.filenamePrefix);
+            FilenameFilter fileFilter = (dir1, name) -> (name.startsWith(configuredDef.filenamePrefix) && name.endsWith(configuredDef.filenameSuffix));
             File[] foundFiles = configuredDef.containingDirectory.toFile().listFiles(fileFilter);
 
             if (foundFiles == null) {
@@ -392,8 +398,8 @@ public class TimeCorrelationRollback {
         }
     }
 
-    public static class SingleFileDeletionOperation extends ProductRollbackOperation<OutputProductDefinition.ResolvedProductPath> {
-        public SingleFileDeletionOperation(OutputProductDefinition.ResolvedProductPath configuredDef) throws MmtcException {
+    public static class SingleFileDeletionOperation extends ProductRollbackOperation<BaseOutputProductDefinition.ResolvedProductPath> {
+        public SingleFileDeletionOperation(BaseOutputProductDefinition.ResolvedProductPath configuredDef) throws MmtcException {
             super(configuredDef);
 
             // check to ensure file is present

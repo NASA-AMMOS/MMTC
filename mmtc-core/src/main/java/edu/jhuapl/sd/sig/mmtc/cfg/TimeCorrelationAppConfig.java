@@ -3,13 +3,22 @@ package edu.jhuapl.sd.sig.mmtc.cfg;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
+import edu.jhuapl.sd.sig.mmtc.products.definition.*;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
+import edu.jhuapl.sd.sig.mmtc.util.FileUtils;
+import edu.jhuapl.sd.sig.mmtc.util.IsolatingUrlClassLoader;
 import org.apache.commons.configuration2.ex.ConversionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TimeCorrelationAppConfig extends MmtcConfig{
     public static final String CONTACT_FILTER = "contact";
@@ -80,7 +89,6 @@ public class TimeCorrelationAppConfig extends MmtcConfig{
 
         logger.debug(toString());
     }
-
 
     public TelemetrySource getTelemetrySource() {
         return telemetrySource;

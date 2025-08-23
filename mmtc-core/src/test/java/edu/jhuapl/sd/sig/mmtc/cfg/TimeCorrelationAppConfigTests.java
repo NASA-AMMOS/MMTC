@@ -217,6 +217,23 @@ class TimeCorrelationAppConfigTests {
 		}
 	}
 
+	/*
+	@Test
+	void testPrefixBasedKeyQuery() throws Exception {
+		try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
+			mockedEnvironment
+					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
+					.thenReturn("src/test/resources/ConfigTests/OutputProductPlugin");
+			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+
+
+
+			assertEquals(Arrays.asList("product.plugin.CustomProduct1.config.customVar1", "product.plugin.CustomProduct1.config.customVar2"), config.getKeysWithPrefix("product.plugin.CustomProduct1.config."));
+		}
+	}
+
+	 */
+
 	private static Set<Integer> set(Integer... ints) {
 		return new HashSet<>(Arrays.asList(ints));
 	}
