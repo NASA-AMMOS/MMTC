@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RunHistoryFile extends AbstractTimeCorrelationTable {
     private static final Logger logger = LogManager.getLogger();
@@ -27,106 +26,29 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public static final String CLI_ARGS = "MMTC Invocation Args Used";
 
     private final List<String> headers;
-    private final List<String> newOutputProductHeadersToEstablishEmptyVersionsFor;
-    private final List<DeconfiguredOutputProductColPair> deconfiguredOutputProductsToTrack;
 
     public enum RollbackEntryOption {
         IGNORE_ROLLBACKS,
         INCLUDE_ROLLBACKS
     }
 
-    public static class DeconfiguredOutputProductColPair {
-        public final String preRunColName;
-        public final String postRunColName;
-
-        private DeconfiguredOutputProductColPair(String preRunColName, String postRunColName) {
-            this.preRunColName = preRunColName;
-            this.postRunColName = postRunColName;
-        }
-
-        @Override
-        public String toString() {
-            return "DeconfiguredOutputProductColPair{" +
-                    "preRunColName='" + preRunColName + '\'' +
-                    ", postRunColName='" + postRunColName + '\'' +
-                    '}';
-        }
-    }
-
-    public RunHistoryFile(Path path, List<OutputProductDefinition<?>> allOutputProdDefs) throws MmtcException {
+    public RunHistoryFile(Path path, List<OutputProductDefinition<?>> allOutputProdDefs) {
         super(path);
 
-        if (getFile().exists()) {
-            // if the file exists, read the order of its columns and update as necessary
-            // reading from disk helps ensure a stable ordering of product names, even when optional products are deconfigured
+        final List<String> headers = new ArrayList<>(Arrays.asList(
+                RUN_TIME,
+                RUN_ID,
+                ROLLEDBACK,
+                RUN_USER,
+                CLI_ARGS
+        ));
 
-            final List<String> currentHeaders = new ArrayList<>(readExistingHeadersFromFile());
-            final List<String> newHeaders = new ArrayList<>();
+        allOutputProdDefs.forEach(def -> {
+            headers.add(getPreRunProductColNameFor(def));
+            headers.add(getPostRunProductColNameFor(def));
+        });
 
-            // look over all currently-configured output products to check whether there are now output product plugins defined since the last run
-            allOutputProdDefs.forEach(def -> {
-                final String prodPreRunColName = getPreRunProductColNameFor(def);
-                final String prodPostRunColName = getPostRunProductColNameFor(def);
-
-                if (! currentHeaders.contains(prodPreRunColName)) {
-                    currentHeaders.add(prodPreRunColName);
-                    newHeaders.add(prodPreRunColName);
-                }
-
-                if (! currentHeaders.contains(prodPostRunColName)) {
-                    currentHeaders.add(prodPostRunColName);
-                    newHeaders.add(prodPostRunColName);
-                }
-            });
-
-            this.headers = Collections.unmodifiableList(currentHeaders);
-            this.newOutputProductHeadersToEstablishEmptyVersionsFor = Collections.unmodifiableList(newHeaders);
-            this.deconfiguredOutputProductsToTrack = Collections.unmodifiableList(determineDeconfiguredProducts(allOutputProdDefs));
-        } else {
-            // if the file does not exist, establish a new column ordering
-
-            // default columns
-            final List<String> headers = new ArrayList<>(Arrays.asList(
-                    RUN_TIME,
-                    RUN_ID,
-                    ROLLEDBACK,
-                    RUN_USER,
-                    CLI_ARGS
-            ));
-
-            // a column for each currently-configured output product
-            allOutputProdDefs.forEach(def -> {
-                headers.add(getPreRunProductColNameFor(def));
-                headers.add(getPostRunProductColNameFor(def));
-            });
-
-            this.headers = Collections.unmodifiableList(headers);
-            this.newOutputProductHeadersToEstablishEmptyVersionsFor = new ArrayList<>();
-            this.deconfiguredOutputProductsToTrack = new ArrayList<>();
-        }
-    }
-
-    private List<DeconfiguredOutputProductColPair> determineDeconfiguredProducts(List<OutputProductDefinition<?>> allOutputProdDefs) throws MmtcException {
-        return readExistingHeadersFromFile().stream()
-                .filter(col -> col.startsWith("Latest"))
-                .filter(col -> col.endsWith("Pre-run"))
-                .filter(col -> allOutputProdDefs.stream().noneMatch(def -> col.equals(getPreRunProductColNameFor(def))))
-                .map(col -> new DeconfiguredOutputProductColPair(col, col.replace("Pre", "Post")))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public void writeRecord(TableRecord record) throws MmtcException {
-        // modify the record to carry forward values of output product versions that are no longer written
-        TableRecord updatedRec = new TableRecord(record);
-
-        for (DeconfiguredOutputProductColPair deconfiguredOutProdColPair : deconfiguredOutputProductsToTrack) {
-            final String latestProdVersionPreAndPostRun = getLatestNonEmptyValueOfCol(deconfiguredOutProdColPair.postRunColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-");
-            updatedRec.setValue(deconfiguredOutProdColPair.preRunColName, latestProdVersionPreAndPostRun);
-            updatedRec.setValue(deconfiguredOutProdColPair.postRunColName, latestProdVersionPreAndPostRun);
-        }
-
-        super.writeRecord(updatedRec);
+        this.headers = Collections.unmodifiableList(headers);
     }
 
     public static String getPreRunProductColNameFor(OutputProductDefinition<?> def) {
@@ -154,41 +76,6 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
         return headers;
     }
 
-    public List<DeconfiguredOutputProductColPair> getDeconfiguredOutputProductsToTrack() {
-        return Collections.unmodifiableList(deconfiguredOutputProductsToTrack);
-    }
-
-    private List<String> readExistingHeadersFromFile() throws MmtcException {
-        try {
-            resetParser();
-            final List<String> existingHeaders = parser.getHeaderNames();
-            parser.close();
-            return existingHeaders;
-        } catch (IOException e) {
-            throw new MmtcException(e);
-        }
-    }
-
-    public void updateRowsForNewProducts() throws MmtcException {
-        if (! getFile().exists()) {
-            return;
-        }
-
-        if (newOutputProductHeadersToEstablishEmptyVersionsFor.isEmpty()) {
-            return;
-        }
-
-        logger.info("Updating Run History File with additional columns: " + newOutputProductHeadersToEstablishEmptyVersionsFor);
-        final List<TableRecord> allExistingRecords = readRecords(RollbackEntryOption.INCLUDE_ROLLBACKS);
-        for (TableRecord existingRecord : allExistingRecords) {
-            for (String newHeader : newOutputProductHeadersToEstablishEmptyVersionsFor) {
-                existingRecord.setValue(newHeader, "-");
-            }
-        }
-
-        writeToTableFromTableRecords(allExistingRecords);
-    }
-
     /**
      * Reads the existing RunHistoryFile and returns its contents as a list of TableRecords each representing
      * individual runs. It intentionally ignores any runs previously used in rollback as indicated by the "Rolled Back?"
@@ -199,7 +86,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
      */
     public List<TableRecord> readRecords(RollbackEntryOption option) throws MmtcException {
         List<TableRecord> records = new ArrayList<>();
-        if (! this.getFile().exists()) {
+        if (!this.getFile().exists()) {
             return records;
         }
 
@@ -212,9 +99,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
             }
 
             for (String column : getHeaders()) {
-                if (record.isMapped(column)) {
-                    newRecord.setValue(column, record.get(column));
-                }
+                newRecord.setValue(column, record.get(column));
             }
             records.add(newRecord);
         }
