@@ -5,11 +5,11 @@
  */
 
 rootProject.name = "mmtc"
-include(":mmtc-app")
 include(":mmtc-core")
 include(":mmtc-plugin-ampcs")
 include(":mmtc-tlm-source-plugin-sdk")
 include(":mmtc-webapp")
+include(":mmtc-webapp-ui")
 include(":jnispice")
 
 dependencyResolutionManagement {

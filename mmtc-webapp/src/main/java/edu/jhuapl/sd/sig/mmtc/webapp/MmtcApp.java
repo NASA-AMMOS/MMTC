@@ -6,9 +6,23 @@ import io.javalin.Javalin;
 public class MmtcApp {
     public static final BuildInfo BUILD_INFO = new BuildInfo();
 
+    private final Javalin javalinApp;
+
     public static void main(String[] args) {
-        Javalin.create()
-                .get("/", ctx -> ctx.result("Hello World!  You are running MMTC " + BUILD_INFO.toString()))
-                .start(7070);
-    }t
+        new MmtcApp().start();
+    }
+
+    public MmtcApp() {
+        javalinApp = Javalin.create(javalinConfig -> {
+            javalinConfig.staticFiles.add("/static");
+        });
+
+        // javalinApp.get("/", )
+
+        javalinApp.get("/api/v1/version", ctx -> ctx.result("MMTC " + BUILD_INFO.toString()));
+    }
+
+    private void start() {
+        javalinApp.start(7070);
+    }
 }

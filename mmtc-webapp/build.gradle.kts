@@ -41,6 +41,28 @@ configurations.getByName("testRuntimeClasspath") {
     extendsFrom(precompiledJniSpiceClasses)
 }
 
+val copyBuiltWebappUiIntoSrc = tasks.register<Copy>("copyBuiltWebappUiIntoSrc") {
+    dependsOn(project(":mmtc-webapp-ui").tasks.getByName("nuxtBuild"))
+    from(project(":mmtc-webapp-ui").projectDir.toPath().resolve("mmtc-webapp-ui/.output/public/"))
+    into(projectDir.toPath().resolve("src/main/resources/static"))
+}
+
+tasks.processResources {
+    dependsOn(copyBuiltWebappUiIntoSrc)
+}
+
+tasks.clean {
+    dependsOn("cleanCopyBuiltWebappUiIntoSrc")
+}
+
+/*
+val runServer = tasks.register<JavaExec>("runServer") {
+    dependsOn(copyBuiltWebappUiIntoSrc)
+    classpath(sourceSets.main.get().runtimeClasspath)
+    mainClass.set("edu.jhuapl.sd.sig.mmtc.webapp")
+}
+ */
+
 // configure the default jar task to be an uber-jar, as we don't need this build to also produce a thin/unter-jar
 tasks.jar {
     dependsOn(":mmtc-core:jar")
