@@ -2,8 +2,8 @@ package edu.jhuapl.sd.sig.mmtc.tlm.tkpacket;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * Represents the Packet_Definition root element in the timekeeping packet definition
