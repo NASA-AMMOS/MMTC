@@ -1,10 +1,16 @@
 package edu.jhuapl.sd.sig.mmtc.products.definition;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkScetFile;
+
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Describes the set of SCLK kernel output products that MMTC performs operations on.
@@ -16,12 +22,13 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
     }
 
     @Override
-    public ResolvedProductDirAndPrefix resolveLocation(RollbackConfig conf) throws MmtcException {
+    public ResolvedProductDirPrefixSuffix resolveLocation(MmtcConfig conf) throws MmtcException {
         conf.validateSclkScetConfiguration();
 
-        return new ResolvedProductDirAndPrefix(
+        return new ResolvedProductDirPrefixSuffix(
                 conf.getSclkScetOutputDir().toAbsolutePath(),
-                conf.getSclkScetFileBasename()
+                conf.getSclkScetFileBasename(),
+                conf.getSclkScetFileSuffix()
         );
     }
 
@@ -39,5 +46,12 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
     @Override
     public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
       return SclkScetFile.writeNewProduct(ctx);
+    }
+
+    @Override
+    public Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputDir) {
+        final Map<String, String> confUpdates = new HashMap<>();
+        confUpdates.put("product.sclkScetFile.dir", newProductOutputDir.toAbsolutePath().toString());
+        return confUpdates;
     }
 }

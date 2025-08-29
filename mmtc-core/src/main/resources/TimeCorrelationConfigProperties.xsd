@@ -9,7 +9,7 @@
 
   <xs:simpleType name="pluginEntryKey">
     <xs:restriction base="xs:string">
-      <xs:pattern value="telemetry\.source\.config\..+"/>
+      <xs:pattern value="(telemetry\.source\.config\..+)|(product\.plugin\..+)"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -133,6 +133,7 @@
       <xs:enumeration value="table.timeHistoryFile.path"/>
       <xs:enumeration value="table.timeHistoryFile.excludeColumns"/>
       <xs:enumeration value="table.timeHistoryFile.scetUtcPrecision"/>
+
       <xs:enumeration value="product.sclkScetFile.create"/>
       <xs:enumeration value="product.sclkScetFile.dir"/>
       <xs:enumeration value="product.sclkScetFile.baseName"/>
@@ -146,6 +147,8 @@
       <xs:enumeration value="product.uplinkCmdFile.create"/>
       <xs:enumeration value="product.uplinkCmdFile.outputDir"/>
       <xs:enumeration value="product.uplinkCmdFile.baseName"/>
+
+      <xs:enumeration value="product.plugin.outputProductNames"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="entryKey">

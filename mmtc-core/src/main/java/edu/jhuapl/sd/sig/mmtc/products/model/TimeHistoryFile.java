@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
@@ -125,7 +125,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         return Collections.unmodifiableList(columns);
     }
 
-    public static OutputProductDefinition.ProductWriteResult appendRowFor(TimeCorrelationContext ctx) throws MmtcException {
+    public static ProductWriteResult appendRowFor(TimeCorrelationContext ctx) throws MmtcException {
         final TimeHistoryFile timeHistoryFile = new TimeHistoryFile(ctx.config.getTimeHistoryFilePath(), ctx.config.getTimeHistoryFileExcludeColumns());
         final TableRecord newThfRec = new TableRecord(timeHistoryFile.getHeaders());
 
@@ -135,7 +135,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
             throw new MmtcException(e);
         }
 
-        return new OutputProductDefinition.ProductWriteResult(
+        return new ProductWriteResult(
                 timeHistoryFile.getPath(),
                 timeHistoryFile.getLastLineNumber()
         );

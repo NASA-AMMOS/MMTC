@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 
 import java.nio.file.Path;
@@ -62,7 +62,7 @@ public class RawTelemetryTable extends AbstractTimeCorrelationTable {
      * @throws MmtcException if there's an unhandled issue writing the raw telemetry table
      * @return a ProductWriteResult describing the updated product
      */
-    public static OutputProductDefinition.ProductWriteResult appendCorrelationFrameSamplesToRawTelemetryTable(TimeCorrelationContext context) throws MmtcException {
+    public static ProductWriteResult appendCorrelationFrameSamplesToRawTelemetryTable(TimeCorrelationContext context) throws MmtcException {
         final RawTelemetryTable rawTlmTable = new RawTelemetryTable(context.config.getRawTelemetryTablePath());
 
         for (FrameSample sample : context.correlation.target.get().getSampleSet()) {
@@ -71,7 +71,7 @@ public class RawTelemetryTable extends AbstractTimeCorrelationTable {
             rawTlmTable.writeRecord(rec);
         }
 
-        return new OutputProductDefinition.ProductWriteResult(
+        return new ProductWriteResult(
                 context.config.getRawTelemetryTablePath(),
                 rawTlmTable.getLastLineNumber()
         );
