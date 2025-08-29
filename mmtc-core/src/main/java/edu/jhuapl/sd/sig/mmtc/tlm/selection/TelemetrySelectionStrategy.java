@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSampleValidator;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -27,13 +27,12 @@ public abstract class TelemetrySelectionStrategy {
 
     private final TelemetrySource tlmSource;
 
-    protected final TimeCorrelationAppConfig config;
+    protected final TimeCorrelationRunConfig config;
     protected final int tk_sclk_fine_tick_modulus;
 
 
-    public TelemetrySelectionStrategy(TimeCorrelationAppConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
+    public TelemetrySelectionStrategy(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
         this.tlmSource = tlmSource;
-
         this.config = config;
         this.tk_sclk_fine_tick_modulus = tk_sclk_fine_tick_modulus;
     }
@@ -101,8 +100,7 @@ public abstract class TelemetrySelectionStrategy {
 
         // compute bitrate-dependent time delay
         for (FrameSample sample : samples) {
-            double td_be = computeTd_be(sample.getTkDataRateBps());
-            sample.setDerivedTdBe(td_be);
+            sample.computeAndSetTdBe(config.getFrameErtBitOffsetError());
         }
 
         // validate that samples have sufficient telemetry for use in time correlation
@@ -136,24 +134,6 @@ public abstract class TelemetrySelectionStrategy {
         } else {
             throw new MmtcException("Telemetry does not have downlink data rate information and samples do not all have a frame size set; cannot estimate downlink data rate.");
         }
-    }
-
-    /**
-     * Computes TD_be, the bitrate-dependent time delay.
-     *
-     * @param downlinkDataRate the downlink bitrate
-     * @return the bitrate-dependent time delay TD_be, or NaN if the downlink
-     *         bitrate is invalid
-     */
-    private Double computeTd_be(BigDecimal downlinkDataRate) {
-        if (downlinkDataRate.doubleValue() <= 0) {
-            return Double.NaN;
-        }
-
-        return BigDecimal.valueOf(config.getFrameErtBitOffsetError())
-                .divide(downlinkDataRate, 24, RoundingMode.HALF_UP)
-                .setScale(24, RoundingMode.HALF_UP)
-                .doubleValue();
     }
 
     /**

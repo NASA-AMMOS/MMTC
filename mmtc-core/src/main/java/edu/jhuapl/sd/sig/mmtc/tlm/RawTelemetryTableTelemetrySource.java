@@ -2,10 +2,10 @@ package edu.jhuapl.sd.sig.mmtc.tlm;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
 import edu.jhuapl.sd.sig.mmtc.util.CdsTimeCode;
-import org.apache.commons.cli.Option;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +27,7 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
 
     private static final String RAW_TLM_TABLE_PATH_CONFIG_KEY = "telemetry.source.plugin.rawTlmTable.tableFile.path";
 
-    private TimeCorrelationAppConfig config;
+    private MmtcConfigWithTlmSource config;
     private RawTelemetryTable rawTlmTable;
 
     // no-arg constructor for Java service loading
@@ -36,18 +36,7 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
-        Set<String> enabledFilters = config.getFilters().keySet();
-        if (
-                enabledFilters.contains(TimeCorrelationAppConfig.VALID_FILTER)
-        ) {
-            String errorString = "When using the RawTelemetryTable telemetry source, the " +
-                    TimeCorrelationAppConfig.VALID_FILTER +
-                    " filters are not applicable and must be disabled by setting the configuration options " +
-                    "filter.<filter name>.enabled to false.";
-            throw new MmtcException(errorString);
-        }
-
+    public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
         this.config = config;
 
         if (! config.containsKey(RAW_TLM_TABLE_PATH_CONFIG_KEY)) {
@@ -86,8 +75,22 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<Option> getAdditionalCliArguments() {
+    public Collection<AdditionalOption> getAdditionalOptions() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public void checkCorrelationConfiguration(TimeCorrelationRunConfig config) throws MmtcException {
+        Set<String> enabledFilters = config.getFilters().keySet();
+        if (
+                enabledFilters.contains(TimeCorrelationRunConfig.VALID_FILTER)
+        ) {
+            String errorString = "When using the RawTelemetryTable telemetry source, the " +
+                    TimeCorrelationRunConfig.VALID_FILTER +
+                    " filters are not applicable and must be disabled by setting the configuration options " +
+                    "filter.<filter name>.enabled to false.";
+            throw new MmtcException(errorString);
+        }
     }
 
     /**

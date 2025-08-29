@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import org.apache.commons.lang3.tuple.Pair;
@@ -19,8 +19,12 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
 
     private static final Logger logger = LogManager.getLogger();
 
-    public SamplingTelemetrySelectionStrategy(TimeCorrelationAppConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
+    public SamplingTelemetrySelectionStrategy(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
         super(config, tlmSource, tk_sclk_fine_tick_modulus);
+
+        if (! config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
+            throw new IllegalStateException("This telemetry selection strategy only supports querying over an ERT range for a target sample");
+        }
     }
 
     @Override
@@ -75,20 +79,20 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
         // - does not query telemetry outside the given input start and stop times
         while (true) {
             if (stop == null) {
-                stop = config.getStopTime();
+                stop = config.getResolvedTargetSampleRange().get().getStop();
             } else {
                 stop = stop.minusMinutes(config.getSamplingSampleSetBuildingStrategySamplingRateMinutes());
             }
 
-            if (! stop.isAfter(config.getStartTime())) {
+            if (! stop.isAfter(config.getResolvedTargetSampleRange().get().getStart())) {
                 break;
             }
 
             start = stop.minusMinutes(config.getSamplingSampleSetBuildingStrategyQueryWidthMinutes());
 
-            if (start.isBefore(config.getStartTime())) {
+            if (start.isBefore(config.getResolvedTargetSampleRange().get().getStart())) {
                 // bound query start time to input start time
-                start = config.getStartTime();
+                start = config.getResolvedTargetSampleRange().get().getStart();
             }
 
             queryRanges.add(Pair.of(start, stop));

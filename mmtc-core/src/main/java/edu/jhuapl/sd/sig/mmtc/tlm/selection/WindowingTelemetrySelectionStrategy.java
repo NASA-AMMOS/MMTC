@@ -2,12 +2,15 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,16 +20,16 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
     private static final Logger logger = LogManager.getLogger();
     private final int windowSlidingIncrement;
 
-    private WindowingTelemetrySelectionStrategy(TimeCorrelationAppConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus, int windowSlidingIncrement) {
+    private WindowingTelemetrySelectionStrategy(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus, int windowSlidingIncrement) {
         super(config, tlmSource, tk_sclk_fine_tick_modulus);
         this.windowSlidingIncrement = windowSlidingIncrement;
     }
 
-    public static WindowingTelemetrySelectionStrategy forSeparateConsecutiveWindows(TimeCorrelationAppConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
+    public static WindowingTelemetrySelectionStrategy forSeparateConsecutiveWindows(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
         return new WindowingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus, config.getSamplesPerSet());
     }
 
-    public static WindowingTelemetrySelectionStrategy forSlidingWindow(TimeCorrelationAppConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
+    public static WindowingTelemetrySelectionStrategy forSlidingWindow(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
         return new WindowingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus, 1);
     }
 
@@ -62,7 +65,22 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
         //
         // Samples in range can be large, so this might not be an efficient approach, but we won't preemptively try
         // to optimize this without performance data.
-        final List<FrameSample> samplesInRange = getSamplesInRange(config.getStartTime(), config.getStopTime());
+
+        final OffsetDateTime queryStartTime;
+        final OffsetDateTime queryStopTime;
+        if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
+            queryStartTime = config.getResolvedTargetSampleRange().get().getStart();
+            queryStopTime = config.getResolvedTargetSampleRange().get().getStop();
+        } else if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
+            // todo there has to be a grace window here to query enough telemetry to find the supplemental sample for a target sample, add a new config key?
+            // this problem won't exist for AmpcsTlmWithFrames because it'll query back separately according to its own configuration
+            queryStartTime = config.getResolvedTargetSampleExactErt().get().minus(60, ChronoUnit.MINUTES);
+            queryStopTime = config.getResolvedTargetSampleExactErt().get().plus(60, ChronoUnit.MINUTES);
+        } else {
+            throw new IllegalStateException();
+        }
+
+        final List<FrameSample> samplesInRange = getSamplesInRange(queryStartTime, queryStopTime);
         final int numSamplesInRange = samplesInRange.size();
 
         int sampleToIndex = numSamplesInRange;
@@ -105,6 +123,14 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
             }
 
             tcTarget = new TimeCorrelationTarget(sampleSet, config, tk_sclk_fine_tick_modulus);
+
+            if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
+                final OffsetDateTime desiredTargetFrameErt = config.getResolvedTargetSampleExactErt().get();
+
+                if (!TimeConvert.parseIsoDoyUtcStr(tcTarget.getTargetSample().getErtStr()).equals(desiredTargetFrameErt)) {
+                    logger.warn("Discarding the candidate sample set because it does not match the desired ERT");
+                }
+            }
 
             if (filterFunction.apply(tcTarget)) {
                 logger.info(USER_NOTICE, "The candidate sample set passed all filters and is valid. MMTC will use it as the sample set for time correlation.");

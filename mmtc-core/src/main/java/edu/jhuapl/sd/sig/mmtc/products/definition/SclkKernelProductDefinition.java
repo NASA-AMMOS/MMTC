@@ -16,8 +16,10 @@ import java.util.Map;
  * A single SCLK kernel is modeled by {@link SclkKernel}.
  */
 public class SclkKernelProductDefinition extends EntireFileOutputProductDefinition {
+    public static final String PRODUCT_NAME = "SCLK Kernel";
+
     public SclkKernelProductDefinition() {
-        super("SCLK Kernel");
+        super(PRODUCT_NAME);
     }
 
     @Override
@@ -77,5 +79,14 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         final Map<String, String> confUpdates = new HashMap<>();
         confUpdates.put("spice.kernel.sclk.kerneldir", newProductOutputDir.toAbsolutePath().toString());
         return confUpdates;
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "SCLK Kernel";
+    }
+
+    public ProductWriteResult writeToAlternatePath(TimeCorrelationContext ctx, Path sclkKernelOutputPath) throws MmtcException {
+        return SclkKernel.writeNewProduct(ctx, sclkKernelOutputPath);
     }
 }

@@ -3,8 +3,6 @@ package edu.jhuapl.sd.sig.mmtc.correlation;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
 
 public class CorrelationMetrics {
-    public final Settable<Double> sclkDrift = new Settable<>();
-
     // length of time since the prior correlation, in days
     public final Settable<Double> dt = new Settable<>();
 

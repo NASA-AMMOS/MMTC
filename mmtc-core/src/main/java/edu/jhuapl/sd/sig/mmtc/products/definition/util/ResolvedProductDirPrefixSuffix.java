@@ -23,4 +23,11 @@ public class ResolvedProductDirPrefixSuffix implements ResolvedProductLocation {
                 .filter(p -> p.getFileName().toString().endsWith(filenameSuffix))
                 .collect(Collectors.toList());
     }
+
+    public Path findMatchingFilename(String filename) throws IOException {
+        return findAllMatching().stream()
+                .filter(p -> p.getFileName().toString().equals(filename))
+                .findFirst()
+                .orElseThrow(() -> new IOException("No such product with filename: " + filename));
+    }
 }

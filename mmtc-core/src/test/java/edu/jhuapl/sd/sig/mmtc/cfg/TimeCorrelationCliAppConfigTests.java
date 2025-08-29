@@ -1,7 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +10,6 @@ import org.mockito.Mockito;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
 import spice.basic.KernelDatabase;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -31,12 +29,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * find the default (non-test version) config file from src/main/resources since that's also on the classpath. The
  * tests will then be using unintented test inputs and giving you false results.
  */
-class TimeCorrelationAppConfigTests {
+class TimeCorrelationCliAppConfigTests {
 
     @Test
     @DisplayName("TimeCorrelationAppConfig.getKernelsToLoad baseline/negative test - no exceptions expected")
     void testCorrectCommasInKernelConfigs() throws Exception {
-		TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(new String[] {"2020-001T00:00:00", "2020-001T23:59:59"});
+		TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(new String[] {"2020-001T00:00:00", "2020-001T23:59:59"});
 		assertDoesNotThrow(
 			() -> {
 				config.getKernelsToLoad();
@@ -51,7 +49,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 				.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 				.thenReturn("src/test/resources/ConfigTests/trailingCommas");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(new String[] {"2020-001T00:00:00", "2020-001T23:59:59"});
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(new String[] {"2020-001T00:00:00", "2020-001T23:59:59"});
 			MmtcException e = assertThrows(
 				MmtcException.class,
 				() -> {
@@ -69,7 +67,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 				.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 				.thenReturn("src/test/resources/ConfigTests/consecutiveCommas");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(new String[] {"2020-001T00:00:00", "2020-001T23:59:59"});
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(new String[] {"2020-001T00:00:00", "2020-001T23:59:59"});
 			MmtcException e = assertThrows(
 				MmtcException.class,
 				() -> {
@@ -82,23 +80,23 @@ class TimeCorrelationAppConfigTests {
 
 	@Test
 	void testParseVcidGroups() throws MmtcException {
-		assertEquals(Arrays.asList(set(1)), TimeCorrelationAppConfig.parseVcidGroups("testkey", "1"));
-		assertEquals(Arrays.asList(set(1), set(2)), TimeCorrelationAppConfig.parseVcidGroups("testkey", "1; 2"));
+		assertEquals(Arrays.asList(set(1)), TimeCorrelationCliAppConfig.parseVcidGroups("testkey", "1"));
+		assertEquals(Arrays.asList(set(1), set(2)), TimeCorrelationCliAppConfig.parseVcidGroups("testkey", "1; 2"));
 
-		assertEquals(Arrays.asList(set(1,2)), TimeCorrelationAppConfig.parseVcidGroups("testkey", "1,2"));
-		assertEquals(Arrays.asList(set(1,2)), TimeCorrelationAppConfig.parseVcidGroups("testkey", "1,2;"));
-		assertEquals(Arrays.asList(set(1,2), set(3,4)), TimeCorrelationAppConfig.parseVcidGroups("testkey", "1,2; 3,4"));
-		assertEquals(Arrays.asList(set(1,2), set(3,4), set(3,5)), TimeCorrelationAppConfig.parseVcidGroups("testkey", "1,2; 3,4; 3,5"));
+		assertEquals(Arrays.asList(set(1,2)), TimeCorrelationCliAppConfig.parseVcidGroups("testkey", "1,2"));
+		assertEquals(Arrays.asList(set(1,2)), TimeCorrelationCliAppConfig.parseVcidGroups("testkey", "1,2;"));
+		assertEquals(Arrays.asList(set(1,2), set(3,4)), TimeCorrelationCliAppConfig.parseVcidGroups("testkey", "1,2; 3,4"));
+		assertEquals(Arrays.asList(set(1,2), set(3,4), set(3,5)), TimeCorrelationCliAppConfig.parseVcidGroups("testkey", "1,2; 3,4; 3,5"));
 
-		assertEquals(Arrays.asList(set(0,6,7), set(5)), TimeCorrelationAppConfig.parseVcidGroups("testkey", "0,6,7; 5"));
+		assertEquals(Arrays.asList(set(0,6,7), set(5)), TimeCorrelationCliAppConfig.parseVcidGroups("testkey", "0,6,7; 5"));
 
-		assertThrows(Exception.class, () -> { TimeCorrelationAppConfig.parseVcidGroups("testkey", ""); });
-		assertThrows(Exception.class, () -> { TimeCorrelationAppConfig.parseVcidGroups("testkey", " "); });
-		assertThrows(Exception.class, () -> { TimeCorrelationAppConfig.parseVcidGroups("testkey", ";"); });
-		assertThrows(Exception.class, () -> { TimeCorrelationAppConfig.parseVcidGroups("testkey", " ; "); });
-		assertThrows(Exception.class, () -> { TimeCorrelationAppConfig.parseVcidGroups("testkey", " ; 2"); });
+		assertThrows(Exception.class, () -> { TimeCorrelationCliAppConfig.parseVcidGroups("testkey", ""); });
+		assertThrows(Exception.class, () -> { TimeCorrelationCliAppConfig.parseVcidGroups("testkey", " "); });
+		assertThrows(Exception.class, () -> { TimeCorrelationCliAppConfig.parseVcidGroups("testkey", ";"); });
+		assertThrows(Exception.class, () -> { TimeCorrelationCliAppConfig.parseVcidGroups("testkey", " ; "); });
+		assertThrows(Exception.class, () -> { TimeCorrelationCliAppConfig.parseVcidGroups("testkey", " ; 2"); });
 
-		assertThrows(Exception.class, () -> { TimeCorrelationAppConfig.parseVcidGroups("testkey", "1,2 ; a,b"); });
+		assertThrows(Exception.class, () -> { TimeCorrelationCliAppConfig.parseVcidGroups("testkey", "1,2 ; a,b"); });
 	}
 
 	@Test
@@ -107,7 +105,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 					.thenReturn("src/test/resources/ConfigTests/unusualSclkModulusOverride");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
 
 			assertEquals(12345, config.getTkSclkFineTickModulus());
 		}
@@ -119,7 +117,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 					.thenReturn("src/test/resources/ConfigTests/noSclkModulusOverride");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
 
 			TimeConvert.loadSpiceLib();
 			KernelDatabase.load("src/test/resources/nh_kernels/lsk/naif0012.tls");
@@ -137,7 +135,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 					.thenReturn("src/test/resources/ConfigTests/noTkOscTempOrParmWindow");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
 
 			assertEquals(600, config.getTkOscTempWindowSec());
 			assertEquals(600, config.getTkParmWindowSec());
@@ -150,7 +148,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 					.thenReturn("src/test/resources/ConfigTests/missingKeys");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
 
 			ArrayList<String> expectedMissingVals = new ArrayList<>();
 			expectedMissingVals.add("missionId");
@@ -177,7 +175,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/ConfigTests/minimalKeys");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
 
 			config.validate();
 		}
@@ -189,7 +187,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 					.thenReturn("src/test/resources/ConfigTests/missingSclkScetKey");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
 
 			MmtcException resultingException = assertThrows(
 					MmtcException.class,
@@ -206,7 +204,7 @@ class TimeCorrelationAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 					.thenReturn("src/test/resources/ConfigTests/missingUplinkCmdFileKey");
-			TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
+			TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("2020-001T00:00:00", "2020-001T23:59:59");
 
 			MmtcException resultingException = assertThrows(
 					MmtcException.class,

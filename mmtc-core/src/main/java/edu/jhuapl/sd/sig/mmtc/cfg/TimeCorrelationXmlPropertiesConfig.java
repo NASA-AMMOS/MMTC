@@ -55,9 +55,9 @@ public class TimeCorrelationXmlPropertiesConfig extends TimeCorrelationConfig {
             final boolean success = config != null;
 
             if (success) {
-                String urlString = config.getURLString();
-                logger.info("Loaded configuration from: " + urlString);
-                setPath(Paths.get(urlString));
+                String path = config.getURLString().replaceFirst("file:", "");
+                logger.info("Loaded configuration from: " + path);
+                setPath(Paths.get(path));
             }
 
             return success;

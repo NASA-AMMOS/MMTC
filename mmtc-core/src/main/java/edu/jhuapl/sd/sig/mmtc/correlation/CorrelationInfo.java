@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.correlation;
 
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
 
@@ -16,11 +16,13 @@ public class CorrelationInfo {
     // time correlation target information, including the sample set, the chosen FrameSample, and some computed information
     public final Settable<TimeCorrelationTarget> target = new Settable<>();
 
-    public final Settable<TimeCorrelationAppConfig.ClockChangeRateMode> actual_clock_change_rate_mode = new Settable<>();
+    public final Settable<TimeCorrelationRunConfig.ClockChangeRateMode> actual_clock_change_rate_mode = new Settable<>();
     public final Settable<Double> predicted_clock_change_rate = new Settable<>();
     public final Settable<Double> interpolated_clock_change_rate = new Settable<>();
 
-    public Settable<SclkKernel.CorrelationTriplet> smoothingTriplet = new Settable<>();
+    public Settable<SclkKernel.CorrelationTriplet> newPredictedTriplet = new Settable<>();
+    public Settable<SclkKernel.CorrelationTriplet> updatedInterpolatedTriplet = new Settable<>();
+    public Settable<SclkKernel.CorrelationTriplet> newSmoothingTriplet = new Settable<>();
 
     // other computed information
     public final Settable<Double> sclk_drift_ms_per_day = new Settable<>();

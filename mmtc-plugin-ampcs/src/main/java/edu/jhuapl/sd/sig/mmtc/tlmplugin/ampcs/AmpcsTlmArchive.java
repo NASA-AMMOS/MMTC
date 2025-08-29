@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketIterator;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;
@@ -48,13 +48,11 @@ public class AmpcsTlmArchive extends AmpcsTelemetrySource {
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
-        super.applyConfiguration(config);
-
+    public void checkCorrelationConfiguration(TimeCorrelationRunConfig config) throws MmtcException {
         Set<String> enabledFilters = config.getFilters().keySet();
-        if (enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER)) {
+        if (enabledFilters.contains(TimeCorrelationRunConfig.CONSEC_MC_FRAME_FILTER)) {
             String errorString = "When using the AmpcsTlmArchive telemetry source, the " +
-                    TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER +
+                    TimeCorrelationRunConfig.CONSEC_MC_FRAME_FILTER +
                     " filter is not applicable and must be disabled by setting the configuration option " +
                     "filter.<filter name>.enabled to false.";
             throw new MmtcException(errorString);

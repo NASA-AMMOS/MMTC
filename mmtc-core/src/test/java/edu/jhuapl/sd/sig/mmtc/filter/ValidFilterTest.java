@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ValidFilterTest {
     private final ValidFilter validFilter = new ValidFilter();
-    private final TimeCorrelationAppConfig config = Mockito.mock(TimeCorrelationAppConfig.class);
+    private final TimeCorrelationCliAppConfig config = Mockito.mock(TimeCorrelationCliAppConfig.class);
 
     @Test
     public void testPassingCases() throws MmtcException {
@@ -60,11 +60,11 @@ class ValidFilterTest {
         );
     }
 
-    private void testFilterPasses(TimeCorrelationAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterPasses(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertTrue(validFilter.process(frameSamples, config), message);
     }
 
-    private void testFilterFails(TimeCorrelationAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterFails(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertFalse(validFilter.process(frameSamples, config), message);
     }
 

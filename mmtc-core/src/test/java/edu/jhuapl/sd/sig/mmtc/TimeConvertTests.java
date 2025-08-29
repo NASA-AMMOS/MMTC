@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -989,5 +990,19 @@ public class TimeConvertTests {
         kernelsToLoad.put("src/test/resources/nh_kernels/lsk/naif0012.tls", "lsk");
         kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
         TimeConvert.loadSpiceKernels(kernelsToLoad);
+    }
+
+    @Test
+    public void testNanosBetween() {
+        final OffsetDateTime now = OffsetDateTime.now();
+        final OffsetDateTime later = now.plusMinutes(5);
+
+        // it'll be positive if the first term is earlier than the second term
+        assertTrue(ChronoUnit.NANOS.between(now, later) > 0);
+        assertEquals(5L * 60 * 1000 * 1000 * 1000, ChronoUnit.NANOS.between(now, later));
+
+        // it'll be negative if the first term is later than the second term
+        assertTrue(ChronoUnit.NANOS.between(later, now) < 0);
+        assertEquals(-5L * 60 * 1000 * 1000 * 1000, ChronoUnit.NANOS.between(later, now));
     }
 }

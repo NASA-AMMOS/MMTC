@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.correlation;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
@@ -17,7 +17,7 @@ public class TimeCorrelationContext {
     public final GeometryInfo geometry = new GeometryInfo();
     public final AncillaryInfo ancillary = new AncillaryInfo();
 
-    public final TimeCorrelationAppConfig config;
+    public final TimeCorrelationRunConfig config;
     public final TelemetrySource telemetrySource;
     public final OffsetDateTime appRunTime;
     public final Settable<Integer> runId = new Settable<>();
@@ -31,7 +31,7 @@ public class TimeCorrelationContext {
 
     private final List<String> warnings;
 
-    public TimeCorrelationContext(final TimeCorrelationAppConfig config) {
+    public TimeCorrelationContext(final TimeCorrelationRunConfig config) {
         this.config = config;
         this.telemetrySource = config.getTelemetrySource();
         this.warnings = new ArrayList<>();

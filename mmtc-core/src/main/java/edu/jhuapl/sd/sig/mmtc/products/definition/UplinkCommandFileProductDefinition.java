@@ -70,4 +70,9 @@ public class UplinkCommandFileProductDefinition extends EntireFileOutputProductD
         confUpdates.put("product.uplinkCmdFile.outputDir", newProductOutputDir.toAbsolutePath().toString());
         return confUpdates;
     }
+
+    @Override
+    public String getDisplayName() {
+        return "Uplink Command File";
+    }
 }

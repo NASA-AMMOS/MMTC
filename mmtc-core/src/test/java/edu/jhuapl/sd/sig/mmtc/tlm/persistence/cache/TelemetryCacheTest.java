@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.RawTelemetryTableTelemetrySource;
@@ -46,7 +47,7 @@ class TelemetryCacheTest {
     }
 
     void loadConfigAndTestTlmSources(String[] args, String rawTlmTablePath) throws Exception {
-        config = spy(new TimeCorrelationAppConfig(args));
+        config = spy(new TimeCorrelationCliAppConfig(args));
         when(config.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(rawTlmTablePath);
 
         vanillaRawTlmTableSource = new RawTelemetryTableTelemetrySource();
