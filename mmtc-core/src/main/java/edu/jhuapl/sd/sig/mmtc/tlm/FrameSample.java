@@ -559,4 +559,23 @@ public class FrameSample {
     public int hashCode() {
         return Objects.hash(sclkCoarse, sclkFine, ert, ertExplicitlySet, ertStr, ertStrExplicitlySet, scet, pathId, vcid, vcfc, mcfc, tkSclkCoarse, tkSclkFine, tkVcid, tkVcfc, tkDataRateBps, tkRfEncoding, tkIsValid, suppVcid, suppVcfc, suppMcfc, suppErt, suppErtExplicitlySet, suppErtStr, suppErtStrExplicitlySet, derivedTdBe, frameSizeBits);
     }
+
+    // call this after downlink rate is set
+    /**
+     * Computes TD_be, the bitrate-dependent time delay.
+     *
+     * @param frameErtBitOffsetError
+     */
+    public void computeAndSetTdBe(Double frameErtBitOffsetError) {
+        if (tkDataRateBps.doubleValue() <= 0) {
+            setDerivedTdBe(Double.NaN);
+        }
+
+        setDerivedTdBe(
+                BigDecimal.valueOf(frameErtBitOffsetError)
+                .divide(tkDataRateBps, 24, RoundingMode.HALF_UP)
+                .setScale(24, RoundingMode.HALF_UP)
+                .doubleValue()
+        );
+    }
 }

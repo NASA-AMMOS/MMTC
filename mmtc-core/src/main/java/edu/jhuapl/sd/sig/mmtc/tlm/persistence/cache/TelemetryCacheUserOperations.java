@@ -1,7 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -9,6 +10,7 @@ import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +29,7 @@ public class TelemetryCacheUserOperations {
      * @throws Exception if the operation was not completed successfully
      */
     public static void precache(String... args) throws Exception {
-        // this is set up inline and incongruously to other entry points due to its direct reliance on TimeCorrelationAppConfig,
+        // this is set up inline and incongruously to other entry points due to its direct reliance on TimeCorrelationRunConfig,
         // and need to override the help option.
         // todo this should eventually be changed to be separate, but that requires separating CLI args out of configuration classes and
         // a change to the TelemetrySource interface (in applyConfiguration)
@@ -44,12 +46,14 @@ public class TelemetryCacheUserOperations {
             System.exit(0);
         }
 
-        final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(args);
+        final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(args));
+        final OffsetDateTime startTime = config.getResolvedTargetSampleRange().get().getStart();
+        final OffsetDateTime stopTime = config.getResolvedTargetSampleRange().get().getStop();
 
-        logger.info(String.format("Querying and caching telemetry from %s to %s...", config.getStartTime(), config.getStopTime()));
+        logger.info(String.format("Querying and caching telemetry from %s to %s...", startTime, stopTime));
         try {
             config.getTelemetrySource().connect();
-            List<FrameSample> samplesInRange = config.getTelemetrySource().getSamplesInRange(config.getStartTime(), config.getStopTime());
+            List<FrameSample> samplesInRange = config.getTelemetrySource().getSamplesInRange(startTime, stopTime);
             logger.info(String.format("Caching complete.  %d samples in the given time range are cached.", samplesInRange.size()));
         } finally {
             config.getTelemetrySource().disconnect();

@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.List;
 
 /**
  * The SclkKernel class creates the SCLK kernel file and its contents. The SCLK Kernel is the primary product of MMTC.
@@ -95,6 +96,15 @@ public class SclkKernel extends TextProduct {
      */
     public void setNewTriplet(Double encSclk, String tdtStr, Double clockChgRate) {
         this.newTriplet = Optional.of(new CorrelationTriplet(encSclk, tdtStr, clockChgRate));
+    }
+
+    /**
+     * Sets the values of the new time correlation record.
+     *
+     * @param newTriplet   newTriplet
+     */
+    public void setNewTriplet(CorrelationTriplet newTriplet) {
+        this.newTriplet = Optional.of(newTriplet);
     }
 
     public boolean hasSmoothingRecordSet() {
@@ -191,7 +201,6 @@ public class SclkKernel extends TextProduct {
      * @throws TextProductException if the time correlation record is invalid or cannot be updated.
      */
     private String replaceChgRate() throws TextProductException {
-
         String record          = sourceProductLines.get(endDataNum);
         String[] tripletFields = parseRecord(record, NUM_FIELDS_IN_TRIPLET);
 
@@ -203,7 +212,6 @@ public class SclkKernel extends TextProduct {
 
         return record1;
     }
-
 
     /**
      * Formats a clock change rate into a string form of 11 decimal places.
@@ -284,6 +292,57 @@ public class SclkKernel extends TextProduct {
         throw new TextProductException("Look back time invalid for the specified SCLK kernel.");
     }
 
+    /**
+     * Retrieves a data record from the current SCLK kernel that is the specified number of hours
+     * previous to the supplied time in TDT.
+     *
+     * @param fromTdt       IN the time to look back from in TDT
+     * @param minLookbackHours IN the min number of hours to look back
+     * @param maxLookbackHours IN the max number of hours to look back
+     * @return the parsed record that is the number of hours back
+     * @throws TextProductException if the prior record could not be found
+     */
+    public List<String[]> getPriorRecs(Double fromTdt, Double minLookbackHours, Double maxLookbackHours, Collection<String> smoothingRecordTdtStringsToIgnore) throws TextProductException {
+        final double minLookbackSeconds = minLookbackHours * 3600.;
+        final double maxLookbackSeconds = maxLookbackHours * 3600.;
+
+        List<String[]> results = new ArrayList<>();
+
+        try {
+            for (int i = endDataNum; i > 0; i--) {
+                String record = sourceProductLines.get(i);
+
+                if (! isDataRecord(record)) {
+                    continue;
+                }
+
+                final String[] recTripletFields = parseRecord(record, NUM_FIELDS_IN_TRIPLET);
+                final String recTdtStr = recTripletFields[TRIPLET_TDTG_FIELD_INDEX].substring(1);
+                final double recTdtSec = TimeConvert.tdtCalStrToTdt(recTdtStr);
+
+                if (smoothingRecordTdtStringsToIgnore.contains(recTdtStr)) {
+                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to it being a smoothing record", recTdtStr));
+                    continue;
+                }
+
+                final double recDeltaTdt = fromTdt - recTdtSec;
+                if ((recDeltaTdt < minLookbackSeconds) || recDeltaTdt > maxLookbackSeconds) {
+                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to not meeting lookback constraints", recTdtStr));
+                    continue;
+                }
+
+                results.add(recTripletFields);
+            }
+        } catch (TimeConvertException e) {
+            throw new TextProductException("Unable to convert TDT string to numeric TDT seconds.", e);
+        }
+
+        if (results.isEmpty()) {
+            throw new TextProductException("Look back time invalid for the specified SCLK kernel.");
+        }
+
+        return results;
+    }
 
      /**
      * Creates a new time correlation record from the encoded SCLK, TDT, and clock change rate triplet
@@ -391,6 +450,23 @@ public class SclkKernel extends TextProduct {
         return records;
     }
 
+    public List<String[]> getParsedRecords() throws TextProductException {
+        List<String[]> dataRecords = new ArrayList<>();
+
+        for (int i = 0; i < sourceProductLines.size(); i++) {
+            String sclkKernelRecord = sourceProductLines.get(i).trim();
+            if (isDataRecord(sclkKernelRecord)) {
+                String[] parsedVals = parseRecord(sclkKernelRecord, 3);
+                if (parsedVals[TRIPLET_TDTG_FIELD_INDEX].startsWith("@")) {
+                    parsedVals[TRIPLET_TDTG_FIELD_INDEX] = parsedVals[TRIPLET_TDTG_FIELD_INDEX].replaceFirst("@", "");
+                }
+                dataRecords.add(parsedVals);
+            }
+        }
+
+        return dataRecords;
+    }
+
     @Override
     public void readSourceProduct() throws IOException, TextProductException {
         super.readSourceProduct();
@@ -420,18 +496,23 @@ public class SclkKernel extends TextProduct {
         newSclkKernel.setProductCreationTime(ctx.appRunTime);
         newSclkKernel.setDir(ctx.config.getSclkKernelOutputDir().toString());
         newSclkKernel.setName(ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc");
-        newSclkKernel.setNewTriplet(
+
+        final CorrelationTriplet newPredictedTriplet = new CorrelationTriplet(
                 ctx.correlation.target.get().getTargetSampleEncSclk(),
                 TimeConvert.tdtToTdtCalStr(ctx.correlation.target.get().getTargetSampleTdtG()),
                 ctx.correlation.predicted_clock_change_rate.get()
         );
+        newSclkKernel.setNewTriplet(newPredictedTriplet);
+
+        ctx.correlation.newPredictedTriplet.set(newPredictedTriplet);
 
         if (ctx.correlation.interpolated_clock_change_rate.isSet()) {
             newSclkKernel.setReplacementClockChgRate(ctx.correlation.interpolated_clock_change_rate.get());
+            // ctx.correlation.updatedInterpolatedTriplet.set(newSclkKernel.getUpdatedPriorCorrelationRecord());
         }
 
-        if (ctx.correlation.smoothingTriplet.isSet()) {
-            newSclkKernel.setSmoothingTriplet(ctx.correlation.smoothingTriplet.get());
+        if (ctx.correlation.newSmoothingTriplet.isSet()) {
+            newSclkKernel.setSmoothingTriplet(ctx.correlation.newSmoothingTriplet.get());
         }
 
         ctx.newSclkKernel.set(newSclkKernel);
@@ -445,18 +526,44 @@ public class SclkKernel extends TextProduct {
      * @return the ProductWriteResult describing the newly-written product
      */
     public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+        return writeNewProduct(ctx, null);
+    }
+
+    /**
+     * Writes a new SCLK Kernel
+     * @param ctx the current time correlation context from which to pull information for the output product
+     *
+     * @throws MmtcException if the SCLK Kernel cannot be written
+     * @return the ProductWriteResult describing the newly-written product
+     */
+    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx, Path overridingPath) throws MmtcException {
         try {
             calculateNewProduct(ctx);
 
-            // If this is a dry run, write the new kernel to the temp output path for subsequent deletion. If not,
-            // write it to the usual location.
-            if(ctx.config.isDryRun()) {
-                ctx.newSclkKernel.get().createFile("/tmp");
+            final Path path;
+            if (overridingPath == null) {
+                path = Paths.get(ctx.newSclkKernel.get().getPath());
             } else {
-                ctx.newSclkKernel.get().createFile();
+                path = overridingPath;
             }
 
-            final Path path = Paths.get(ctx.newSclkKernel.get().getPath());
+            // If this is a dry run, write the new kernel to the temp output path for subsequent deletion. If not,
+            // write it to the usual location.
+            switch(ctx.config.getDryRunConfig().mode) {
+                case NOT_DRY_RUN: {
+                    ctx.newSclkKernel.get().createFile();
+                    break;
+                }
+                case DRY_RUN_RETAIN_NO_PRODUCTS: {
+                    ctx.newSclkKernel.get().createFile("/tmp");
+                    break;
+                }
+                case DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY: {
+                    ctx.newSclkKernel.get().createFile(path);
+                    break;
+                }
+            }
+
             ctx.newSclkKernelPath.set(path);
 
             return new ProductWriteResult(

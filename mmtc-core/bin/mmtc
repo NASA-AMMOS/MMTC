@@ -29,8 +29,13 @@ fi
 
 echo
 
+if [[ -z "${MMTC_JAR+x}" ]]
+then
+  export MMTC_JAR=mmtc-core-@VERSION@-app.jar
+fi
+
 exec ${JAVA_HOME}/bin/java \
     -jar \
     -Djava.library.path=${MMTC_HOME}/lib/naif/JNISpice/lib \
     -Dlog4j2.configurationFile=${MMTC_HOME}/conf/log4j2.xml \
-    ${MMTC_HOME}/lib/mmtc-core-@VERSION@-app.jar "$@"
+    ${MMTC_HOME}/lib/${MMTC_JAR} "$@"

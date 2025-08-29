@@ -10,10 +10,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class GenericCsv {
@@ -44,6 +41,17 @@ public class GenericCsv {
         } catch (IOException e) {
             throw new MmtcException(e);
         }
+    }
+
+    public List<String> getHeaders() {
+        return Collections.unmodifiableList(this.headers);
+    }
+
+    public List<Map<String, String>> getRows() {
+        return this.rows
+                .stream()
+                .map(Collections::unmodifiableMap)
+                .collect(Collectors.toList());
     }
 
     public boolean hasColumn(String name) {

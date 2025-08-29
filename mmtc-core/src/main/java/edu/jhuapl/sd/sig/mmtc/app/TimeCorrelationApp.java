@@ -2,12 +2,12 @@ package edu.jhuapl.sd.sig.mmtc.app;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.math.BigDecimal;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.filter.ContactFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
@@ -27,7 +27,6 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.appender.RollingFileAppender;
 
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
@@ -42,7 +41,7 @@ import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 public class TimeCorrelationApp {
     private static final Logger logger = LogManager.getLogger();
 
-    private final TimeCorrelationAppConfig config;
+    private final TimeCorrelationRunConfig config;
     private final TimeCorrelationContext ctx;
 
     private RunHistoryFile runHistoryFile;
@@ -58,7 +57,17 @@ public class TimeCorrelationApp {
 
     public TimeCorrelationApp(String... args) throws Exception {
         try {
-            this.config = new TimeCorrelationAppConfig(args);
+            this.config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(args));
+            this.ctx = new TimeCorrelationContext(config);
+            init();
+        } catch (Exception e) {
+            throw new MmtcException("MMTC correlation initialization failed.", e);
+        }
+    }
+
+    public TimeCorrelationApp(TimeCorrelationRunConfig config) throws MmtcException {
+        try {
+            this.config = config;
             this.ctx = new TimeCorrelationContext(config);
             init();
         } catch (Exception e) {
@@ -117,10 +126,16 @@ public class TimeCorrelationApp {
         final TelemetrySource tlmSource = config.getTelemetrySource();
         final TelemetrySelectionStrategy tlmSelecStrat;
 
-        switch(config.getSampleSetBuildingStrategy()) {
-            case SEPARATE_CONSECUTIVE_WINDOWS: tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(config, tlmSource, tk_sclk_fine_tick_modulus); break;
-            case SLIDING_WINDOW: tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(config, tlmSource, tk_sclk_fine_tick_modulus); break;
-            case SAMPLING: tlmSelecStrat = new SamplingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus); break;
+        switch (config.getSampleSetBuildingStrategy()) {
+            case SEPARATE_CONSECUTIVE_WINDOWS:
+                tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(config, tlmSource, tk_sclk_fine_tick_modulus);
+                break;
+            case SLIDING_WINDOW:
+                tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(config, tlmSource, tk_sclk_fine_tick_modulus);
+                break;
+            case SAMPLING:
+                tlmSelecStrat = new SamplingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus);
+                break;
             default:
                 throw new IllegalStateException("No such sample set building strategy: " + config.getSampleSetBuildingStrategy());
         }
@@ -217,7 +232,7 @@ public class TimeCorrelationApp {
         newRunHistoryFileRecord.setValue(RunHistoryFile.MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION,   mmtcVersion);
         newRunHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,                             "false");
         newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,                               System.getProperty("user.name"));
-        newRunHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,                               String.join(" ", config.getCliArgs()));
+        newRunHistoryFileRecord.setValue(RunHistoryFile.INVOC_ARGS,                             config.getInvocationStringRepresentation()); // todo pick up here with restoring invoc args and rerunning NH test to ensure
 
         // Output products
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
@@ -286,6 +301,44 @@ public class TimeCorrelationApp {
         return clkChgRate;
     }
 
+    private String[] getLookbackRecordForPredictedClkChgRate(Double tdtGOfNewTriplet) throws MmtcException, TextProductException, TimeConvertException {
+        Optional<Double> desiredPriorCorrelationTdt = config.getPriorCorrelationTdt();
+
+        // this is returned in order of most recent to oldest
+        final List<String[]> priorRecsWithinLookbackWindow = ctx.currentSclkKernel.get().getPriorRecs(
+                tdtGOfNewTriplet,
+                config.getPredictedClkRateLookBackHours(),
+                config.getMaxPredictedClkRateLookBackHours(),
+                runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback()
+        );
+
+        for (String[] record : priorRecsWithinLookbackWindow) {
+            if (desiredPriorCorrelationTdt.isPresent()) {
+                if (TimeConvert.tdtCalStrToTdt(record[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1)).equals(desiredPriorCorrelationTdt.get())) {
+                    return record;
+                }
+            } else {
+                return record;
+            }
+        }
+
+        if (desiredPriorCorrelationTdt.isPresent()) {
+            throw new MmtcException("Could not find the specified triplet to use as the lookback record with TDT: " + config.getPriorCorrelationTdt().get());
+        } else {
+            final String[] mostRecentLookbackRecMeetingMinimumOnly = ctx.currentSclkKernel.get().getPriorRec(tdtGOfNewTriplet, config.getPredictedClkRateLookBackHours(), runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
+            Double lookbackRecTdtG        = TimeConvert.tdtCalStrToTdt(mostRecentLookbackRecMeetingMinimumOnly[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
+            final double deltaTdt = tdtGOfNewTriplet - lookbackRecTdtG;
+
+            String errorMsg = "Insufficient earlier data in the input SCLK Kernel to compute the Predicted CLKRATE. ";
+            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + mostRecentLookbackRecMeetingMinimumOnly[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1) + ",";
+            errorMsg       += "which is " + deltaTdt/3600 + " hours older than the new record being generated. ";
+            errorMsg       += "The most recent lookback record is determined using a combination of the lookback and max lookback configuration values, and may not necessarily be the most recent entry in the latest SCLK Kernel. ";
+            errorMsg       += String.format("However, the maximum allowable difference specified by the compute.tdtG.rate.predicted.maxLookBackDays configuration option is %f hours. ", config.getMaxPredictedClkRateLookBackHours());
+            errorMsg       += "Please consider rerunning MMTC with either the --clkchgrate-assign or --clkchgrate-nodrift mode selected, or rerun within a different time period.";
+
+            throw new MmtcException(errorMsg);
+        }
+    }
 
     /**
      * Compute the predicted clock change rate. This method compares the newly
@@ -301,7 +354,7 @@ public class TimeCorrelationApp {
      * @throws MmtcException if the new SCLK or TDT values overlap a previous time correlation
      */
     private Double computePredictedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException, MmtcException {
-        String[] lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tdt_g, config.getPredictedClkRateLookBackDays()*24., runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
+        String[] lookBackRec = getLookbackRecordForPredictedClkChgRate(tdt_g);
 
         logger.debug("computePredictedClkChgRate(): lookBackRec from SCLK = " +
                 lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX] + " " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX] + " "
@@ -315,28 +368,6 @@ public class TimeCorrelationApp {
         Double tdt_g0        = TimeConvert.tdtCalStrToTdt(lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
 
         logger.debug("computePredictedClkChgRate(): sclk0 = " + sclk0 + ", tdt_g0 = " + tdt_g0 + ", sclk = " + sclk + ", tdt_g = " + tdt_g);
-
-        // Check that the selected look back record from the input SCLK Kernel is not older than the time of the current
-        // sample minus the maximum number of look back hours as specified in the configuration parameters.  If it is,
-        // throw an exception. Processing should not continue. The user should check that the input SCLK Kernel is
-        // correct for the run or rerun in Assign (--clkchgrate-assign) or No-Drift (--clkchgrate-nodrift) modes to
-        // compute the CLKRATE.
-        final double deltaTDT = tdt_g - tdt_g0;
-        logger.debug("computePredictedClkChgRate(): The look back record from the SCLK Kernel used to compute the " +
-                " Predicted CLKRATE is " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX] + ",\nwhich is " + deltaTDT/3600 + " hours earlier than the current TDT(G) of " +
-                tdtGStr + ". Processing continues.");
-
-        if (deltaTDT > (config.getMaxPredictedClkRateLookBackHours()) * 3600.) {
-            String errorMsg = "Insufficient earlier data in the input SCLK Kernel to compute the Predicted CLKRATE. ";
-            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1) + ",";
-            errorMsg       += "which is " + deltaTDT/3600 + " hours older than the new record being generated. ";
-            errorMsg       += "The most recent lookback record is determined using a combination of the lookback and max lookback configuration values, and may not necessarily be the most recent entry in the latest SCLK Kernel. ";
-            errorMsg       += String.format("However, the maximum allowable difference specified by the compute.tdtG.rate.predicted.maxLookBackDays configuration option is %f hours. ", config.getMaxPredictedClkRateLookBackHours());
-            errorMsg       += "Please consider rerunning MMTC with either the --clkchgrate-assign or --clkchgrate-nodrift mode selected, or rerun within a different time period.";
-
-            throw new MmtcException(errorMsg);
-        }
-
         return computeClkChgRate(sclk0, tdt_g0, sclk, tdt_g);
     }
 
@@ -388,15 +419,34 @@ public class TimeCorrelationApp {
      *
      * @throws Exception if time correlation cannot be successfully completed
      */
-    public void run() throws Exception {
-        logger.info(USER_NOTICE, String.format("Running time correlation between %s and %s", config.getStartTime().toString(), config.getStopTime().toString()));
+    public TimeCorrelationContext run() throws Exception {
+        if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
+            logger.info(USER_NOTICE, String.format("Running time correlation between %s and %s",
+                    config.getResolvedTargetSampleRange().get().getStart().toString(),
+                    config.getResolvedTargetSampleRange().get().getStop().toString()
+            ));
+        } else if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)){
+            logger.info(USER_NOTICE, String.format("Running time correlation on a target sample with ERT %s",
+                    config.getResolvedTargetSampleExactErt().get()
+            ));
+        }
+
         if (config.isTestMode()) {
             logger.warn(String.format("Test mode is enabled! One-way light time will be set to the provided value %f and ancillary positional and velocity calculations will be skipped.", config.getTestModeOwlt()));
         }
-        if (config.isDryRun()) {
-            logger.warn("Dry run mode is enabled! No data products from this run will be kept and will instead be printed to the console and recorded in the log file according to log4j2.xml");
-        }
 
+        switch(config.getDryRunConfig().mode) {
+            case NOT_DRY_RUN: break;
+            case DRY_RUN_RETAIN_NO_PRODUCTS: {
+                logger.warn("Dry run mode is enabled! No data products from this run will be kept and will instead be printed to the console and recorded in the log file");
+                break;
+            }
+            case DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY: {
+                logger.warn("Dry run mode is enabled! Only the SCLK kernel will be retained at a separate location; no data products from this run will be kept and will instead be printed to the console and recorded in the log file");
+                break;
+            }
+            default: throw new IllegalStateException("Unexpected dry run config: " + config.getDryRunConfig().mode);
+        }
 
         // Select telemetry for this new time correlation run
         final TimeCorrelationTarget tcTarget = selectSampleSetAndTimeCorrelationTarget();
@@ -457,8 +507,8 @@ public class TimeCorrelationApp {
             final double curr_tdt_g = tcTarget.getTargetSampleTdtG();
             final double predictedClockChangeRate;
 
-            final TimeCorrelationAppConfig.ClockChangeRateMode actualClockChangeRateMode;
-            if (config.getClockChangeRateMode().equals(TimeCorrelationAppConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE) && ctx.currentSclkKernel.get().getSourceProductDataRecCount() == 1) {
+            final TimeCorrelationRunConfig.ClockChangeRateMode actualClockChangeRateMode;
+            if (config.getClockChangeRateMode().equals(TimeCorrelationRunConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE) && ctx.currentSclkKernel.get().getSourceProductDataRecCount() == 1) {
                 /*
                  * If this is the very first run of the application for a mission, the input SCLK Kernel is assumed to be the seed kernel.
                  * In this case and ONLY in this case, only compute the predicted clock change rate value, so as
@@ -466,7 +516,7 @@ public class TimeCorrelationApp {
                  * CLKRATE method anyway for the first few runs.
                  */
                 logger.warn("Not computing interpolated rate for prior SCLK kernel record so as not to overwrite seed kernel entry; switching clock change rate mode to compute-predicted");
-                actualClockChangeRateMode = TimeCorrelationAppConfig.ClockChangeRateMode.COMPUTE_PREDICT;
+                actualClockChangeRateMode = TimeCorrelationRunConfig.ClockChangeRateMode.COMPUTE_PREDICT;
             } else {
                 actualClockChangeRateMode = config.getClockChangeRateMode();
             }
@@ -500,7 +550,7 @@ public class TimeCorrelationApp {
         // Compute 'smoothing' record, if enabled
         if (config.getAdditionalSmoothingRecordConfig().enabled) {
             computeAdditionalSmoothingRecord(ctx);
-            newRunHistoryFileRecord.setValue(RunHistoryFile.SMOOTHING_TRIPLET_TDT, ctx.correlation.smoothingTriplet.get().tdtStr);
+            newRunHistoryFileRecord.setValue(RunHistoryFile.SMOOTHING_TRIPLET_TDT, ctx.correlation.newSmoothingTriplet.get().tdtStr);
         }
 
         // Perform all ancillary post-correlation operations
@@ -511,14 +561,28 @@ public class TimeCorrelationApp {
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
             final String postRunColProdColName = RunHistoryFile.getPostRunProductColNameFor(prodDef);
 
-            if (prodDef.shouldBeWritten(ctx) && !ctx.config.isDryRun()) {
-                final ProductWriteResult res = prodDef.write(ctx);
-                newRunHistoryFileRecord.setValue(postRunColProdColName, res.newVersion);
-
-            } else if (prodDef.shouldBeWritten(ctx) && ctx.config.isDryRun()) {
-                // Log/print output products instead of writing them to files
-                final String productPrintout = prodDef.getDryRunPrintout(ctx);
-                logger.info(USER_NOTICE, productPrintout);
+            if (prodDef.shouldBeWritten(ctx)) {
+                switch(ctx.config.getDryRunConfig().mode) {
+                    case NOT_DRY_RUN: {
+                        final ProductWriteResult res = prodDef.write(ctx);
+                        newRunHistoryFileRecord.setValue(postRunColProdColName, res.newVersion);
+                        break;
+                    }
+                    case DRY_RUN_RETAIN_NO_PRODUCTS: {
+                        // Log/print output products instead of writing them to files
+                        final String productPrintout = prodDef.getDryRunPrintout(ctx);
+                        logger.info(USER_NOTICE, productPrintout);
+                        break;
+                    }
+                    case DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY: {
+                        // Intentionally skip all processing for other output products, and only write the SCLK kernel to a special path
+                        if (prodDef.getName().equals(SclkKernelProductDefinition.PRODUCT_NAME)) {
+                            SclkKernelProductDefinition sclkKernelProdDef = (SclkKernelProductDefinition) prodDef;
+                            sclkKernelProdDef.writeToAlternatePath(ctx, ctx.config.getDryRunConfig().sclkKernelOutputPath);
+                        }
+                        break;
+                    }
+                }
             } else {
                 newRunHistoryFileRecord.setValue(postRunColProdColName,  runHistoryFile.getLatestNonEmptyValueOfCol(postRunColProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
             }
@@ -532,6 +596,8 @@ public class TimeCorrelationApp {
         }
 
         logger.info(USER_NOTICE, "MMTC completed successfully.");
+
+        return ctx;
     }
 
     private static void computeAdditionalSmoothingRecord(TimeCorrelationContext ctx) throws MmtcException {
@@ -609,7 +675,7 @@ public class TimeCorrelationApp {
                     smoothingRecordClkChgRate
             );
 
-            ctx.correlation.smoothingTriplet.set(newSmoothingTriplet);
+            ctx.correlation.newSmoothingTriplet.set(newSmoothingTriplet);
         } catch (TextProductException | TimeConvertException e) {
             throw new MmtcException("Could not calculate additional smoothing record", e);
         }

@@ -2,9 +2,9 @@ package edu.jhuapl.sd.sig.mmtc.tlm;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.TelemetryCache;
-import org.apache.commons.cli.Option;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -32,12 +32,17 @@ public class CachingTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<Option> getAdditionalCliArguments() {
-        return underlyingTelemetrySource.getAdditionalCliArguments();
+    public Collection<AdditionalOption> getAdditionalOptions() {
+        return underlyingTelemetrySource.getAdditionalOptions();
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
+    public void checkCorrelationConfiguration(TimeCorrelationRunConfig config) throws MmtcException {
+
+    }
+
+    @Override
+    public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
         underlyingTelemetrySource.applyConfiguration(config);
     }
 

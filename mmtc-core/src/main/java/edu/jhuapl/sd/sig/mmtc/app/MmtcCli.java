@@ -12,6 +12,7 @@ import org.apache.logging.log4j.MarkerManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class MmtcCli {
     public static final Marker USER_NOTICE = MarkerManager.getMarker("USER_NOTICE");
@@ -115,7 +116,7 @@ public class MmtcCli {
             }
             case ROLLBACK: {
                 try {
-                    new TimeCorrelationRollback(appInvoc.args).rollback();
+                    new TimeCorrelationRollback(appInvoc.args).rollback(Optional.empty());
                 } catch (Exception e) {
                     logger.fatal("Rollback failed.", e);
                     System.exit(1);

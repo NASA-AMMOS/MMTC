@@ -1,7 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -61,7 +62,7 @@ public class SclkScetFile extends TextProduct {
     /* Specifies the SCET of the last data record in the new SCLK/SCET file. */
     private OffsetDateTime endSclkScetTime;
 
-    private final TimeCorrelationAppConfig.SclkScetFileLeapSecondSclkRate leapSecondSclkRateMode;
+    private final MmtcConfig.SclkScetFileLeapSecondSclkRate leapSecondSclkRateMode;
 
     /**
      * Metadata parameters for the SCLK/SCET file header if not read-in from an existing SCLK/SCET file.
@@ -88,7 +89,7 @@ public class SclkScetFile extends TextProduct {
      * @param filename           IN the new SCLK/SCET filename
      * @param product_version_id IN the version of this product
      */
-    public SclkScetFile(TimeCorrelationAppConfig config, String filename, String product_version_id) {
+    public SclkScetFile(TimeCorrelationRunConfig config, String filename, String product_version_id) {
         super();
         setDir(config.getSclkScetOutputDir().toString());
         setName(filename);
@@ -631,7 +632,7 @@ public class SclkScetFile extends TextProduct {
     }
 
     public static SclkScetFile calculateNewProduct(TimeCorrelationContext ctx) {
-        final TimeCorrelationAppConfig conf = ctx.config;
+        final TimeCorrelationRunConfig conf = ctx.config;
         final String newSclkScetFilename = conf.getSclkScetFileBasename() +
                 conf.getSclkScetFileSeparator() +
                 ctx.newSclkVersionString.get() +

@@ -26,7 +26,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public static final String MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION = "Built-In Output Product Version";
     public static final String ROLLEDBACK = "Rolled Back?";
     public static final String RUN_USER = "Run User";
-    public static final String CLI_ARGS = "MMTC Invocation Args Used";
+    public static final String INVOC_ARGS = "MMTC Invocation Args Used";
     public static final String SMOOTHING_TRIPLET_TDT = "Smoothing Triplet TDT";
 
     private final List<String> headers;
@@ -96,7 +96,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
                     MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION,
                     ROLLEDBACK,
                     RUN_USER,
-                    CLI_ARGS,
+                    INVOC_ARGS,
                     SMOOTHING_TRIPLET_TDT
             ));
 

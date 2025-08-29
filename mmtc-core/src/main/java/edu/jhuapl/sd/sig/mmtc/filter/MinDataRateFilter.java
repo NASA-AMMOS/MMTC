@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,7 +24,7 @@ public class MinDataRateFilter implements TimeCorrelationFilter {
      * @return true if all samples have a data rate no lower than the minimum
      */
     @Override
-    public boolean process(List<FrameSample> samples, TimeCorrelationAppConfig config) {
+    public boolean process(List<FrameSample> samples, TimeCorrelationRunConfig config) {
         if (samples.isEmpty()) {
             logger.warn("Data Rate Filter failed: Attempted to filter an empty sample set");
             return false;

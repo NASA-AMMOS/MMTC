@@ -188,10 +188,13 @@ abstract class TextProduct {
      * @throws TimeConvertException if an error occurred in a computation
      * @return the Path representing the location where the new file was written
      */
-    public Path createFile(String tempPath) throws TextProductException, TimeConvertException {
-        return createFile(sourceFilespec, tempPath, filename);
+    public Path createFile(String path) throws TextProductException, TimeConvertException {
+        return createFile(sourceFilespec, path, filename);
     }
 
+    public Path createFile(Path path) throws TextProductException, TimeConvertException {
+        return createFile(sourceFilespec, path.getParent().toString(), path.getFileName().toString());
+    }
 
     /**
      * Creates a new product file from an existing source file and writes it to the directory

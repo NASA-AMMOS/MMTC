@@ -14,7 +14,7 @@ class GroundStationMapTests {
     @BeforeEach
     void loadTable() throws Exception {
         // Load the config to get the path to the partition map
-        TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(new String[]{"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"});
+        TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(new String[]{"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"});
 
         // Create a new ground stations map (ignore the one from TimeCorrelationConfig)
         stationMap = new GroundStationMap(config.getGroundStationMapPath());

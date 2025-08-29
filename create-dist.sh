@@ -1,10 +1,16 @@
 #!/bin/bash
 
-# only arg provided to this script must be project version string
+# two args provided to this script:
+# - project version string
+# - "cli" or "webapp"
 
 set -e
 
-DIST_DIR=build/mmtc-dist-tmp
+if [ "${2}" = "webapp" ]; then
+  DIST_DIR=build/mmtc-webapp-dist-tmp
+else
+  DIST_DIR=build/mmtc-dist-tmp
+fi
 
 if [[ -d $DIST_DIR ]]; then
   rm -r $DIST_DIR
@@ -53,3 +59,17 @@ touch $DIST_DIR/log/.keep
 
 mkdir $DIST_DIR/output/
 touch $DIST_DIR/output/.keep
+
+if [ "${2}" = "webapp" ]; then
+  cp mmtc-webapp/bin/mmtc-webapp                                                  $DIST_DIR/bin
+
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # BSD sed
+    sed -i '' "s|@VERSION@|${1}|"                                                 $DIST_DIR/bin/mmtc-webapp
+  else
+    # assume Linux (and GNU sed)
+    sed -i "s/@VERSION@/${1}/"                                                    $DIST_DIR/bin/mmtc-webapp
+  fi
+
+  cp mmtc-webapp/build/libs/mmtc-webapp-$1.jar                                      $DIST_DIR/lib/
+fi

@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
@@ -77,6 +77,7 @@ public class TimeCorrelationAncillaryOperations {
             double estimatedEtUsingPriorCorrelation  = CSPICE.sct2e(ctx.config.getNaifSpacecraftId(), actualEncSclk);
             double estimatedTdtUsingPriorCorrelation = CSPICE.unitim(estimatedEtUsingPriorCorrelation, "ET", "TDT");
             return (estimatedTdtUsingPriorCorrelation - actualTdt) * TimeConvert.MSEC_PER_SECOND;
+            // experimental == estimated - actual/accepted
         } catch (SpiceErrorException ex) {
             throw new MmtcException("Unable to compute TDT error: " + ex.getMessage(), ex);
         }
@@ -115,7 +116,7 @@ public class TimeCorrelationAncillaryOperations {
         logger.info("Retrieving GNC parameter values and calculating related metrics");
 
         // create local refs for brevity throughout the rest of this method
-        final TimeCorrelationAppConfig config = ctx.config;
+        final TimeCorrelationRunConfig config = ctx.config;
         final TelemetrySource tlmSource = ctx.telemetrySource;
         // final FrameSample targetSample = ctx.correlation.target.get().getTargetSample();
         final TimeCorrelationTarget tcTarget = ctx.correlation.target.get();
@@ -252,7 +253,7 @@ public class TimeCorrelationAncillaryOperations {
      * @throws MmtcException if the state vector could not be computed
      */
     private double[] computeTargetState(String target, String observer) throws TimeConvertException, MmtcException {
-        final TimeCorrelationAppConfig config = ctx.config;
+        final TimeCorrelationRunConfig config = ctx.config;
         final FrameSample targetSample = ctx.correlation.target.get().getTargetSample();
 
         final String corr = "NONE";               // Aberration correction

@@ -1,6 +1,5 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig.ClockChangeRateMode;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.commons.cli.*;
 import org.apache.commons.lang3.StringUtils;
@@ -28,13 +27,13 @@ public class CorrelationCommandLineConfig implements IConfiguration {
     private OffsetDateTime startTime;
     private OffsetDateTime stopTime;
 
-    private ClockChangeRateMode clockChangeRateMode;
+    private TimeCorrelationRunConfig.ClockChangeRateMode clockChangeRateMode;
     private double clockChangeRateAssignedValue;
     private String clockChangeRateAssignedKey;
     private boolean isClockChangeRateModeExplicitlySet;
 
     private boolean isInsertAdditionalSmoothingRecordExplicitlySet;
-    private TimeCorrelationAppConfig.AdditionalSmoothingRecordConfig additionalSmoothingRecordConfig;
+    private TimeCorrelationRunConfig.AdditionalSmoothingRecordConfig additionalSmoothingRecordConfig;
 
     private static final String ClockChangeRateOptionCompute = "clkchgrate-compute";
     private static final String ClockChangeRateOptionNoDrift = "clkchgrate-nodrift";
@@ -224,7 +223,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
         return isClockChangeRateModeExplicitlySet;
     }
 
-    ClockChangeRateMode getClockChangeRateMode() {
+    TimeCorrelationRunConfig.ClockChangeRateMode getClockChangeRateMode() {
         return clockChangeRateMode;
     }
 
@@ -239,27 +238,27 @@ public class CorrelationCommandLineConfig implements IConfiguration {
 
             switch (method) {
                 case "i":
-                    clockChangeRateMode = ClockChangeRateMode.COMPUTE_INTERPOLATE;
+                    clockChangeRateMode = MmtcConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE;
                     break;
                 case "p":
-                    clockChangeRateMode = ClockChangeRateMode.COMPUTE_PREDICT;
+                    clockChangeRateMode = MmtcConfig.ClockChangeRateMode.COMPUTE_PREDICT;
                     break;
                 default:
                     throw new ParseException("Invalid clock change rate compute method: " + method);
             }
         }
         else if (cmdLine.hasOption(ClockChangeRateOptionNoDrift)) {
-            clockChangeRateMode = ClockChangeRateMode.NO_DRIFT;
+            clockChangeRateMode = MmtcConfig.ClockChangeRateMode.NO_DRIFT;
         }
         else if (cmdLine.hasOption(ClockChangeRateOptionAssign)) {
             String assignValue = cmdLine.getOptionValue(ClockChangeRateOptionAssign);
-            clockChangeRateMode = ClockChangeRateMode.ASSIGN;
+            clockChangeRateMode = MmtcConfig.ClockChangeRateMode.ASSIGN;
 
             try {
                 clockChangeRateAssignedValue = Double.parseDouble(assignValue);
             } catch (NumberFormatException ex) {
                 logger.debug(String.format("Assigned clock change rate %s appears to reference a named preset.", assignValue));
-                clockChangeRateMode = ClockChangeRateMode.ASSIGN_KEY;
+                clockChangeRateMode = MmtcConfig.ClockChangeRateMode.ASSIGN_KEY;
                 clockChangeRateAssignedKey = assignValue;
             }
         }
@@ -291,13 +290,13 @@ public class CorrelationCommandLineConfig implements IConfiguration {
 
         this.isInsertAdditionalSmoothingRecordExplicitlySet = true;
         if (isInsertAdditionalSmoothingRecord) {
-            this.additionalSmoothingRecordConfig = new TimeCorrelationAppConfig.AdditionalSmoothingRecordConfig(true, Integer.parseInt(cmdLine.getOptionValue("s")));
+            this.additionalSmoothingRecordConfig = new TimeCorrelationRunConfig.AdditionalSmoothingRecordConfig(true, Integer.parseInt(cmdLine.getOptionValue("s")));
         } else {
-            this.additionalSmoothingRecordConfig = new TimeCorrelationAppConfig.AdditionalSmoothingRecordConfig(false, 0);
+            this.additionalSmoothingRecordConfig = new TimeCorrelationRunConfig.AdditionalSmoothingRecordConfig(false, 0);
         }
     }
 
-    public Optional<TimeCorrelationAppConfig.AdditionalSmoothingRecordConfig> getAdditionalSmoothingRecordInsertionOverride() {
+    public Optional<TimeCorrelationRunConfig.AdditionalSmoothingRecordConfig> getAdditionalSmoothingRecordInsertionOverride() {
         if (isInsertAdditionalSmoothingRecordExplicitlySet) {
             return Optional.of(this.additionalSmoothingRecordConfig);
         } else {
@@ -305,7 +304,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
         }
     }
 
-    public String getOptionValue(char shortOpt) {
+    public String getOptionValue(String shortOpt) {
         return cmdLine.getOptionValue(shortOpt);
     }
 

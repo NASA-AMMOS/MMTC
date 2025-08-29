@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +26,7 @@ public class GroundStationFilter implements TimeCorrelationFilter {
      * @return true if both conditions are met, false otherwise
      */
     @Override
-    public boolean process(List<FrameSample> samples, TimeCorrelationAppConfig config) {
+    public boolean process(List<FrameSample> samples, TimeCorrelationRunConfig config) {
         if (samples.isEmpty()) {
             logger.warn("Ground Station Filter Failed: Attempted to filter an empty sample set");
             return false;

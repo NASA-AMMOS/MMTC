@@ -83,4 +83,9 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
         confUpdates.put("product.sclkScetFile.dir", newProductOutputDir.toAbsolutePath().toString());
         return confUpdates;
     }
+
+    @Override
+    public String getDisplayName() {
+        return "SCLK-SCET File";
+    }
 }
