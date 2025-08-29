@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -52,17 +51,17 @@ public class TimeCorrelationRollback {
     }
 
     /**
-     * The primary method for rolling back MMTC's output products to a previous state. All rollback processes happen before
+     * The entry point for rolling back MMTC's output products to a previous state. All rollback processes happen before
      * TimeCorrelationApp is instantiated in main() and consequently use a unique empty config constructor.
      * Rollback is initiated by passing "rollback" as the first arg when invoking MMTC.
      * @throws MmtcRollbackException if rollback is unsuccessful for any reason
      * (this includes products being modified between rollback being initiated and deletion confirmation being given by the user)
      */
-    public void rollback() throws MmtcException {
-        new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
+    public void rollback(Optional<String> runId) throws MmtcRollbackException, MmtcException {
+    new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
 
         try {
-            prepareRollback();
+            prepareRollback(runId);
         } catch (Exception e) {
             throw new MmtcRollbackException("Rollback aborted; no changes were made. Please see error details and retry.", e);
         }
@@ -80,8 +79,9 @@ public class TimeCorrelationRollback {
         }
     }
 
-    private void prepareRollback() throws MmtcException {
-        Scanner scanner = new Scanner(System.in);
+    private void prepareRollback(Optional<String> preselectedRunId) throws MmtcException {
+        final boolean isInteractive = preselectedRunId.isPresent();
+
         rawRunHistoryRecords = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS); // Will be used to rewrite complete RunHistoryFile
         List<TableRecord> runHistoryRecords = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS); // Will be used for rollback and shouldn't include rolled back entries
 
@@ -103,16 +103,24 @@ public class TimeCorrelationRollback {
 
         final TableRecord latestRun = runHistoryRecords.get(runHistoryRecords.size() - 1);
 
-        System.out.println("\nPlease choose a run to become the new latest run (including leading zeros), or enter '0' to roll back to MMTC's initial state (with no output products): ");
-        String selectedRunId = scanner.nextLine();
+        Scanner scanner = new Scanner(System.in);
+        final String selectedRunId;
+        if (isInteractive) {
+            System.out.println("\nPlease choose a run to become the new latest run (including leading zeros), or enter '0' to roll back to MMTC's initial state (with no output products): ");
+            selectedRunId = scanner.nextLine();
+        } else {
+            selectedRunId = preselectedRunId.get();
+        }
 
         logger.info(String.format("Run ID %s selected by user.", selectedRunId));
         if (Integer.parseInt(selectedRunId) == 0) {
-            System.out.printf(String.format("Rolling back to the initial state will revert all output products from the latest run (%s, SCLK Kernel %s) " +
-                            "to a nonexistent state, except for the seed kernel.%n",
-                    latestRun.getValue("Run ID"),
-                    latestRun.getValue("Latest SCLK Kernel Post-run"))
-            );
+            if (isInteractive) {
+                System.out.printf(String.format("Rolling back to the initial state will revert all output products from the latest run (%s, SCLK Kernel %s) " +
+                                "to a nonexistent state, except for the seed kernel.%n",
+                        latestRun.getValue("Run ID"),
+                        latestRun.getValue("Latest SCLK Kernel Post-run"))
+                );
+            }
 
             rawRecordsSelectedRunIndex = -1;
             rollbackOps = RollbackOperations.toInitialState(runHistoryFile, config);
@@ -151,12 +159,14 @@ public class TimeCorrelationRollback {
                 throw new MmtcRollbackException("The selected run is also the latest run and rollback would not change any output products, aborting.");
             }
 
-            System.out.printf("Rolling back will revert all output products from the latest run (%s, SCLK Kernel %s) " +
-                            "to the state they were in after run %s at %s with the following effects: %n",
-                    latestRun.getValue("Run ID"),
-                    latestRun.getValue("Latest SCLK Kernel Post-run"),
-                    selectedRun.getValue("Run ID"),
-                    selectedRun.getValue("Run Time"));
+            if (isInteractive) {
+                System.out.printf("Rolling back will revert all output products from the latest run (%s, SCLK Kernel %s) " +
+                                "to the state they were in after run %s at %s with the following effects: %n",
+                        latestRun.getValue("Run ID"),
+                        latestRun.getValue("Latest SCLK Kernel Post-run"),
+                        selectedRun.getValue("Run ID"),
+                        selectedRun.getValue("Run Time"));
+            }
 
             rollbackOps = RollbackOperations.fromRunHistoryFile(runHistoryFile, config, selectedRunId);
 
@@ -167,24 +177,26 @@ public class TimeCorrelationRollback {
             );
         }
 
-        System.out.println("- The following files will be deleted: ");
-        for (String description : rollbackOps.getDescriptionOfFilesToDelete()) {
-            System.out.printf("    - %s\n", description);
-        }
+        if (isInteractive) {
+            System.out.println("- The following files will be deleted: ");
+            for (String description : rollbackOps.getDescriptionOfFilesToDelete()) {
+                System.out.printf("    - %s\n", description);
+            }
 
-        System.out.println("- The following files will be truncated: ");
-        for (String description : rollbackOps.getDescriptionOfFilesToTruncate()) {
-            System.out.printf("    - %s\n", description);
-        }
+            System.out.println("- The following files will be truncated: ");
+            for (String description : rollbackOps.getDescriptionOfFilesToTruncate()) {
+                System.out.printf("    - %s\n", description);
+            }
 
-        System.out.println("\033[0;1mIt is recommended to save copies of all these files for your anomaly reporting system before continuing, as these deletions cannot be undone!");
+            System.out.println("\033[0;1mIt is recommended to save copies of all these files for your anomaly reporting system before continuing, as these deletions cannot be undone!");
 
-        System.out.println("Continue? [y/N]: ");
-        String confirmRollback = scanner.nextLine();
-        scanner.close();
+            System.out.println("Continue? [y/N]: ");
+            String confirmRollback = scanner.nextLine();
+            scanner.close();
 
-        if (!confirmRollback.equalsIgnoreCase("y")) {
-            throw new MmtcRollbackException("Rollback aborted due to user input, no changes made.");
+            if (!confirmRollback.equalsIgnoreCase("y")) {
+                throw new MmtcRollbackException("Rollback aborted due to user input, no changes made.");
+            }
         }
     }
 

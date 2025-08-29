@@ -8,11 +8,16 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.time.Year;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.apache.commons.lang3.StringUtils;
 
 import spice.basic.*;
@@ -87,7 +92,7 @@ import spice.basic.*;
      /**
      * Converts an ISO DOY format calendar string (yyyy-doyThh:mm:ss.ssssss) to a Java OffsetDateTime object.
      *
-     * @param utc IN:the UTC time in yyyy-doyThh:mm:ss.ssssss format
+     * @param utc IN:the UTC time in yyyy-doyThh:mm:ss.sssssssss format
      * @return the time as an OffsetDateTime object
      */
     public static OffsetDateTime parseIsoDoyUtcStr(String utc) {
@@ -136,13 +141,14 @@ import spice.basic.*;
      *
      * @throws TimeConvertException when System.loadLibrary() fails
      */
-    public static void loadSpiceLib() throws TimeConvertException {
-        try {
-            System.loadLibrary("JNISpice");
-            spiceLibIsLoaded = true;
-        }
-        catch (Exception e) {
-            throw new TimeConvertException("Error initializing SPICE library", e);
+    public static synchronized void loadSpiceLib() throws TimeConvertException {
+        if (! spiceLibIsLoaded) {
+            try {
+                System.loadLibrary("JNISpice");
+                spiceLibIsLoaded = true;
+            } catch (Exception e) {
+                throw new TimeConvertException("Error initializing SPICE library", e);
+            }
         }
     }
 
@@ -626,7 +632,11 @@ import spice.basic.*;
      * @throws TimeConvertException when there is a SPICE error
      */
     public static String tdtToTdtCalStr(Double tdt) throws TimeConvertException {
+        return tdtToTdtCalStr(tdt, 6);
 
+    }
+
+    public static String tdtToTdtCalStr(Double tdt, int subsecPrecision) throws TimeConvertException {
         String tdtStr;
 
         if (Double.isNaN(tdt)) {
@@ -636,15 +646,15 @@ import spice.basic.*;
         try {
 
             double et = CSPICE.unitim(tdt, "TDT", "ET");
-            tdtStr = CSPICE.timout(et, "DD-MON-YYYY-HR:MN:SC.######  ::TDT ::RND");
+            String subsecStr = String.join("", Collections.nCopies(subsecPrecision, "#"));
+            tdtStr = CSPICE.timout(et, String.format("DD-MON-YYYY-HR:MN:SC.%s  ::TDT ::RND", subsecStr));
 
         } catch (SpiceErrorException e) {
-            throw new TimeConvertException("Error converting a TDT String to a TDT string:  " + e.getMessage(), e);
+            throw new TimeConvertException("Error converting a TDT to a TDT string:  " + e.getMessage(), e);
         }
 
         return tdtStr;
     }
-
 
 
     /**
@@ -1066,7 +1076,7 @@ import spice.basic.*;
             delim_id = CSPICE.gdpool(varname, 0, 1);
         }catch (SpiceErrorException e) {
             throw new TimeConvertException("Error reading SCLK Kernel variable " + varname + ": " + e.getMessage(), e);
-        }catch (spice.basic.KernelVarNotFoundException e) {
+        }catch (KernelVarNotFoundException e) {
             throw new TimeConvertException("Error Required SCLK Kernel variable '" + varname + "' not found: " + e.getMessage(), e);
         }
         String delimiter;
@@ -1246,5 +1256,51 @@ import spice.basic.*;
         return !eq(first, second, epsilon);
     }
 
+    public static class ScetMetrics {
+        public final OffsetDateTime scetUtc;
+        public final double scetErrorNanos;
+
+        public ScetMetrics(OffsetDateTime scetUtc, double scetErrorNanos) {
+            this.scetUtc = scetUtc;
+            this.scetErrorNanos = scetErrorNanos;
+        }
+    }
+
+    /**
+     * Computes the SCET error for a given FrameSample, assuming that there is a loaded SCLK kernel
+     * which this method will use to perform the SCLK -> SCET (UTC) time conversion
+     *
+     * @param config
+     * @param fs
+     * @return
+     * @throws TimeConvertException
+     * @throws MmtcException
+     */
+    public static ScetMetrics calculateScetErrorNanos(TimeCorrelationRunConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
+        final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(
+                Arrays.asList(fs),
+                config,
+                config.getTkSclkFineTickModulus()
+        );
+
+        // expected SCET is the value TDT(G) value as converted using the SCLK kernel
+        double estimatedEtUsingSclkKernel  = CSPICE.sct2e(config.getNaifSpacecraftId(), tcTarget.getTargetSampleEncSclk());
+        double estimatedTdtUsingSclkkernel = CSPICE.unitim(estimatedEtUsingSclkKernel, "ET", "TDT");
+        final OffsetDateTime estimatedScet = tdtToUtc(estimatedTdtUsingSclkkernel, 9);
+
+        // actual SCET is the actual TDT_G, in SCET terms, that was read on the ground
+        final OffsetDateTime actualScet = tdtToUtc(tcTarget.getTargetSampleTdtG(), 9);
+
+        // for our estimated - actual calculation, we want the error term to be negative if the estimated value is larger (later) than the actual value, which would correspond to a 'negative' result from ChronoUnit.between, so invert the sign
+        return new ScetMetrics(
+                actualScet, -1 * ChronoUnit.NANOS.between(estimatedScet, actualScet)
+        );
+    }
+
+    public static OffsetDateTime tdtToUtc(Double tdt, int subsecPrecision) throws TimeConvertException {
+        final String tdtGStr = TimeConvert.tdtToTdtCalStr(tdt, subsecPrecision);
+        final String utcStr = TimeConvert.tdtCalStrToUtc(tdtGStr, subsecPrecision);
+        return TimeConvert.parseIsoDoyUtcStr(utcStr);
+    }
 }
 

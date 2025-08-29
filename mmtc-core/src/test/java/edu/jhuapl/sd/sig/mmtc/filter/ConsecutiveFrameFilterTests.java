@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
 
@@ -93,7 +93,7 @@ public class ConsecutiveFrameFilterTests {
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveFrameFilterTest");
 
-            TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
 
             testFilterPasses(config, getFrameSamples(SEQ_VCFCs), "six frames with sequential VCFCs");
@@ -109,7 +109,7 @@ public class ConsecutiveFrameFilterTests {
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveFrameFilterTest");
 
-            TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
             testFilterPasses(config, getFrameSamples(RESTARTING_VCFCs), "six frames with restarting VCFCs");
 
@@ -134,7 +134,7 @@ public class ConsecutiveFrameFilterTests {
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveFrameFilterTest");
 
-            TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
             testFilterPasses(config, getFrameSamples(BASIC_ROLLOVER), "basic rollover");
 
@@ -150,11 +150,11 @@ public class ConsecutiveFrameFilterTests {
         }
     }
 
-    private void testFilterPasses(TimeCorrelationAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterPasses(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertTrue(ConsecutiveFrameFilter.process(frameSamples, config), message);
     }
 
-    private void testFilterFails(TimeCorrelationAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterFails(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertFalse(ConsecutiveFrameFilter.process(frameSamples, config), message);
     }
 

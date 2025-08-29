@@ -1,7 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketIterator;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;
@@ -52,7 +53,7 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
+    public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
         super.applyConfiguration(config);
 
         if (config.getSamplesPerSet() != 1) {
@@ -62,21 +63,24 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
         if (! packetsHaveDownlinkDataRate()) {
             throw new MmtcException("ERROR: When using the AmpcsTlmWithFrames telemetry source plugin, the TK packets must contain the downlink data rate. These do not.");
         }
+    }
 
+    @Override
+    public void checkCorrelationConfiguration(TimeCorrelationRunConfig config) throws MmtcException {
         Set<String> enabledFilters = config.getFilters().keySet();
         if (
-                enabledFilters.contains(TimeCorrelationAppConfig.ERT_FILTER) ||
-                enabledFilters.contains(TimeCorrelationAppConfig.SCLK_FILTER) ||
-                enabledFilters.contains(TimeCorrelationAppConfig.VCID_FILTER) ||
-                enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_FRAMES_FILTER) ||
-                enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER)
+                enabledFilters.contains(TimeCorrelationRunConfig.ERT_FILTER) ||
+                        enabledFilters.contains(TimeCorrelationRunConfig.SCLK_FILTER) ||
+                        enabledFilters.contains(TimeCorrelationRunConfig.VCID_FILTER) ||
+                        enabledFilters.contains(TimeCorrelationRunConfig.CONSEC_FRAMES_FILTER) ||
+                        enabledFilters.contains(TimeCorrelationRunConfig.CONSEC_MC_FRAME_FILTER)
         ) {
             String errorString = "When using the AmpcsTlmWithFrames telemetry source, the " +
-                    TimeCorrelationAppConfig.ERT_FILTER +  ", " +
-                    TimeCorrelationAppConfig.SCLK_FILTER + ", " +
-                    TimeCorrelationAppConfig.VCID_FILTER + ", " +
-                    TimeCorrelationAppConfig.CONSEC_FRAMES_FILTER + ", and " +
-                    TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER +
+                    TimeCorrelationRunConfig.ERT_FILTER +  ", " +
+                    TimeCorrelationRunConfig.SCLK_FILTER + ", " +
+                    TimeCorrelationRunConfig.VCID_FILTER + ", " +
+                    TimeCorrelationRunConfig.CONSEC_FRAMES_FILTER + ", and " +
+                    TimeCorrelationRunConfig.CONSEC_MC_FRAME_FILTER +
                     " filters are not applicable and must be disabled by setting the configuration options " +
                     "filter.<filter name>.enabled to false.";
             throw new MmtcException(errorString);

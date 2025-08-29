@@ -2,7 +2,8 @@ package edu.jhuapl.sd.sig.mmtc.tlmplugin.example;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -22,7 +23,7 @@ public class ExampleTelemetrySource implements TelemetrySource {
     // a typical implementation of a telemetry source will not need to know such values, as they should be read directly from the underlying source
     final int MAX_VCFC = 2048;
 
-    private TimeCorrelationAppConfig config;
+    private MmtcConfigWithTlmSource config;
 
     @Override
     public String getName() {
@@ -34,7 +35,7 @@ public class ExampleTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<Option> getAdditionalCliArguments() {
+    public Collection<AdditionalOption> getAdditionalOptions() {
         /*
          * This is the second call that MMTC makes to the configured TelemetrySource during a correlation run.
          * It gives the TelemetrySource a chance to add additional CLI options/arguments to correlation runs.
@@ -45,40 +46,46 @@ public class ExampleTelemetrySource implements TelemetrySource {
          */
 
         return Arrays.asList(
-                new Option(
-                        "b",
-                        "number-of-frames-to-generate",
-                        true,
-                        "Specifies the number of fake FrameSamples to generate"
+                new AdditionalOption(
+                    new Option(
+                            "b",
+                            "number-of-frames-to-generate",
+                            true,
+                            "Specifies the number of fake FrameSamples to generate"
+                    ),
+            "Number of frames to generate"
                 )
         );
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
+    public void checkCorrelationConfiguration(TimeCorrelationRunConfig config) throws MmtcException {
         /*
-         * This is the third call that method is called:
-         * - after the complete MMTC configuration for the run is read into a TimeCorrelationAppConfig object and validated.
-         * - before any other call (besides getAdditionalCliArguments)
-         *
-         * Typically, you'll want to create a reference to the TimeCorrelationAppConfig object for future use in other methods.
-         * This is also where plugins should check for any enabled filters that does not make sense to run with the telemetry that they can produce.
+         * This is where plugins should check for any enabled filters that does not make sense to run with the telemetry that they can produce.
          * See the MMTC User Guide, and/or the source of the filters in edu.jhuapl.sd.sig.mmtc.filter, for more information.
-         */
-        this.config = config;
-
-        /*
+         *
          * Let's imagine that our example mission's telemetry does not have a Master Channel Frame Counter.
-         * This TelemetrySource, thus, will not populate that field, and we should not allow the corresponding filter to be enabled:
+         * This TelemetrySource, thus, will not populate that field,MmtcConfigWithTlmSource and we should not allow the corresponding filter to be enabled:
          */
         Set<String> enabledFilters = config.getFilters().keySet();
-        if (enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER)) {
+        if (enabledFilters.contains(TimeCorrelationRunConfig.CONSEC_MC_FRAME_FILTER)) {
             String errorString = "When using ExampleTelemetrySource, the " +
-                    TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER +
+                    TimeCorrelationRunConfig.CONSEC_MC_FRAME_FILTER +
                     " filter is not applicable and must be disabled by setting the configuration option " +
                     "filter.<filter name>.enabled to false.";
             throw new MmtcException(errorString);
         }
+    }
+
+    @Override
+    public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
+        /*
+         * Typically, you'll want to create a reference to the MmtcConfigWithTlmSource object for future use in other methods.
+         * This is method is called:
+         * - after the MMTC configuration for the run is read into a MmtcConfigWithTlmSource object and validated
+         * - before any other call (besides getAdditionalCliArguments)
+         */
+        this.config = config;
     }
 
     @Override
@@ -146,8 +153,8 @@ public class ExampleTelemetrySource implements TelemetrySource {
         // example usage of a command-line argument
         final int maxNumFramesToGenerate;
 
-        if (config.cmdLineHasOption('b')) {
-            maxNumFramesToGenerate = Integer.parseInt(config.getCmdLineOptionValue('b'));
+        if (config.getAdditionalOptionValue("Number of frames to generate") != null) {
+            maxNumFramesToGenerate = Integer.parseInt(config.getAdditionalOptionValue("Number of frames to generate"));
         } else {
             maxNumFramesToGenerate = 2000;
         }

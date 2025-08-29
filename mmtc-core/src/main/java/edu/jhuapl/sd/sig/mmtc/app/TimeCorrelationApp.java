@@ -2,12 +2,11 @@ package edu.jhuapl.sd.sig.mmtc.app;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.math.BigDecimal;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.filter.ContactFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
@@ -27,7 +26,6 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.appender.RollingFileAppender;
 
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
@@ -42,7 +40,7 @@ import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 public class TimeCorrelationApp {
     private static final Logger logger = LogManager.getLogger();
 
-    private final TimeCorrelationAppConfig config;
+    private final TimeCorrelationRunConfig config;
     private final TimeCorrelationContext ctx;
 
     private RunHistoryFile runHistoryFile;
@@ -58,7 +56,17 @@ public class TimeCorrelationApp {
 
     public TimeCorrelationApp(String... args) throws Exception {
         try {
-            this.config = new TimeCorrelationAppConfig(args);
+            this.config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(args));
+            this.ctx = new TimeCorrelationContext(config);
+            init();
+        } catch (Exception e) {
+            throw new MmtcException("MMTC correlation initialization failed.", e);
+        }
+    }
+
+    public TimeCorrelationApp(TimeCorrelationRunConfig config) throws MmtcException {
+        try {
+            this.config = config;
             this.ctx = new TimeCorrelationContext(config);
             init();
         } catch (Exception e) {
@@ -117,10 +125,16 @@ public class TimeCorrelationApp {
         final TelemetrySource tlmSource = config.getTelemetrySource();
         final TelemetrySelectionStrategy tlmSelecStrat;
 
-        switch(config.getSampleSetBuildingStrategy()) {
-            case SEPARATE_CONSECUTIVE_WINDOWS: tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(config, tlmSource, tk_sclk_fine_tick_modulus); break;
-            case SLIDING_WINDOW: tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(config, tlmSource, tk_sclk_fine_tick_modulus); break;
-            case SAMPLING: tlmSelecStrat = new SamplingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus); break;
+        switch (config.getSampleSetBuildingStrategy()) {
+            case SEPARATE_CONSECUTIVE_WINDOWS:
+                tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(config, tlmSource, tk_sclk_fine_tick_modulus);
+                break;
+            case SLIDING_WINDOW:
+                tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(config, tlmSource, tk_sclk_fine_tick_modulus);
+                break;
+            case SAMPLING:
+                tlmSelecStrat = new SamplingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus);
+                break;
             default:
                 throw new IllegalStateException("No such sample set building strategy: " + config.getSampleSetBuildingStrategy());
         }
@@ -217,7 +231,7 @@ public class TimeCorrelationApp {
         newRunHistoryFileRecord.setValue(RunHistoryFile.MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION,   mmtcVersion);
         newRunHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,                             "false");
         newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,                               System.getProperty("user.name"));
-        newRunHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,                               String.join(" ", config.getCliArgs()));
+        newRunHistoryFileRecord.setValue(RunHistoryFile.INVOC_ARGS,                             String.join(" ", config.getInvocationArgs()));
 
         // Output products
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
@@ -389,7 +403,17 @@ public class TimeCorrelationApp {
      * @throws Exception if time correlation cannot be successfully completed
      */
     public void run() throws Exception {
-        logger.info(USER_NOTICE, String.format("Running time correlation between %s and %s", config.getStartTime().toString(), config.getStopTime().toString()));
+        if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
+            logger.info(USER_NOTICE, String.format("Running time correlation between %s and %s",
+                    config.getResolvedTargetSampleRange().get().getStart().toString(),
+                    config.getResolvedTargetSampleRange().get().getStop().toString()
+            ));
+        } else if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)){
+            logger.info(USER_NOTICE, String.format("Running time correlation on a target sample with ERT %s",
+                    config.getResolvedTargetSampleExactErt().get()
+            ));
+        }
+
         if (config.isTestMode()) {
             logger.warn(String.format("Test mode is enabled! One-way light time will be set to the provided value %f and ancillary positional and velocity calculations will be skipped.", config.getTestModeOwlt()));
         }
@@ -457,8 +481,8 @@ public class TimeCorrelationApp {
             final double curr_tdt_g = tcTarget.getTargetSampleTdtG();
             final double predictedClockChangeRate;
 
-            final TimeCorrelationAppConfig.ClockChangeRateMode actualClockChangeRateMode;
-            if (config.getClockChangeRateMode().equals(TimeCorrelationAppConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE) && ctx.currentSclkKernel.get().getSourceProductDataRecCount() == 1) {
+            final TimeCorrelationRunConfig.ClockChangeRateMode actualClockChangeRateMode;
+            if (config.getClockChangeRateMode().equals(TimeCorrelationRunConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE) && ctx.currentSclkKernel.get().getSourceProductDataRecCount() == 1) {
                 /*
                  * If this is the very first run of the application for a mission, the input SCLK Kernel is assumed to be the seed kernel.
                  * In this case and ONLY in this case, only compute the predicted clock change rate value, so as
@@ -466,7 +490,7 @@ public class TimeCorrelationApp {
                  * CLKRATE method anyway for the first few runs.
                  */
                 logger.warn("Not computing interpolated rate for prior SCLK kernel record so as not to overwrite seed kernel entry; switching clock change rate mode to compute-predicted");
-                actualClockChangeRateMode = TimeCorrelationAppConfig.ClockChangeRateMode.COMPUTE_PREDICT;
+                actualClockChangeRateMode = TimeCorrelationRunConfig.ClockChangeRateMode.COMPUTE_PREDICT;
             } else {
                 actualClockChangeRateMode = config.getClockChangeRateMode();
             }

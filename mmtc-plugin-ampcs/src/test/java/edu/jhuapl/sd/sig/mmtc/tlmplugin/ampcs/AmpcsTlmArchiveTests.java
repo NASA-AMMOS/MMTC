@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.ConsecutiveMasterChannelFrameFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -40,7 +40,7 @@ public class AmpcsTlmArchiveTests {
                         .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
 
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z", "--ampcs-session-id", "10"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTlmArchive tlm = new AmpcsTlmArchive();
                 tlm.applyConfiguration(config);
@@ -56,9 +56,9 @@ public class AmpcsTlmArchiveTests {
 
     @Test
     void testUseUnallowableFilter() throws Exception {
-        TimeCorrelationAppConfig mockedConfig = mock(TimeCorrelationAppConfig.class);
+        TimeCorrelationCliAppConfig mockedConfig = mock(TimeCorrelationCliAppConfig.class);
         Map<String, TimeCorrelationFilter> enabledFilters = new HashMap<>();
-        enabledFilters.put(TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER, new ConsecutiveMasterChannelFrameFilter());
+        enabledFilters.put(TimeCorrelationCliAppConfig.CONSEC_MC_FRAME_FILTER, new ConsecutiveMasterChannelFrameFilter());
         when(mockedConfig.getFilters()).thenReturn(enabledFilters);
         // needed for AmpcsTelemetrySourceConfig to instantiate
         when(mockedConfig.containsNonEmptyKey("telemetry.source.plugin.ampcs.oscillator.activeOscillatorSelectionMode")).thenReturn(true);
@@ -70,7 +70,7 @@ public class AmpcsTlmArchiveTests {
                 MmtcException.class,
                 () -> tlmArchive.applyConfiguration(mockedConfig),
                 "When using the AmpcsTlmArchive telemetry source, the " +
-                        TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER +
+                        TimeCorrelationCliAppConfig.CONSEC_MC_FRAME_FILTER +
                         " filter is not applicable and must be disabled by setting the configuration option " +
                         "filter.<filter name>.enabled to false."
         );
@@ -86,7 +86,7 @@ public class AmpcsTlmArchiveTests {
 
                 // session 101 tells the fake chill_get_chanvals to return GNC parms
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z", "--ampcs-session-id", "101"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTlmArchive tlm = new AmpcsTlmArchive();
                 tlm.applyConfiguration(config);
@@ -125,7 +125,7 @@ public class AmpcsTlmArchiveTests {
 
                 // session 102 tells the fake chill_get_chanvals to return oscillator temperature
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z", "--ampcs-session-id", "102"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTlmArchive tlm = new AmpcsTlmArchive();
                 tlm.applyConfiguration(config);
@@ -152,7 +152,7 @@ public class AmpcsTlmArchiveTests {
 
                 // session 102 tells the fake chill_get_chanvals to return oscillator temperature
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z", "--ampcs-session-id", "102"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTlmArchive tlm = new AmpcsTlmArchive();
                 tlm.applyConfiguration(config);
@@ -176,7 +176,7 @@ public class AmpcsTlmArchiveTests {
 
                 // session 102 tells the fake chill_get_chanvals to return oscillator temperature
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z", "--ampcs-session-id", "102"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTlmArchive tlm = new AmpcsTlmArchive();
                 tlm.applyConfiguration(config);

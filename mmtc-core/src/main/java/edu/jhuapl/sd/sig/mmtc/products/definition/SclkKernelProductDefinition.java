@@ -16,8 +16,10 @@ import java.util.Map;
  * A single SCLK kernel is modeled by {@link SclkKernel}.
  */
 public class SclkKernelProductDefinition extends EntireFileOutputProductDefinition {
+    public static final String PRODUCT_NAME = "SCLK Kernel";
+
     public SclkKernelProductDefinition() {
-        super("SCLK Kernel");
+        super(PRODUCT_NAME);
     }
 
     @Override

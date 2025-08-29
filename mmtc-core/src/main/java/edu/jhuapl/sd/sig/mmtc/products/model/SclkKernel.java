@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.List;
 
 /**
  * The SclkKernel class creates the SCLK kernel file and its contents. The SCLK Kernel is the primary product of MMTC.
@@ -389,6 +390,23 @@ public class SclkKernel extends TextProduct {
             records[j] = newProductLines.get(i);
         }
         return records;
+    }
+
+    public List<String[]> getParsedRecords() throws TextProductException {
+        List<String[]> dataRecords = new ArrayList<>();
+
+        for (int i = 0; i < sourceProductLines.size(); i++) {
+            String sclkKernelRecord = sourceProductLines.get(i).trim();
+            if (isDataRecord(sclkKernelRecord)) {
+                String[] parsedVals = parseRecord(sclkKernelRecord, 3);
+                if (parsedVals[TRIPLET_TDTG_FIELD_INDEX].startsWith("@")) {
+                    parsedVals[TRIPLET_TDTG_FIELD_INDEX] = parsedVals[TRIPLET_TDTG_FIELD_INDEX].replaceFirst("@", "");
+                }
+                dataRecords.add(parsedVals);
+            }
+        }
+
+        return dataRecords;
     }
 
     @Override

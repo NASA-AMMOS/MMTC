@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.ValidFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
@@ -19,11 +19,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 public class RawTelemetryTableTelemetrySourceTests {
-    private TimeCorrelationAppConfig config;
+    private TimeCorrelationCliAppConfig config;
     private RawTelemetryTableTelemetrySource tableTlmSource;
 
     void loadConfigAndTlmSource(String[] args, String rawTlmTablePath) throws Exception {
-        config = spy(new TimeCorrelationAppConfig(args));
+        config = spy(new TimeCorrelationCliAppConfig(args));
         when(config.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(rawTlmTablePath);
 
         try {
@@ -116,9 +116,9 @@ public class RawTelemetryTableTelemetrySourceTests {
 
     @Test
     void testUseUnallowableFilter() throws Exception {
-        TimeCorrelationAppConfig mockedConfig = mock(TimeCorrelationAppConfig.class);
+        TimeCorrelationCliAppConfig mockedConfig = mock(TimeCorrelationCliAppConfig.class);
         Map<String, TimeCorrelationFilter> enabledFilters = new HashMap<>();
-        enabledFilters.put(TimeCorrelationAppConfig.VALID_FILTER, new ValidFilter());
+        enabledFilters.put(TimeCorrelationCliAppConfig.VALID_FILTER, new ValidFilter());
         when(mockedConfig.getFilters()).thenReturn(enabledFilters);
         when(mockedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn("src/test/resources/tables/RawTelemetryTable_empty.csv");
 
@@ -128,7 +128,7 @@ public class RawTelemetryTableTelemetrySourceTests {
                 MmtcException.class,
                 () -> tlmArchive.applyConfiguration(mockedConfig),
                 "When using the RawTelemetryTable telemetry source, the " +
-                        TimeCorrelationAppConfig.VALID_FILTER +
+                        TimeCorrelationCliAppConfig.VALID_FILTER +
                         " filter is not applicable and must be disabled by setting the configuration option " +
                         "filter.<filter name>.enabled to false."
         );

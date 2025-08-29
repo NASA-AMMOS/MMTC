@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 
 import java.nio.file.Path;
@@ -8,10 +8,10 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class AmpcsTelemetrySourceConfig {
-    private final TimeCorrelationAppConfig timeCorrelationAppConfig;
+    private final MmtcConfigWithTlmSource timeCorrelationAppConfig;
     private final Map<Integer, String> vcidsToOscillatorIds = new HashMap<>();
 
-    public AmpcsTelemetrySourceConfig(TimeCorrelationAppConfig timeCorrelationAppConfig) {
+    public AmpcsTelemetrySourceConfig(MmtcConfigWithTlmSource timeCorrelationAppConfig) {
         this.timeCorrelationAppConfig = timeCorrelationAppConfig;
 
         if (getActiveOscillatorSelectionMode().equals(ActiveOscillatorSelectionMode.by_vcid)) {
@@ -33,10 +33,12 @@ public class AmpcsTelemetrySourceConfig {
     }
 
     String getSessionId() {
-        return this.timeCorrelationAppConfig.getCmdLineOptionValue('K');
+        return this.timeCorrelationAppConfig.getAdditionalOptionValue(AmpcsTelemetrySource.AMPCS_SESSION_ID_OPT);
     };
 
-    String getConnectionParms() { return this.timeCorrelationAppConfig.getCmdLineOptionValue('n'); };
+    String getConnectionParms() {
+        return this.timeCorrelationAppConfig.getAdditionalOptionValue(AmpcsTelemetrySource.ADDITIONAL_AMPCS_CLI_ARGS_OPT);
+    };
 
     /**
      * Gets the frame header fine SCLK modulus.

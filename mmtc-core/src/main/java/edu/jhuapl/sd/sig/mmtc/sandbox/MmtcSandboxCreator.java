@@ -275,11 +275,7 @@ public class MmtcSandboxCreator {
         }
 
         Files.createDirectories(newProductOutputDir);
-        List<Path> filePathsToCopy = Files.list(originalProductOutputDir)
-                .filter(p -> p.getFileName().toString().startsWith(resolvedDirAndPrefix.filenamePrefix))
-                .filter(p -> p.getFileName().toString().endsWith(resolvedDirAndPrefix.filenameSuffix))
-                .collect(Collectors.toList());
-        for (Path file : filePathsToCopy) {
+        for (Path file : resolvedDirAndPrefix.findAllMatching()) {
             Files.copy(
                     file,
                     newProductOutputDir.resolve(file.getFileName())

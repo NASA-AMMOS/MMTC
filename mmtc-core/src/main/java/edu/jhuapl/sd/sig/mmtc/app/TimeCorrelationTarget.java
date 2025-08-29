@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.util.Owlt;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -14,7 +15,7 @@ public class TimeCorrelationTarget {
     // input values
     private final List<FrameSample> sampleSet;
     private final FrameSample targetSample;
-    private final TimeCorrelationAppConfig config;
+    private final TimeCorrelationRunConfig config;
     private final int tk_sclk_fine_tick_modulus;
 
     // computed values, assigned in `computeCorrelationValues` below
@@ -27,7 +28,7 @@ public class TimeCorrelationTarget {
     private String ertGCalcLogStatement;
     private Double tdtG;
 
-    public TimeCorrelationTarget(List<FrameSample> sampleSet, TimeCorrelationAppConfig config, int tk_sclk_fine_tick_modulus) throws MmtcException {
+    public TimeCorrelationTarget(List<FrameSample> sampleSet, TimeCorrelationRunConfig config, int tk_sclk_fine_tick_modulus) throws MmtcException {
         this.sampleSet = sampleSet;
         this.targetSample = sampleSet.get(sampleSet.size() / 2);
         this.tk_sclk_fine_tick_modulus = tk_sclk_fine_tick_modulus;

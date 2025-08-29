@@ -7,7 +7,10 @@
 rootProject.name = "mmtc"
 include(":mmtc-core")
 include(":mmtc-plugin-ampcs")
+include(":mmtc-output-plugin-sdk")
 include(":mmtc-tlm-source-plugin-sdk")
+include(":mmtc-webapp")
+include(":mmtc-webapp-ui")
 include(":jnispice")
 
 dependencyResolutionManagement {

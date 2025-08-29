@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,7 +12,7 @@ public class ConsecutiveMasterChannelFrameFilter implements TimeCorrelationFilte
     private static final Logger logger = LogManager.getLogger();
 
     @Override
-    public boolean process(List<FrameSample> samples, TimeCorrelationAppConfig config) throws MmtcException {
+    public boolean process(List<FrameSample> samples, TimeCorrelationRunConfig config) throws MmtcException {
         if (! (config.getMcfcMaxValue() > 0)) {
             throw new MmtcException("When using the ConsecutiveMasterChannelFrameFilter, the MCFC maximum value must be set in configuration to a positive integer.");
         }

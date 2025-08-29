@@ -63,11 +63,31 @@ val createDistDir = tasks.register("createDistDir") {
 
     doLast {
         exec {
-            commandLine("bash", "create-dist.sh", project.version)
+            commandLine("bash", "create-dist.sh", project.version, "cli")
         }
     }
 
     outputs.dir("build/mmtc-dist-tmp")
+}
+
+val createWebAppDistDir = tasks.register("createWebappDistDir") {
+    inputs.files("mmtc-core/bin/mmtc")
+    inputs.files("mmtc-core/build/libs/mmtc-core-" + project.version + "-app.jar")
+    inputs.files("mmtc-plugin-ampcs/build/libs/mmtc-plugin-ampcs-" + project.version + ".jar")
+    inputs.files("mmtc-webapp/build/libs/mmtc-webapp-" + project.version + ".jar")
+
+    dependsOn("mmtc-core:uberJar")
+    dependsOn("mmtc-plugin-ampcs:jar")
+    dependsOn(":userGuidePdf")
+    dependsOn("mmtc-webapp:jar")
+
+    doLast {
+        exec {
+            commandLine("bash", "create-dist.sh", project.version, "webapp")
+        }
+    }
+
+    outputs.dir("build/mmtc-webapp-dist-tmp")
 }
 
 val mmtcEl8Rpm = tasks.register<Rpm>("mmtcEl8Rpm") {
@@ -135,11 +155,87 @@ tasks.getByName("mmtcEl9Rpm") {
     dependsOn(tasks.getByName("cleanMmtcEl9Rpm"))
 }
 
+val mmtcWebAppEl8Rpm = tasks.register<Rpm>("mmtcWebAppEl8Rpm") {
+    dependsOn(tasks.build)
+
+    packageName = "mmtc-webapp"
+    distribution = "el8"
+    release = "1.$distribution"
+    archStr = "x86_64"
+    os = org.redline_rpm.header.Os.LINUX
+
+    preInstall(file(projectDir.toPath().resolve("rpm-scripts/pre-install.sh")))
+    postInstall(file(projectDir.toPath().resolve("rpm-scripts/post-install.sh")))
+
+    user(this, "mmtc")
+    permissionGroup(this, "mmtc")
+
+    //make the RPM relocatable using prefix(). however, also set the default location using into();
+    //otherwise, if you install without specifying a custom "--prefix", it gets installed in /usr
+    //(at least that's what happened in my local testing).
+    prefix("/opt/local/mmtc")
+    into("/opt/local/mmtc")
+
+    //copy the distribution folder, preserving permissions since they're already correct.
+    //NOTE: this doesn't seem to set *directory* permissions, so we use post-install.sh for that.
+    from(projectDir.toPath().resolve("build/mmtc-webapp-dist-tmp"))
+
+    //NOTE: create-dist.sh updates bin/mmtc to point to the correct (newly installed) jar file,
+    //so we no longer create a symlink at lib/mmtc.jar
+}
+
+val mmtcWebAppEl9Rpm = tasks.register<Rpm>("mmtcWebAppEl9Rpm") {
+    dependsOn(tasks.build)
+
+    packageName = "mmtc-webapp"
+    distribution = "el9"
+    release = "1.$distribution"
+    archStr = "x86_64"
+    os = org.redline_rpm.header.Os.LINUX
+
+    preInstall(file(projectDir.toPath().resolve("rpm-scripts/pre-install.sh")))
+    postInstall(file(projectDir.toPath().resolve("rpm-scripts/post-install.sh")))
+
+    user(this, "mmtc")
+    permissionGroup(this, "mmtc")
+
+    //make the RPM relocatable using prefix(). however, also set the default location using into();
+    //otherwise, if you install without specifying a custom "--prefix", it gets installed in /usr
+    //(at least that's what happened in my local testing).
+    prefix("/opt/local/mmtc")
+    into("/opt/local/mmtc")
+
+    //copy the distribution folder, preserving permissions since they're already correct.
+    //NOTE: this doesn't seem to set *directory* permissions, so we use post-install.sh for that.
+    from(projectDir.toPath().resolve("build/mmtc-webapp-dist-tmp"))
+
+    //NOTE: create-dist.sh updates bin/mmtc to point to the correct (newly installed) jar file,
+    //so we no longer create a symlink at lib/mmtc.jar
+}
+
+// fix for Rpm task setting incorrect digests in RPM metadata
+tasks.getByName("mmtcWebAppEl8Rpm") {
+    dependsOn(tasks.getByName("cleanMmtcWebAppEl8Rpm"))
+}
+
+tasks.getByName("mmtcWebAppEl9Rpm") {
+    dependsOn(tasks.getByName("cleanMmtcWebAppEl9Rpm"))
+}
+
 distributions {
     main {
         distributionBaseName.set(project.name)
         contents {
             from("build/mmtc-dist-tmp")
+        }
+    }
+}
+
+distributions {
+    create("mmtcWebApp") {
+        distributionBaseName.set("mmtc-webapp")
+        contents {
+            from("build/mmtc-webapp-dist-tmp")
         }
     }
 }
@@ -156,6 +252,20 @@ tasks.distTar {
 
 tasks.installDist {
     dependsOn(createDistDir)
+}
+
+tasks.getByName<Zip>("mmtcWebAppDistZip") {
+    dependsOn(createWebAppDistDir)
+}
+
+tasks.getByName<Tar>("mmtcWebAppDistTar") {
+    dependsOn(createWebAppDistDir)
+    compression = Compression.GZIP
+    archiveExtension.set("tar.gz")
+}
+
+tasks.getByName("installMmtcWebAppDist") {
+    dependsOn(createWebAppDistDir)
 }
 
 val demoZip = tasks.register("demoZip") {

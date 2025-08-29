@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.GroundStationFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -25,7 +25,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowing");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(
@@ -62,7 +62,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowing");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-352T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-352T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(
@@ -99,7 +99,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowing");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(
@@ -138,7 +138,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowingOnlyStation55");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(
@@ -180,7 +180,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowing");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(
@@ -207,7 +207,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowing");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2020-001T00:00:00.000Z", "2021-001T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2020-001T00:00:00.000Z", "2021-001T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(
@@ -234,7 +234,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowing");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2017-340T00:00:00.000Z", "2017-341T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-340T00:00:00.000Z", "2017-341T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(
@@ -261,7 +261,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowing");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_EMPTY);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(
@@ -288,7 +288,7 @@ class SeparateConsecutiveWindowingTelemetrySelectionStrategyTest extends BaseTel
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SeparateConsecutiveWindowing");
 
-            final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
+            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSeparateConsecutiveWindows(

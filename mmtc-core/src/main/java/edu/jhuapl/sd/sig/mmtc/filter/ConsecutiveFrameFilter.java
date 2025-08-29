@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,7 +54,7 @@ public class ConsecutiveFrameFilter implements TimeCorrelationFilter {
      * @return true if the VCID is consistent among all samples, false otherwise
      */
     @Override
-    public boolean process(List<FrameSample> samples, TimeCorrelationAppConfig config) throws MmtcException {
+    public boolean process(List<FrameSample> samples, TimeCorrelationRunConfig config) throws MmtcException {
         if (samples.isEmpty()) {
             logger.warn("Consecutive Frame Filter Failed: Attempted to filter an empty sample set.");
             return false;
