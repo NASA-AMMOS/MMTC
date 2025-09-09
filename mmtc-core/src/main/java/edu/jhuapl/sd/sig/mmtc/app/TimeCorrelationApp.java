@@ -92,7 +92,9 @@ public class TimeCorrelationApp {
 
         runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath());
         newRunHistoryFileRecord = new TableRecord(runHistoryFile.getHeaders());
-        recordRunHistoryFilePreRunValues();
+        if (!ctx.config.isDryRun()) {
+            recordRunHistoryFilePreRunValues();
+        }
 
         tk_sclk_fine_tick_modulus = config.getTkSclkFineTickModulus();
         logger.info("tk_sclk_fine_tick_modulus set to: " + tk_sclk_fine_tick_modulus);
@@ -373,6 +375,10 @@ public class TimeCorrelationApp {
         if (config.isTestMode()) {
             logger.warn(String.format("Test mode is enabled! One-way light time will be set to the provided value %f and ancillary positional and velocity calculations will be skipped.", config.getTestModeOwlt()));
         }
+        if (config.isDryRun()) {
+            logger.warn("Dry run mode is enabled! No products/outputs will be kept and will only be recorded in the log at {}/log/", System.getenv("MMTC_HOME"));
+        }
+
 
         // Select telemetry for this new time correlation run
         final TimeCorrelationTarget tcTarget = selectSampleSetAndTimeCorrelationTarget();
@@ -477,20 +483,27 @@ public class TimeCorrelationApp {
         // Perform all ancillary post-correlation operations
         new TimeCorrelationAncillaryOperations(ctx).perform();
 
-        // Write all output products
+        // Write or log all output products
         ctx.newSclkVersionString.set(getNextSclkKernelVersionString());
         for (OutputProductDefinition<?> prodDef : OutputProductDefinition.all()) {
             final String postRunColProdColName = RunHistoryFile.getPostRunProductColNameFor(prodDef);
 
-            if (prodDef.shouldBeWritten(ctx)) {
+            if (prodDef.shouldBeWritten(ctx) && !ctx.config.isDryRun()) {
                 final OutputProductDefinition.ProductWriteResult res = prodDef.write(ctx);
                 newRunHistoryFileRecord.setValue(postRunColProdColName, res.newVersion);
 
+            } else if (prodDef.shouldBeWritten(ctx) && ctx.config.isDryRun()) {
+                // Log/print output products instead of writing them to files
+                final String productPrintout = prodDef.getDryRunPrintout(ctx);
+                logger.info(productPrintout);
             } else {
                 newRunHistoryFileRecord.setValue(postRunColProdColName,  runHistoryFile.getLatestNonEmptyValueOfCol(postRunColProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
             }
         }
-        runHistoryFile.writeRecord(newRunHistoryFileRecord);
+
+        if (!ctx.config.isDryRun()) {
+            runHistoryFile.writeRecord(newRunHistoryFileRecord);
+        }
 
         logger.info(USER_NOTICE, "Appended a new entry to Run History File located at " + runHistoryFile.getPath());
         logger.info(String.format("Run at %s recorded to %s", ctx.appRunTime, config.getRunHistoryFilePath().toString()));

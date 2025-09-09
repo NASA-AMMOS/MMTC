@@ -3,6 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.products.definition;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
+import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.products.model.TimeHistoryFile;
@@ -31,6 +32,19 @@ public class TimeHistoryFileProductDefinition extends AppendedFileOutputProductD
     @Override
     public boolean shouldBeWritten(TimeCorrelationContext context) {
         return true;
+    }
+
+    @Override
+    public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
+        TimeHistoryFile timeHistFile = new TimeHistoryFile(ctx.config.getRawTelemetryTablePath(), ctx.config.getTimeHistoryFileExcludeColumns());
+        TableRecord timeHistRecord = new TableRecord(timeHistFile.getHeaders());
+        try {
+            TimeHistoryFile.generateNewTimeHistRec(ctx, timeHistFile, timeHistRecord);
+        } catch (TimeConvertException e) {
+            throw new RuntimeException(e);
+        }
+        return String.format("Updated Time History file records: %s \n %s", new TimeHistoryFile(ctx.config.getTimeHistoryFilePath()).getHeaders(),
+                timeHistRecord.getValues().toString());
     }
 
     @Override

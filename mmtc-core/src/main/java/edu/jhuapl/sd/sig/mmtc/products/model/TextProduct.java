@@ -165,6 +165,15 @@ abstract class TextProduct {
 
 
     /**
+     * Gets the last x records in the original source product
+     *
+     * @param numRecords the number of records to return
+     * @return a String array of records in their original order, else an empty array if numRecords is invalid
+     */
+    public abstract String[] getLastXRecords(int numRecords);
+
+
+    /**
      * Creates a new product file from an existing source file and writes it to the directory
      * and name specified with the current time in UTC as the product creation time. This is
      * the top-level method in this class and the one that would be called from an external
@@ -200,12 +209,16 @@ abstract class TextProduct {
 
         try {
             /* Read the source file */
-            readSourceProduct();
-            createNewProduct();   /* <-- Abstract method defined in derived class. */
+            updateFile();
             return writeNewProduct();
         } catch (IOException e) {
             throw new TextProductException("Unable to read source product \"" + sourceFilespec + "\".", e);
         }
+    }
+
+    public void updateFile() throws TextProductException, IOException, TimeConvertException {
+        readSourceProduct();
+        createNewProduct();   /* <-- Abstract method defined in derived class. */
     }
 
 

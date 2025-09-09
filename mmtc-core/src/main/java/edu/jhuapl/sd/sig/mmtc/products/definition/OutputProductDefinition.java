@@ -42,6 +42,8 @@ public abstract class OutputProductDefinition<T extends OutputProductDefinition.
 
     public abstract boolean shouldBeWritten(TimeCorrelationContext context);
 
+    public abstract String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException;
+
     public interface ResolvedProductLocation {
     }
 

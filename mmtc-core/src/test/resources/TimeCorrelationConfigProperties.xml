@@ -34,8 +34,8 @@
   <!--entry key="telemetry.source.pluginJarPrefix">mmtc-plugin-ampcs</entry-->
 
   <!-- Options for built-in Raw TLM Table telemetry source -->
-  <entry key="telemetry.source.plugin.rawTlmTable.tableFile.path">/absolute/path/to/RawTelemetryTable_NH_reformatted.csv</entry>
-  <entry key="telemetry.source.plugin.rawTlmTable.readDownlinkDataRate">false</entry>
+  <entry key="telemetry.source.plugin.rawTlmTable.tableFile.path">/home/lageja1/Desktop/MMTC/MMTC/mmtc-core/src/test/resources/tables/RawTelemetryTable_NH_reformatted.csv</entry>
+  <entry key="telemetry.source.plugin.rawTlmTable.readDownlinkDataRate">true</entry>
 
   <entry key="telemetry.tkOscTempWindowSec">60</entry>
 

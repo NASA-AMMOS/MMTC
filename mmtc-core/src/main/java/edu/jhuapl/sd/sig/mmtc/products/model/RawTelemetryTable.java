@@ -55,6 +55,24 @@ public class RawTelemetryTable extends AbstractTimeCorrelationTable {
     }
 
     /**
+     * Generate an updated RawTelemetryTable based on the current run, but don't append the new rows to the file.
+     * Intended for use in dry runs where the updated table is desired but not the changes to the file.
+     * @param ctx the current time correlation context from which to pull information for the output product
+     * @return an updated RawTelemetryTable
+     */
+    public static TableRecord calculateUpdatedRawTlmTable(TimeCorrelationContext ctx) {
+        final RawTelemetryTable rawTlmTable = new RawTelemetryTable(ctx.config.getRawTelemetryTablePath());
+        TableRecord rawTlmTableRecord = new TableRecord(rawTlmTable.getHeaders());
+
+        for (FrameSample sample : ctx.correlation.target.get().getSampleSet()) {
+            rawTlmTableRecord = sample.toRawTelemetryTableRecord(rawTlmTable.getHeaders());
+            rawTlmTableRecord.setValue(RawTelemetryTable.RUN_TIME, ctx.appRunTime.toString());
+        }
+
+        return rawTlmTableRecord;
+    }
+
+    /**
      * Write the current time correlation's sample set to the raw telemetry table.
      *
      * @param context the current time correlation context from which to pull information for the output product

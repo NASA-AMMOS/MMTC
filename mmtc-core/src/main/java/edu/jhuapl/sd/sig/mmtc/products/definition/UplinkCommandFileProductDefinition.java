@@ -4,6 +4,7 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.model.*;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
 import java.nio.file.Paths;
 
@@ -29,6 +30,16 @@ public class UplinkCommandFileProductDefinition extends EntireFileOutputProductD
     @Override
     public boolean shouldBeWritten(TimeCorrelationContext context) {
         return context.config.isCreateUplinkCmdFile();
+    }
+
+    @Override
+    public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
+        try {
+            UplinkCommand uplinkCommand = UplinkCmdFile.generateNewProduct(ctx);
+            return String.format("Generated Uplink Command string: \n"+ uplinkCommand);
+        } catch (TimeConvertException e) {
+            throw new MmtcException("Unable to generate the Uplink Command File: ", e);
+        }
     }
 
     /**
