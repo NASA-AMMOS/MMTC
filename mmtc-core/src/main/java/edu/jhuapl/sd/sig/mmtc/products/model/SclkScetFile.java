@@ -3,7 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.products.model;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
+import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
@@ -145,7 +145,19 @@ public class SclkScetFile extends TextProduct {
         endSclkScetTime = datetime;
     }
 
-     /**
+    @Override
+    public String[] getLastXRecords(int numRecords) {
+        if(numRecords < 1) { return new String[0]; }
+        int lastRecordIndex = lastDataRecNum(sourceProductLines);
+
+        String[] records = new String[numRecords];
+        for(int i=lastRecordIndex-(numRecords-1), j=0;i < lastRecordIndex+1; i++, j++) {
+            records[j] = sourceProductLines.get(i);
+        }
+        return records;
+    }
+
+    /**
      * Creates the new SCLK kernel product. Implements the corresponding abstract method in the parent class.
      *
      * @throws TextProductException if the product cannot be created
@@ -623,6 +635,26 @@ public class SclkScetFile extends TextProduct {
         return createFile();
     }
 
+    public static SclkScetFile calculateNewProduct(TimeCorrelationContext ctx) {
+        final TimeCorrelationAppConfig conf = ctx.config;
+        final String newSclkScetFilename = conf.getSclkScetFileBasename() +
+                conf.getSclkScetFileSeparator() +
+                ctx.newSclkVersionString.get() +
+                conf.getSclkScetFileSuffix();
+
+        // Create the new SCLK/SCET file from the newly-created SCLK kernel.
+        final SclkScetFile scetFile = new SclkScetFile(
+                conf,
+                newSclkScetFilename,
+                ctx.newSclkVersionString.get()
+        );
+
+        scetFile.setProductCreationTime(ctx.appRunTime);
+        scetFile.setClockTickRate(ctx.sclk_kernel_fine_tick_modulus.get());
+        SclkScet.setScetStrSecondsPrecision(conf.getSclkScetScetUtcPrecision());
+
+        return scetFile;
+    }
     /**
      * Writes a new SCLK-SCET File
      * @param ctx the current time correlation context from which to pull information for the output product
@@ -630,27 +662,12 @@ public class SclkScetFile extends TextProduct {
      * @throws MmtcException if the SCLK-SCET File cannot be written
      * @return a ProductWriteResult describing the updated product
      */
-    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
-        final TimeCorrelationAppConfig conf = ctx.config;
+    public static OutputProductDefinition.ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
 
         try {
-            final String newSclkScetFilename = conf.getSclkScetFileBasename() +
-                    conf.getSclkScetFileSeparator() +
-                    ctx.newSclkVersionString.get() +
-                    conf.getSclkScetFileSuffix();
+            final SclkScetFile scetFile = calculateNewProduct(ctx);
 
-            // Create the new SCLK/SCET file from the newly-created SCLK kernel.
-            final SclkScetFile scetFile = new SclkScetFile(
-                    conf,
-                    newSclkScetFilename,
-                    ctx.newSclkVersionString.get()
-            );
-
-            scetFile.setProductCreationTime(ctx.appRunTime);
-            scetFile.setClockTickRate(ctx.sclk_kernel_fine_tick_modulus.get());
-            SclkScet.setScetStrSecondsPrecision(conf.getSclkScetScetUtcPrecision());
-
-            return new ProductWriteResult(
+            return new OutputProductDefinition.ProductWriteResult(
                     scetFile.createNewSclkScetFile(ctx.newSclkKernelPath.get().toString()),
                     ctx.newSclkVersionString.get()
             );

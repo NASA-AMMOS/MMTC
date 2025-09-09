@@ -7,6 +7,11 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkScetFile;
+import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
+
+import java.io.IOException;
+import java.util.Arrays;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -35,6 +40,18 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
     @Override
     public boolean shouldBeWritten(TimeCorrelationContext ctx) {
         return ctx.config.createSclkScetFile();
+    }
+
+    @Override
+    public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
+        SclkScetFile scetFile = SclkScetFile.calculateNewProduct(ctx);
+        try {
+            scetFile.setSourceFilespec(ctx.config.getInputSclkKernelPath().toString()); // Can't use
+            scetFile.updateFile();
+        } catch (TextProductException | TimeConvertException | IOException e) {
+            throw new MmtcException("Failed to generate SCLKSCET file");
+        }
+        return Arrays.toString(scetFile.getLastXRecords(1));
     }
 
     /**

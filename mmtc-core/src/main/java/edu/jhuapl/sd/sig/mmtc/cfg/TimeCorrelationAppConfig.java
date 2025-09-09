@@ -281,6 +281,15 @@ public class TimeCorrelationAppConfig extends MmtcConfig{
     }
 
     /**
+     * Indicates if this is a dry run
+     *
+     * @return true if -D or --dry-run CLI options are invoked
+     */
+    public boolean isDryRun() {
+        return cmdLineConfig.isDryRun();
+    }
+
+    /**
      * Indicates if an optional Uplink Command File is to be created. This can be specified in either the command line
      * or in configuration parameters. Command line overrides the configuration parameter.
      *

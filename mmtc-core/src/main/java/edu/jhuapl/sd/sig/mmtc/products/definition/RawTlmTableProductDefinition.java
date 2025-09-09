@@ -1,15 +1,10 @@
 package edu.jhuapl.sd.sig.mmtc.products.definition;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
-import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductPath;
 import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
-
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
 
 public class RawTlmTableProductDefinition extends AppendedFileOutputProductDefinition {
     public RawTlmTableProductDefinition() {
@@ -17,8 +12,11 @@ public class RawTlmTableProductDefinition extends AppendedFileOutputProductDefin
     }
 
     @Override
-    public ResolvedProductPath resolveLocation(MmtcConfig config) {
-        return new ResolvedProductPath(config.getRawTelemetryTablePath());
+    public ResolvedProductPath resolveLocation(RollbackConfig config) {
+        return new ResolvedProductPath(
+                config.getRawTelemetryTablePath(),
+                new RawTelemetryTable(config.getRawTelemetryTablePath())
+        );
     }
 
     @Override
@@ -27,14 +25,14 @@ public class RawTlmTableProductDefinition extends AppendedFileOutputProductDefin
     }
 
     @Override
-    public ProductWriteResult appendToProduct(TimeCorrelationContext context) throws MmtcException {
-        return RawTelemetryTable.appendCorrelationFrameSamplesToRawTelemetryTable(context);
+    public String getDryRunPrintout(TimeCorrelationContext ctx) {
+        TableRecord rawTlmTableRecord = RawTelemetryTable.calculateUpdatedRawTlmTable(ctx);
+        return String.format("Updated Raw TLM table records: %s \n %s", new RawTelemetryTable(ctx.config.getRawTelemetryTablePath()).getHeaders(),
+                rawTlmTableRecord.getValues().toString());
     }
 
     @Override
-    public Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputPath) {
-        final Map<String, String> confUpdates = new HashMap<>();
-        confUpdates.put("table.rawTelemetryTable.path", newProductOutputPath.toString());
-        return confUpdates;
+    public ProductWriteResult writeToProduct(TimeCorrelationContext context) throws MmtcException {
+        return RawTelemetryTable.appendCorrelationFrameSamplesToRawTelemetryTable(context);
     }
 }
