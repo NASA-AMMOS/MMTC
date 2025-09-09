@@ -854,8 +854,8 @@ Please reference the configuration section for the full configuration key names 
 The overall process for implementing a new Telemetry Source plugin and providing it to MMTC for usage is:
 
 1. Writing a new Java implementation of its _TelemetrySource_ interface
-2. Building and packaging it into a Java .jar file according to the Java service convention
-3. Placing the jar file in a location accessible to MMTC and supplying matching configuration in TimeCorrelationConfigProperties.xml.
+2. Building and packaging it into a Java .jar file according to the Java ServiceLoader convention
+3. Placing the jar file in a location accessible to MMTC and supplying corresponding configuration in TimeCorrelationConfigProperties.xml.
 
 ==== Quick Start
 
@@ -904,16 +904,16 @@ The directory structure of the example Telemetry Source project is as follows:
 
 To build and use the plugin:
 
-1. Acquire the SDK artifact `mmtc-{revnumber}-tlm-source-plugin-sdk.zip`, either from a release or by building from the MMTC repository: `./gradlew :mmtc-tlm-source-plugin-sdk:createSdkDist`
+1. Acquire the SDK artifact `mmtc-{revnumber}-tlm-source-plugin-sdk.zip`, either from an MMTC release or by building from the MMTC repository: `./gradlew :mmtc-tlm-source-plugin-sdk:createSdkDist`
 2. Unzip the archive, which will create the file structure illustrated above.
 3. From the root of the SDK's Gradle project, run `./gradlew build`
 4. Configure your MMTC deployment as follows (assuming your MMTC installation is located at `/opt/local/mmtc`):
-- Copy the resulting `build/libs/mmtc-plugin-example-1.0.0-SNAPSHOT.jar` file into `/opt/local/mmtc/lib/plugins`
+- Copy the resulting `build/libs/mmtc-tlm-plugin-example-1.0.0-SNAPSHOT.jar` file into `/opt/local/mmtc/lib/plugins`
 - Apply the following configuration in `/opt/local/mmtc/conf/TimeCorrelationConfigProperties.xml`:
 
     <entry key="telemetry.source.name">ExampleTelemetrySource</entry>
     <entry key="telemetry.source.pluginDirectory">/opt/local/mmtc/lib/plugins/</entry>
-    <entry key="telemetry.source.pluginJarPrefix">mmtc-plugin-example</entry>
+    <entry key="telemetry.source.pluginJarPrefix">mmtc-tlm-plugin-example</entry>
 
 5. Run MMTC:
 
@@ -1321,6 +1321,11 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 |STR
 |The pattern that is used to parse ERTs from query metadata and to write ERT to the RawTlmTable in calendar string date/time form (e.g., ISO DOY format: “yyyy-DDD’T’HH:mm:ss.SSSSSS”).
 
+|table.timeHistoryFile.create
+|OPTIONAL
+|BOOL
+|Whether the Time History File should be created (if need be) and updated with each run.  If not specified, the default value is `true`.
+
 |table.timeHistoryFile.path
 |REQUIRED
 |STR
@@ -1400,6 +1405,11 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 |OPTIONAL
 |STR
 |The basename of the Uplink Command File. For example, given the filename “uplinkCmd1577130458.csv”, “uplinkCmd” is the basename. Required if product.uplinkCmdFile.create is `true`.
+
+|product.plugin.outputProductNames
+|OPTIONAL
+|STR
+|A comma-separated list of names that uniquely identify plugin-provided (custom) output product types.  If this parameter is populated, additional per-custom-product parameters are also required.  Please reference <<_configuring_custom_output_products>> for details.
 
 
 |===
@@ -1720,7 +1730,11 @@ Path ID, Station ID, Station Name
 
 == Output Products
 
-=== Output SCLK Kernel
+=== Built-in Products
+
+MMTC contains built-in functionality to create and update a range of output products.  Each output product type has associated configuration that can be used to adjust the desired content of each output product.  Please refer the configuration section for full configuration details.
+
+==== Output SCLK Kernel
 
 Each time the MMTC runs, it creates a new SCLK kernel. SCLK kernels follow the NAIF specifications _(SCLK – Reference for the SPICE spacecraft clock subsystem and the Spacecraft Clock Kernel (SCLK))_ and is a primary output product. Each new SCLK kernel contains the entire contents of the previous SCLK kernel that MMTC read as input, but has one new time correlation record appended to the end. In addition, if the user has selected interpolated clock change rate computation (the default), the clock change rate of the last record of the previous kernel will be overwritten with a new and more accurate value. The new kernel will have the same name as the preceding one, except that the version number in the name will have been incremented.
 
@@ -1735,11 +1749,11 @@ For example, setting _basename_ to “europaclipper”, _sep_ to “_”, and _s
 
 MMTC writes the SCLK kernels to the directory indicated in *spice.kernel.sclk.kerneldir*. The existing input SCLK Kernel must reside in this directory and the new output SCLK kernel will be written to it.
 
-==== Input SCLK Kernel Override
+===== Input SCLK Kernel Override
 
 MMTC provides a configuration parameter *spice.kernel.sclk.inputPathOverride* that directs it to read the source (current) SCLK Kernel not from the normal *spice.kernel.sclk.kerneldir* from which it normally derives its input SCLK kernel, but from an alternate SCLK Kernel. This is intended for use only in test venues. On occasion, it is convenient when testing to read an SCLK kernel other than the one resident in the directory that the new one will be written to. This can cause versioning problems and duplicate SCLK Kernel filename errors in successive runs. Therefore, this option is only for certain test situations and should never be used operationally. To use this, set *spice.kernel.sclk.inputPathOverride* to the fully qualified path of the alternate SCLK Kernel. Remove it before running again. Successive runs will likely fail if this parameter is not removed after the first run.
 
-=== SCLK/SCET File
+==== SCLK/SCET File
 
 Each time MMTC runs, it optionally creates a new SCLK/SCET file. SCLK/SCET files follow the NAIF specifications _(Generic SCLK versus SCET Correlation File, Software Interface Specification, Rev. E, January 2012)_. This is a primary output product. The new SCLK/SCET file contains the entire contents of the previous SCLK/SCET file, but has one new time correlation record appended to the end. The version number of the file is incremented each time a new one is produced. MMTC creates the new SCLK/SCET file from the new SCLK kernel; however, in order to conform with specifications and for accurate conversions, it adds two records at every point in time where a leap second was added to world timekeeping.  For each leap second, two records will be inserted that encode the leap second at the next-higher coarse SCLK tick to the actual occurrence of the leap second.  MMTC supports both added (positive) leap seconds and removed (negative) leap seconds.
 
@@ -1756,27 +1770,168 @@ MMTC names the SCLK/SCET files by `<basename><sep><nnnn>.<suffix>`, where:
 
 For example, setting _basename_ to “europaclipper”, _sep_ to “_”, and _suffix_ to “coeff” in the configuration parameters would produce the SCLK kernel *“europaclipper_00123.coeff”*, if the previous version was 122.
 
-=== Uplink Command File
+==== Uplink Command File
 
 The Uplink Command File is an optional operations product that can be used to uplink time correlation data to the spacecraft. It is a simple CSV formatted text file with a single line in it. It contains five values: SCLK coarse, ground time in ephemeris time in seconds of epoch (ET also called TDB), ground time in TDT in seconds of epoch, the identical ground time TDT as a calendar string, and the clock change rate. The fine time SCLK (i.e., subseconds) is not included in this file because the corresponding ground time is adjusted, by an amount equal to the fine time, to a whole tick SCLK coarse time; in other words, the subseconds are subtracted from the TDB and TDT ground times. The SCLK1, TDT1, and CLKCHGRATE1 values which the flight software uses to compute ground time from SCLK derive from these. It is left to other elements of the space mission ground system to convert the values in this file to the necessary format and load them into a command for uplink. For missions that use this product, it is left to the mission’s GDS to take this file and form its contents into a command that can be uplinked. See Appendix D. for a sample of this file.
 
 This file is produced if the *product.uplinkCmdFile.create* configuration parameter is set to `true`, or if the `--generate-cmd-file` or `-c` option is provided at the command line. If the command line option is provided, it will override the configuration parameter.
 
-=== Time History File
+==== Time History File
 
 The Time History File is a cumulative product that is updated with a single record appended to its end each time the MMTC runs. It is a CSV format text file that contains records of processed time correlations (including inputs and computed values) as well as other information useful in assessing the state of the onboard clock. This file is intended for analysis purposes. Table 8 in Appendix E describes the fields in this file.
 
 MMTC creates this file upon its first execution, and appends to it with each successful run thereafter.  If this file becomes inconveniently large over the course of a mission, the records created from prior runs may be deleted (possibly having been copied elsewhere for archival purposes.)
 
-=== Raw Telemetry Table
+==== Raw Telemetry Table
 
 The Raw Telemetry Table contains the unprocessed data extracted from telemetry used in time correlation. It contains the basic SCLK, ERT, and virtual channel information. The data contained in this table, along with the associated SPICE kernels and configuration parameters, contain the information needed to run the Time Correlation application and, when necessary, to reproduce the results of a previous time correlation and its output products (SCLK kernel, SCLK/SCET file, command uplink file) without having to connect to the telemetry archive again. This is a comma separated value (CSV) formatted text file. It is useful for analysis and for later reprocessing if needed. It contains records of all frames/TK Packets in the sample set and is appended to each time the application runs. The fields in the table are described in Table 9 in the Appendix.
 
 MMTC creates this file upon its first execution, and appends to it with each successful run thereafter.  If this file becomes inconveniently large over the course of a mission, the records created from prior runs may be deleted (possibly having been copied elsewhere for archival purposes.)
 
-=== Run History File
+==== Run History File
 The Run History File is another cumulative product that records information about each successful MMTC run that is executed. While it can be useful to users for tracking things such as: the state of output products before and
 after each MMTC run; the system user responsible for each run; the time a run was executed; and more, its primary purpose is to enable output product rollback (discussed later) and therefore should never be manually modified due to risk of interfering with or preventing successful rollback in the future.
+
+=== Custom Output Products
+
+MMTC users and adaptations can declare one or many custom output products in configuration.  These custom output products are implemented by external jars (compiled against mmtc-core) which contain at least one implementation of the `OutputProductDefinitionFactory` interface.  These output product implementations:
+- must be defined as `OutputProductDefinitions` that extend either `AppendedFileOutputProductDefinition` or `EntireFileOutputProductDefinition`
+- are written last in a correlation run, and are included in the Run History file, rollback, and sandboxing functionality
+- are provided a `TimeCorrelationContext` from which to pull information about the current or past correlations
+
+The overall process for implementing a new Output Product plugin and providing it to MMTC for usage is:
+
+1. Writing a new Java implementation of its `OutputProductDefinitionFactory` interface, which its provides one or several `OutputProductDefinition` implementations
+2. Building and packaging it into a Java .jar file according to the Java ServiceLoader convention
+3. Placing the jar file in a location accessible to MMTC and supplying corresponding configuration in TimeCorrelationConfigProperties.xml.
+
+==== Quick Start
+
+MMTC includes an example standalone Gradle project that builds a functional sample Output Product plugin that can be immediately used with MMTC, and which can serve as a basis for new plugins.
+
+The directory structure of the sample project is as follows:
+
+[source, subs="attributes"]
+----
+├── build.gradle.kts
+├── docs
+│ └── MMTC_Users_Guide.pdf
+├── gradle
+│ └── wrapper
+│     ├── gradle-wrapper.jar
+│     └── gradle-wrapper.properties
+├── gradlew
+├── lib
+│ └── edu
+│     └── jhuapl
+│         └── sd
+│             └── sig
+│                 └── mmtc-core
+│                     └── {revnumber}
+│                         ├── mmtc-core-{revnumber}.jar
+│                         ├── mmtc-core-{revnumber}-javadoc.jar
+│                         ├── mmtc-core-{revnumber}.pom
+│                         └── mmtc-core-{revnumber}-sources.jar
+├── settings.gradle.kts
+└── src
+    └── main
+        ├── java
+        │ └── edu
+        │     └── jhuapl
+        │         └── sd
+        │             └── sig
+        │                 └── mmtc
+        │                     └── products
+        │                         └── definition
+        │                             ├── ExampleAppendedFileOutputProductDefinition.java
+        │                             ├── ExampleEntireFileOutputProductDefinition.java
+        │                             └── ExampleOutputProductDefinitionFactory.java
+        └── resources
+            └── META-INF
+                └── services
+                    └── edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinitionFactory
+----
+
+To build and use the plugin:
+
+1. Acquire the SDK artifact `mmtc-{revnumber}-output-plugin-sdk.zip`, either from an MMTC release or by building from the MMTC repository: `./gradlew :mmtc-output-plugin-sdk:createSdkDist`
+2. Unzip the archive, which will create the file structure illustrated above.
+3. From the root of the SDK's Gradle project, run `./gradlew build`
+4. Configure your MMTC deployment as follows (assuming your MMTC installation is located at `/opt/local/mmtc`):
+- Copy the resulting `build/libs/mmtc-output-plugin-example-1.0.0-SNAPSHOT.jar` file into `/opt/local/mmtc/lib/plugins`
+- Apply the following configuration in `/opt/local/mmtc/conf/TimeCorrelationConfigProperties.xml`:
+
+    <entry key="product.plugin.outputProductNames">CustomProduct1,CustomProduct2</entry>
+    <entry key="product.plugin.CustomProduct1.pluginDirectory">/opt/local/mmtc/lib/plugins/</entry>
+    <entry key="product.plugin.CustomProduct1.pluginJarPrefix">mmtc-output-plugin-example</entry>
+    <entry key="product.plugin.CustomProduct1.outputProductType">Example Entire File Product</entry>
+    <entry key="product.plugin.CustomProduct1.enabled">true</entry>
+    <entry key="product.plugin.CustomProduct1.config.customHeaderContent">My Custom Header Content</entry>
+    <entry key="product.plugin.CustomProduct1.config.customFooterContent">My Custom Footer Content</entry>
+    <entry key="product.plugin.CustomProduct2.pluginDirectory">/opt/local/mmtc/lib/plugins/</entry>
+    <entry key="product.plugin.CustomProduct2.pluginJarPrefix">mmtc-output-plugin-example</entry>
+    <entry key="product.plugin.CustomProduct2.outputProductType">Example Appended File Product</entry>
+    <entry key="product.plugin.CustomProduct2.enabled">true</entry>
+
+5. Run MMTC:
+
+    bin/mmtc 2017-342T00:00:00 2017-342T23:59:59 -F --clkchgrate-compute p
+
+6. View the plugin-provided output products located at:
+
+    /opt/local/mmtc/output/Example-Appended-File.csv
+    /opt/local/mmtc/output/Example-Entire-File_1001.txt
+
+
+==== Writing a new _OutputProductDefinitionFactory_ Implementation
+
+To develop a new plugin, a developer needs to implement the _OutputProductDefinitionFactory_ interface.  An implementation of _OutputProductDefinitionFactory_ performs two main tasks:
+
+1. Informing MMTC of the type of products in can create (identified by unique strings returned from `OutputProductDefinitionFactory#getApplicableTypes()`, called by MMTC on startup)
+
+2. Instantiating instances of these output product types (via `OutputProductDefinition<?> create(String type, String name, Map<String, String> config)`, called by MMTC for each enabled output product that has a type that this plugin  provides.)
+
+The returned `OutputProductDefinition` instances must be of types that extend from one of these two provided base classes:
+
+- `AppendedFileOutputProductDefinition`: plaintext products for which only one file will ever exist, and which has one or many lines appended to it with each successful time correlation (e.g. plaintext files, CSV files, logs, etc.)
+
+- `EntireFileOutputProductDefinition`: any product type which will produce a new file with each successful time correlation, and which has an advancing version number encoded in the middle of its filename (e.g. `myfile_0001.bin`)
+
+In particular, before and during implementation of a new Output Product plugin, please read and understand the Javadoc and comments in the MMTC source for at least the following classes:
+
+* edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinitionFactory
+* edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition
+
+The following methods must be implemented for each new product type that is implemented:
+
+* For new classes extending `EntireFileOutputProductDefinition`:
+** `ProductWriteResult writeNewProduct(TimeCorrelationContext ctx)`
+** `ResolvedProductDirPrefixSuffix resolveLocation(MmtcConfig config)`
+** `boolean shouldBeWritten(TimeCorrelationContext ctx)`
+** `Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputDir)`
+* For new classes extending `AppendedFileOutputProductDefinition`:
+** `ProductWriteResult appendToProduct(TimeCorrelationContext ctx)`
+** `ResolvedProductPath resolveLocation(MmtcConfig config)`
+** `boolean shouldBeWritten(TimeCorrelationContext ctx)`
+** `Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputPath)`
+
+This implementation and all other supporting classes and/or libraries must be packaged in a jar file, along with a `META-INF/services` directory containing a service provider configuration file that identifies the class(es) that implement the OutputProductDefinitionFactory.  Please reference the above sample project for an example of a compliant implementation.
+
+==== Configuring Custom Output Products
+
+For MMTC to configure plugin-provided output products at runtime, the following configuration must be in place within MMTC's TimeCorrelationConfigProperties.xml file:
+
+* the *product.plugin.outputProductNames* configuration parameter must specify a comma-separated list of strings that provide (custom) names for each additional, plugin-provided output product
+* for each product name given in the key above, the following configuration must be specified:
+** *product.plugin.[name].pluginDirectory*: the directory containing the jar that implements this product's type
+** *product.plugin.[name].pluginJarPrefix*: the prefix of the jar that uniquely specifies the start of the plugin jar file's name within the above directory
+** *product.plugin.[name].outputProductType*: the type of the output product (that will be recognized and is able to be created by an OutputProductDefinitionFactory within the above jar)
+** *product.plugin.[name].enabled*: whether the product should be enabled (`true`) or not (`false`)
+** *product.plugin.[name].config.**: optional configuration key namespace to pass key-value configuration for this product, via its matching `OutputProductDefinitionFactory's` `create` method
+
+
+Please note that a single plugin jar may include more than one _OutputProductDefinitionFactory_ or _OutputProductDefinition_ implementations.
+
 
 == Output Product Rollback
 MMTC 1.5.0 and later provides a simple system for users to revert all of MMTC's output products back to an earlier state. Rollback makes use of the Run History File to determine which output products and

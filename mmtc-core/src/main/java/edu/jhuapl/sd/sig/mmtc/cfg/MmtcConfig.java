@@ -12,10 +12,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import edu.jhuapl.sd.sig.mmtc.products.definition.*;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.TelemetrySelectionStrategy;
 
+import edu.jhuapl.sd.sig.mmtc.util.FileUtils;
 import edu.jhuapl.sd.sig.mmtc.util.IsolatingUrlClassLoader;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
@@ -48,6 +50,7 @@ public abstract class MmtcConfig {
 
     protected final Path mmtcHome;
     protected final TimeCorrelationConfig timeCorrelationConfig;
+    protected final List<OutputProductDefinition<?>> allProductDefs;
 
     protected GroundStationMap groundStationMap;
     protected SclkPartitionMap sclkPartitionMap;
@@ -75,6 +78,136 @@ public abstract class MmtcConfig {
             throw new MmtcException("Error loading " + sclkPartitionMap.getPath());
         }
         logger.info("Loaded SCLK clock partition map " + sclkPartitionMap.getPath());
+
+        this.allProductDefs = Collections.unmodifiableList(constructAllOutputProductDefinitions());
+    }
+
+    public List<OutputProductDefinition<?>> getAllOutputProductDefs() {
+        return this.allProductDefs;
+    }
+
+    private List<OutputProductDefinition<?>> constructAllOutputProductDefinitions() throws MmtcException, IOException {
+        final List<OutputProductDefinition<?>> productDefs = new ArrayList<>();
+
+        // first, load all built-in product defs
+        {
+            final OutputProductDefinitionFactory builtInProdDefFactory = new BuiltInOutputProductDefinitionFactory();
+            for (String builtInProductType : builtInProdDefFactory.getApplicableTypes()){
+                final OutputProductDefinition<?> def = builtInProdDefFactory.create(builtInProductType, null, null);
+                def.setIsBuiltIn(true);
+                productDefs.add(def);
+            }
+        }
+
+        // next, load all plugin-provided product defs
+        final List<PluginProvidedProductConfig> pluginProvidedProductConfigs = new ArrayList<>();
+        for (String productName : getStringArray("product.plugin.outputProductNames")) {
+            final PluginProvidedProductConfig pluginProductConfig = PluginProvidedProductConfig.createFrom(this, productName);
+
+            if (pluginProductConfig.enabled) {
+                pluginProvidedProductConfigs.add(pluginProductConfig);
+            }
+        }
+
+        productDefs.addAll(loadAllPluginProvidedOutputProductDefinitionFor(pluginProvidedProductConfigs));
+
+        // ensure product definitions provide unique names
+        if (productDefs.stream().map(def -> def.getName()).collect(Collectors.toSet()).size() != productDefs.size()) {
+            throw new IllegalStateException("Please check your loaded configuration and/or plugins to ensure all output products have unique names.  Loaded names are: " + productDefs.stream().map(def -> def.getName()).collect(Collectors.toList()));
+        }
+
+        // lastly, validate that they're all of either of the two supported types (constrained by the rollback feature)
+        for (OutputProductDefinition<?> def : productDefs) {
+            if ((! (def instanceof EntireFileOutputProductDefinition)) && (! (def instanceof AppendedFileOutputProductDefinition))) {
+                throw new IllegalStateException("Product def " + def.getName() + " must either be subclassed from EntireFileProductDefinition or AppendedFileOutputProductDefinition");
+            }
+        }
+
+        return productDefs;
+    }
+
+    private static List<OutputProductDefinition<?>> loadAllPluginProvidedOutputProductDefinitionFor(List<PluginProvidedProductConfig> pluginProvidedProductConfigs) throws MmtcException, IOException {
+        final Map<PluginProvidedProductConfig, Path> perConfigPluginJar = new HashMap<>();
+        final Map<Path, ServiceLoader<OutputProductDefinitionFactory>> perJarServiceLoaders = new HashMap<>();
+
+        // iterate through defined plugin products, using ServiceLoader to load all OutputProductDefinitionFactorys from each referenced jar once
+        for (PluginProvidedProductConfig pluginProdConf : pluginProvidedProductConfigs) {
+            final Path pluginJarPath = FileUtils.findUniqueJarFileWithinDir(pluginProdConf.pluginDir, pluginProdConf.pluginJarPrefix);
+            perConfigPluginJar.put(pluginProdConf, pluginJarPath);
+
+            if (! perJarServiceLoaders.containsKey(pluginJarPath)) {
+                logger.info("Loading output product plugin implementations from {}", pluginJarPath);
+
+                final URL[] urls = { pluginJarPath.toAbsolutePath().toUri().toURL() };
+
+                // not closing this classloader here, because if we did, further classes won't be able to be loaded from the jar file
+                URLClassLoader cl = new IsolatingUrlClassLoader(urls);
+                final ServiceLoader<OutputProductDefinitionFactory> outputProductDefFactoryLoader = ServiceLoader.load(OutputProductDefinitionFactory.class, cl);
+                perJarServiceLoaders.put(pluginJarPath, outputProductDefFactoryLoader);
+            }
+        }
+
+        // check that factories can't produce defs of the same type; ensure the factories specify completely separate types
+        {
+            final Set<String> allProvidedTypes = new HashSet<>();
+            for (Map.Entry<Path, ServiceLoader<OutputProductDefinitionFactory>> entry : perJarServiceLoaders.entrySet()) {
+                ServiceLoader<OutputProductDefinitionFactory> sl = entry.getValue();
+                for (OutputProductDefinitionFactory fact : sl) {
+
+                    if (fact instanceof BuiltInOutputProductDefinitionFactory) {
+                        // this can be picked up due to IsolatingUrlClassLoader's delegation behavior; skip it here
+                        continue;
+                    }
+
+                    for (String t : fact.getApplicableTypes()) {
+                        if (allProvidedTypes.contains(t) || BuiltInOutputProductDefinitionFactory.BUILT_IN_PRODUCT_TYPES.contains(t)) {
+                            throw new IllegalStateException("More than one of a loaded plugin or MMTC core provides a product of type: " + t);
+                        }
+                        allProvidedTypes.add(t);
+                    }
+                }
+            }
+        }
+
+        final List<OutputProductDefinition<?>> productDefs = new ArrayList<>();
+        for (PluginProvidedProductConfig pluginProdConf : pluginProvidedProductConfigs) {
+            final Path jarWithImpl = perConfigPluginJar.get(pluginProdConf);
+            final ServiceLoader<OutputProductDefinitionFactory> serviceLoader = perJarServiceLoaders.get(jarWithImpl);
+            for (OutputProductDefinitionFactory prodDefFactory : serviceLoader) {
+                if (prodDefFactory.getApplicableTypes().contains(pluginProdConf.outputProductType)) {
+                    final OutputProductDefinition<?> def = prodDefFactory.create(
+                            pluginProdConf.outputProductType,
+                            pluginProdConf.outputProductName,
+                            pluginProdConf.config
+                    );
+                    def.setIsBuiltIn(false);
+                    productDefs.add(def);
+
+                    logger.info(String.format(
+                            "Initialized output product configuration for %s (of type %s) from %s",
+                            pluginProdConf.outputProductName,
+                            pluginProdConf.outputProductType,
+                            jarWithImpl
+                    ));
+                }
+            }
+        }
+
+        return productDefs;
+    }
+
+    protected String getEnsureNotEmpty(String key) throws MmtcException {
+        if (! containsKey(key)) {
+            throw new MmtcException("No such key: " + key);
+        }
+
+        final String val = getString(key);
+
+        if (val.trim().isEmpty()) {
+            throw new MmtcException("Empty value for key: " + key);
+        }
+
+        return val;
     }
 
     @Override
@@ -108,19 +241,7 @@ public abstract class MmtcConfig {
                 }
             }
         } else {
-            final Path pluginJarPath;
-
-            try (Stream<Path> files = Files.list(getTelemetrySourcePluginDirectory())) {
-                List<Path> results = files.filter(p -> p.toString().endsWith(".jar"))
-                        .filter(p -> p.getFileName().toString().startsWith(getTelemetrySourcePluginJarPrefix()))
-                        .collect(Collectors.toList());
-
-                if (results.size() != 1) {
-                    throw new MmtcException(String.format("A unique plugin jar was not found at the given location: %d matching jars found at %s", results.size(), getTelemetrySourcePluginDirectory()));
-                }
-
-                pluginJarPath = results.get(0);
-            }
+            final Path pluginJarPath = FileUtils.findUniqueJarFileWithinDir(getTelemetrySourcePluginDirectory(), getTelemetrySourcePluginJarPrefix());
 
             // load tlm plugin from an external jar
             logger.info("Loading telemetry source implementation from {}", pluginJarPath);
@@ -517,12 +638,8 @@ public abstract class MmtcConfig {
         return ensureAbsolute(Paths.get(timeCorrelationConfig.getConfig().getString("table.runHistoryFile.path")));
     }
 
-    /**
-     * Gets the location of the output Summary Table.
-     * @return the path to the input and output Summary Table
-     */
-    public Path getSummaryTablePath() {
-        return ensureAbsolute(Paths.get(timeCorrelationConfig.getConfig().getString("table.summaryTable.path")));
+    public boolean createTimeHistoryFile() {
+        return timeCorrelationConfig.getConfig().getBoolean("table.timeHistoryFile.create", true);
     }
 
     /**
@@ -947,6 +1064,18 @@ public abstract class MmtcConfig {
 
     public Boolean getBoolean(String key) {
         return timeCorrelationConfig.getConfig().getBoolean(key);
+    }
+
+    public List<String> getKeysWithPrefix(String keyPrefix) {
+        final List<String> keys = new ArrayList<>();
+
+        Iterator<String> keyIterator = timeCorrelationConfig.getConfig().getKeys(keyPrefix);
+
+        while (keyIterator.hasNext()) {
+            keys.add(keyIterator.next());
+        }
+
+        return keys;
     }
 
     public int getInt(String key) {

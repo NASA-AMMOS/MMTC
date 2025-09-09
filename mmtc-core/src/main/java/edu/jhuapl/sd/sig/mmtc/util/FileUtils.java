@@ -1,11 +1,17 @@
 package edu.jhuapl.sd.sig.mmtc.util;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FileUtils {
     private static final Logger logger = LogManager.getLogger();
@@ -41,5 +47,38 @@ public class FileUtils {
 
     public static boolean fileExistsAndIsWritable(Path p) {
         return Files.exists(p) && Files.isWritable(p);
+    }
+
+    public static Path findUniqueJarFileWithinDir(Path containingDir, String jarPrefix) throws IOException, MmtcException {
+        try (Stream<Path> files = Files.list(containingDir)) {
+            List<Path> results = files.filter(p -> p.toString().endsWith(".jar"))
+                    .filter(p -> p.getFileName().toString().startsWith(jarPrefix))
+                    .collect(Collectors.toList());
+
+            if (results.size() != 1) {
+                throw new MmtcException(String.format("A unique plugin jar was not found at the given location: %d matching jars found at %s", results.size(), containingDir));
+            }
+
+            return results.get(0);
+        }
+    }
+
+    public static Long countNumLinesInFile(Path path) throws IOException {
+        try (Stream<String> lineStream = Files.lines(path)) {
+            return lineStream.count();
+        }
+    }
+
+    public static Integer truncateLinesTo(Path pathToProduct, int linesRemainingAfterTruncation) throws IOException {
+        final List<String> allOriginalLines = Files.readAllLines(pathToProduct);
+        final List<String> linesToKeep = allOriginalLines.subList(0, linesRemainingAfterTruncation);
+
+        // all MMTC output products that are appended to currently end with a newline, which is POSIX convention
+        Files.write(
+                pathToProduct,
+                (String.join("\n", linesToKeep) + "\n").getBytes(StandardCharsets.UTF_8)
+        );
+
+        return allOriginalLines.size() - linesToKeep.size();
     }
 }

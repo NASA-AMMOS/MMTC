@@ -20,7 +20,7 @@ dependencies {
     testImplementation(testlibs.mockito.inline)
 }
 
-description = "mmtc-tlm-plugin-example"
+description = "mmtc-output-plugin-example"
 
 java {
     withJavadocJar()

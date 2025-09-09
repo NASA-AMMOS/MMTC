@@ -11,9 +11,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
-// todo: make this immutable somehow (maybe adopt set-once or builder pattern)
 public class TimeCorrelationContext {
     public final CorrelationInfo correlation = new CorrelationInfo();
     public final GeometryInfo geometry = new GeometryInfo();
@@ -21,14 +19,16 @@ public class TimeCorrelationContext {
 
     public final TimeCorrelationAppConfig config;
     public final TelemetrySource telemetrySource;
-    private final List<String> warnings;
     public final OffsetDateTime appRunTime;
+    public final Settable<Integer> runId = new Settable<>();
 
     public final Settable<SclkKernel> currentSclkKernel = new Settable<>();
     public final Settable<String> newSclkVersionString = new Settable<>();
     public final Settable<Path> newSclkKernelPath = new Settable<>();
     public final Settable<Integer> tk_sclk_fine_tick_modulus = new Settable<>();
     public final Settable<Integer> sclk_kernel_fine_tick_modulus = new Settable<>();
+
+    private final List<String> warnings;
 
     public TimeCorrelationContext(final TimeCorrelationAppConfig config) {
         this.config = config;

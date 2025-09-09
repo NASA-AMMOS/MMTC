@@ -3,7 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.products.model;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
@@ -66,7 +66,7 @@ public class UplinkCmdFile {
      * @throws MmtcException if the Uplink Command File cannot be written
      * @return a ProductWriteResult describing the newly-written product
      */
-    public static OutputProductDefinition.ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         String cmdFilespec = "";
         try {
             final UplinkCommand uplinkCmd = generateNewProduct(ctx);
@@ -79,7 +79,7 @@ public class UplinkCmdFile {
                     ctx.config.getUplinkCmdFileDir(), cmdFilename
             ).toString());
 
-            return new OutputProductDefinition.ProductWriteResult(
+            return new ProductWriteResult(
                     cmdFile.write(uplinkCmd),
                     Long.toString(ctx.appRunTime.toEpochSecond())
             );

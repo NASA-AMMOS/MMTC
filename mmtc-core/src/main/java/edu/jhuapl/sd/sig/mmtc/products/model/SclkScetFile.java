@@ -3,7 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.products.model;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
@@ -662,12 +662,12 @@ public class SclkScetFile extends TextProduct {
      * @throws MmtcException if the SCLK-SCET File cannot be written
      * @return a ProductWriteResult describing the updated product
      */
-    public static OutputProductDefinition.ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
 
         try {
             final SclkScetFile scetFile = calculateNewProduct(ctx);
 
-            return new OutputProductDefinition.ProductWriteResult(
+            return new ProductWriteResult(
                     scetFile.createNewSclkScetFile(ctx.newSclkKernelPath.get().toString()),
                     ctx.newSclkVersionString.get()
             );

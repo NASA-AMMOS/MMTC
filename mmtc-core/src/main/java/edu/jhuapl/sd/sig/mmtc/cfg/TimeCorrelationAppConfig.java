@@ -81,7 +81,6 @@ public class TimeCorrelationAppConfig extends MmtcConfig{
         logger.debug(toString());
     }
 
-
     public TelemetrySource getTelemetrySource() {
         return telemetrySource;
     }
