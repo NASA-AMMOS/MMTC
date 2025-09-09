@@ -47,6 +47,18 @@ public class UplinkCmdFile {
         return Paths.get(filespec);
     }
 
+    public static UplinkCommand generateNewProduct(TimeCorrelationContext ctx) throws TimeConvertException {
+        UplinkCommand uplinkCmd = new UplinkCommand(
+                ctx.correlation.target.get().getTargetSample().getTkSclkCoarse(),
+                ctx.correlation.target.get().getTargetSampleEtG(),
+                ctx.correlation.target.get().getTargetSampleTdtG(),
+                TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG()),
+                ctx.correlation.predicted_clock_change_rate.get()
+        );
+
+        return uplinkCmd;
+    }
+
     /**
      * Writes a new Uplink Command File
      * @param ctx the current time correlation context from which to pull information for the output product
@@ -57,13 +69,7 @@ public class UplinkCmdFile {
     public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         String cmdFilespec = "";
         try {
-            final UplinkCommand uplinkCmd = new UplinkCommand(
-                    ctx.correlation.target.get().getTargetSample().getTkSclkCoarse(),
-                    ctx.correlation.target.get().getTargetSampleEtG(),
-                    ctx.correlation.target.get().getTargetSampleTdtG(),
-                    TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG()),
-                    ctx.correlation.predicted_clock_change_rate.get()
-            );
+            final UplinkCommand uplinkCmd = generateNewProduct(ctx);
 
             final String cmdFilename = ctx.config.getUplinkCmdFileBasename() +
                     ctx.appRunTime.toEpochSecond() +

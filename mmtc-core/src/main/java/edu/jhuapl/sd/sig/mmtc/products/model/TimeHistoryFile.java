@@ -142,12 +142,16 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
     }
 
     /**
-     * Writes the next record for the Time History File (and updates the prior interpolated clock change rate, if applicable)
-     *
-     * @throws MmtcException if an unhandled MMTC configuraiton or other operation fails
-     * @throws TimeConvertException if a time conversion operation fails
+     * Helper function for creation of a new Time History file record. Takes a reference to a time history file record
+     * and modifies it in place so its caller can eventually write it or print it in the case of dry runs
+     * @param ctx
+     * @param timeHistoryFile
+     * @param newThfRec
+     * @return a TableRecord with the updated contents of the time history file
+     * @throws MmtcException
+     * @throws TimeConvertException
      */
-    private static void writeNewRow(TimeCorrelationContext ctx, TimeHistoryFile timeHistoryFile, TableRecord newThfRec) throws MmtcException, TimeConvertException, TextProductException {
+    public static void generateNewTimeHistRec(TimeCorrelationContext ctx, TimeHistoryFile timeHistoryFile, TableRecord newThfRec) throws MmtcException, TimeConvertException {
         final DecimalFormat tdf = new DecimalFormat("#.000000");
         tdf.setRoundingMode(RoundingMode.HALF_UP);
 
@@ -300,7 +304,16 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         newThfRec.setValue(TimeHistoryFile.RADIO_ID,                  ctx.ancillary.active_radio_id.get());
         newThfRec.setValue(TimeHistoryFile.OSCILLATOR,                ctx.ancillary.oscillator_id.get());
         newThfRec.setValue(TimeHistoryFile.OSCILLATOR_TEMP_DEGC,      String.valueOf(ctx.ancillary.oscillator_temperature_deg_c.get()));
+    }
 
+    /**
+     * Writes the next record for the Time History File (and updates the prior interpolated clock change rate, if applicable)
+     *
+     * @throws MmtcException if an unhandled MMTC configuration or other operation from the helper function fails
+     * @throws TimeConvertException if a time conversion operation fails
+     */
+    private static void writeNewRow(TimeCorrelationContext ctx, TimeHistoryFile timeHistoryFile, TableRecord newThfRec) throws MmtcException, TimeConvertException, TextProductException {
+        generateNewTimeHistRec(ctx, timeHistoryFile, newThfRec);
         timeHistoryFile.writeRecord(newThfRec);
     }
 }

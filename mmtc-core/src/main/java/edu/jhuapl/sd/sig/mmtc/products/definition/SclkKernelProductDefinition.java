@@ -1,15 +1,13 @@
 package edu.jhuapl.sd.sig.mmtc.products.definition;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
-import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
 
 /**
  * Describes the set of SCLK kernel output products that MMTC performs operations on.
@@ -21,11 +19,10 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     }
 
     @Override
-    public ResolvedProductDirPrefixSuffix resolveLocation(MmtcConfig conf) {
-        return new ResolvedProductDirPrefixSuffix(
+    public ResolvedProductDirAndPrefix resolveLocation(RollbackConfig conf) {
+        return new ResolvedProductDirAndPrefix(
                 conf.getSclkKernelOutputDir().toAbsolutePath(),
-                conf.getSclkKernelBasename(),
-                SclkKernel.FILE_SUFFIX
+                conf.getSclkKernelBasename()
         );
     }
 
@@ -46,9 +43,14 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     }
 
     @Override
-    public Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputDir) {
-        final Map<String, String> confUpdates = new HashMap<>();
-        confUpdates.put("spice.kernel.sclk.kerneldir", newProductOutputDir.toAbsolutePath().toString());
-        return confUpdates;
+    public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
+        try {
+            SclkKernel newKernel = SclkKernel.calculateNewProduct(ctx);
+            newKernel.updateFile();
+            String[] newSclkEntries = newKernel.getLastXRecords(2);
+            return String.format("New SCLK entries: \n"+newSclkEntries[0]+"\n "+newSclkEntries[1]);
+        } catch (TimeConvertException | TextProductException | IOException e) {
+            throw new MmtcException("Unable to generate SCLK kernel", e);
+        }
     }
 }

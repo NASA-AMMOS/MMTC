@@ -92,6 +92,14 @@ public class CorrelationCommandLineConfig implements IConfiguration {
                 "Run in test mode, which allows the user to override one-way-light-time."
         );
 
+        opts.addOption(
+                "D",
+                "dry-run",
+                false,
+                "Executes a dry run of MMTC with outputs calculated as otherwise configured " +
+                        "but only records them in the log without writing/modifying product files."
+        );
+
         opts.addOption("h", "help", false, "Print this message.");
 
         for (Option additionalOption : additionalOptions) {
@@ -174,6 +182,10 @@ public class CorrelationCommandLineConfig implements IConfiguration {
 
     boolean isTestMode() {
         return cmdLine.hasOption("T") || cmdLine.hasOption("test-mode-owlt");
+    }
+
+    boolean isDryRun() {
+        return cmdLine.hasOption("D") || cmdLine.hasOption("dry-run");
     }
 
     double getTestModeOwlt() {

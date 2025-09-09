@@ -364,6 +364,18 @@ public class SclkKernel extends TextProduct {
     }
 
     @Override
+    public String[] getLastXRecords(int numRecords) {
+        if(numRecords < 1) { return new String[0]; }
+        int lastRecordIndex = lastDataRecNum(newProductLines);
+
+        String[] records = new String[numRecords];
+        for(int i=lastRecordIndex-(numRecords-1), j=0;i < lastRecordIndex+1; i++, j++) {
+            records[j] = newProductLines.get(i);
+        }
+        return records;
+    }
+
+    @Override
     public void readSourceProduct() throws IOException, TextProductException {
         super.readSourceProduct();
         this.endDataNum = lastDataRecNum(sourceProductLines);
@@ -376,6 +388,31 @@ public class SclkKernel extends TextProduct {
         return Paths.get(getPath()).getFileName().toString().replace(sclkBaseName + separator, "").replace(FILE_SUFFIX, "");
     }
 
+
+    /**
+     * Generates a new SCLK Kernel but doesn't yet write it to file. Helper method for writeNewProduct
+     * @param ctx
+     * @return
+     * @throws TimeConvertException
+     */
+    public static SclkKernel calculateNewProduct(TimeCorrelationContext ctx) throws TimeConvertException, TextProductException {
+        final SclkKernel newSclkKernel = new SclkKernel(ctx.currentSclkKernel.get());
+
+        newSclkKernel.setProductCreationTime(ctx.appRunTime);
+        newSclkKernel.setDir(ctx.config.getSclkKernelOutputDir().toString());
+        newSclkKernel.setName(ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc");
+        newSclkKernel.setNewTriplet(
+                ctx.correlation.target.get().getTargetSampleEncSclk(),
+                TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG()),
+                ctx.correlation.predicted_clock_change_rate.get()
+        );
+
+        if (ctx.correlation.interpolated_clock_change_rate.isSet()) {
+            newSclkKernel.setReplacementClockChgRate(ctx.correlation.interpolated_clock_change_rate.get());
+        }
+        return newSclkKernel;
+    }
+
     /**
      * Writes a new SCLK Kernel
      * @param ctx the current time correlation context from which to pull information for the output product
@@ -385,21 +422,7 @@ public class SclkKernel extends TextProduct {
      */
     public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         try {
-            final SclkKernel newSclkKernel = new SclkKernel(ctx.currentSclkKernel.get());
-
-            newSclkKernel.setProductCreationTime(ctx.appRunTime);
-            newSclkKernel.setDir(ctx.config.getSclkKernelOutputDir().toString());
-            newSclkKernel.setName(ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc");
-            newSclkKernel.setNewTriplet(
-                    ctx.correlation.target.get().getTargetSampleEncSclk(),
-                    TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG()),
-                    ctx.correlation.predicted_clock_change_rate.get()
-            );
-
-            if (ctx.correlation.interpolated_clock_change_rate.isSet()) {
-                newSclkKernel.setReplacementClockChgRate(ctx.correlation.interpolated_clock_change_rate.get());
-            }
-
+            final SclkKernel newSclkKernel = calculateNewProduct(ctx);
             newSclkKernel.createFile();
 
             final Path path = Paths.get(newSclkKernel.getPath());
