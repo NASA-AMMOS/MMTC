@@ -1120,6 +1120,11 @@ source.name is not set to rawTlmTable.
 |STR
 |The basename of the telemetry source plugin jar file that should be used. This parameter is ignored if telemetry.source.name is rawTlmTable.
 
+|telemetry.cacheFilePath
+|OPTIONAL
+|STR
+|The filepath where MMTC should maintain its telemetry cache.  If a value is given, MMTC will begin caching time correlation telemetry it retrieves from the telemetry source to a sqlite file at this location.  If a value is not specified for this key, MMTC will perform no telemetry caching.
+
 |telemetry.tkOscTempWindowSec
 |OPTIONAL
 |INT
@@ -1960,6 +1965,22 @@ MMTC will print out the names of all files modified (or potentially files that f
 Prior runs that were rolled back are not deleted from the Run History File but are flagged as previously involved in rollback and will be ignored by any future rollbacks.
 
 Insufficient system permissions to remove relevant files are the most likely source of rollback failures, so it is recommended that users verify that they have the requisite permissions to modify MMTC output products prior to initiating rollback.
+
+== Telemetry Caching
+
+MMTC supports optional telemetry caching.  This is helpful when rerunning MMTC over the same time period of telemetry, especially in the following cases:
+
+- during adaptation, integration, and testing
+- for use with the MMTC UI
+- when adjusting configuration during anomaly resolution or otherwise
+
+To enable telemetry caching, populate the configuration key `telemetry.cacheFilePath` with a filepath.  MMTC will begin maintaining a cache of time correlation telemetry in a sqlite cache at this path.
+
+MMTC also offers two commands to interact with the cache:
+- `mmtc precache <start time> <stop time>`: pre-load the cache with telemetry over the specified time range
+- `mmtc cache-stats`: log information about the contents of the telemetry cache
+
+To clear the cache, simply delete this file when MMTC is not running.
 
 == Filters
 

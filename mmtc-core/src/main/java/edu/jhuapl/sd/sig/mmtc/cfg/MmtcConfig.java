@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 
 import edu.jhuapl.sd.sig.mmtc.products.definition.*;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.TelemetrySelectionStrategy;
 
@@ -265,8 +266,13 @@ public abstract class MmtcConfig {
             throw new MmtcException(String.format("Cannot find telemetry source with name %s; please check configuration and plugin availability", getTelemetrySourceName()));
         }
 
-        logger.info("Loaded telemetry source {}", tlmSource.getName());
-        return tlmSource;
+        if (isTelemetrySourceCachingEnabled()) {
+            logger.info("Loaded telemetry source {} with caching enabled", tlmSource.getName());
+            return new CachingTelemetrySource(getTelemetrySourceCacheLocation(), tlmSource);
+        } else {
+            logger.info("Loaded telemetry source {}", tlmSource.getName());
+            return tlmSource;
+        }
     }
 
     /**
@@ -465,6 +471,18 @@ public abstract class MmtcConfig {
 
     public String getTelemetrySourcePluginJarPrefix() {
         return timeCorrelationConfig.getConfig().getString("telemetry.source.pluginJarPrefix");
+    }
+
+    public boolean isTelemetrySourceCachingEnabled() {
+        if (containsKey("telemetry.cacheFilePath")) {
+            return ! getString("telemetry.cacheFilePath").isEmpty();
+        }
+
+        return false;
+    }
+
+    public Path getTelemetrySourceCacheLocation() {
+        return Paths.get(timeCorrelationConfig.getConfig().getString("telemetry.cacheFilePath")).toAbsolutePath();
     }
 
     /**

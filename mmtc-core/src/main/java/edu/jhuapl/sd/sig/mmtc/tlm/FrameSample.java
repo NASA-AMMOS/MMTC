@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Objects;
 
 import static edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable.*;
 
@@ -33,6 +34,7 @@ import static edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable.*;
  * This class, and the rest of MMTC, assumes that the SCLK is a two-stage spacecraft clock.
  */
 public class FrameSample {
+
     public enum ValidState {
         VALID,
         INVALID,
@@ -245,6 +247,14 @@ public class FrameSample {
         this.frameSizeBits = -1;
     }
 
+    public int getSclkCoarse() {
+        return this.sclkCoarse;
+    }
+
+    public int getSclkFine() {
+        return this.sclkFine;
+    }
+
     public void setSclkCoarse(int sclkCoarse) { this.sclkCoarse = sclkCoarse; }
 
     public void setSclkFine(int sclkFine) { this.sclkFine = sclkFine; }
@@ -266,25 +276,38 @@ public class FrameSample {
         // initial "empty" value, and that's what we want to return, anyway.
         return this.ert;
     }
+
     public void setErt(CdsTimeCode ert) {
         this.ert = ert;
         this.ertExplicitlySet = true;
     }
 
     public String getErtStr() {
-        if (!this.ertStrExplicitlySet && this.ertExplicitlySet) {
+        if (! this.ertStrExplicitlySet && this.ertExplicitlySet) {
             try {
                 return TimeConvert.cdsToIsoUtc(this.ert);
-            }
-            catch (TimeConvertException e) {
-                logger.error("ertStr was not explicitly set, and failed to derive it from raw ert value " + this.ert.toString(), e);
+            } catch (TimeConvertException e) {
+                throw new RuntimeException("ertStr was not explicitly set, and failed to derive it from raw ert value " + this.ert.toString(), e);
             }
         }
         return this.ertStr;
     }
+
     public void setErtStr(String ertStr) {
         this.ertStr = ertStr;
         this.ertStrExplicitlySet = true;
+    }
+
+    public boolean isErtExplicitlySet() {
+        return this.ertExplicitlySet;
+    }
+
+    public boolean isErtStrExplicitlySet() {
+        return this.ertStrExplicitlySet;
+    }
+
+    public String getScet() {
+        return scet;
     }
 
     public void setScet(String scet) { this.scet = scet; }
@@ -372,6 +395,11 @@ public class FrameSample {
         // initial "empty" value, and that's what we want to return, anyway.
         return this.suppErt;
     }
+
+    public boolean isSuppErtExplicitlySet() {
+        return this.suppErtExplicitlySet;
+    }
+
     public void setSuppErt(CdsTimeCode suppErt) {
         this.suppErt = suppErt;
         this.suppErtExplicitlySet = true;
@@ -388,9 +416,14 @@ public class FrameSample {
         }
         return this.suppErtStr;
     }
+
     public void setSuppErtStr(String suppErtStr) {
         this.suppErtStr = suppErtStr;
         this.suppErtStrExplicitlySet = true;
+    }
+
+    public boolean isSuppErtStrExplicitlySet() {
+        return this.suppErtStrExplicitlySet;
     }
 
     public double getDerivedTdBe() {
@@ -450,6 +483,7 @@ public class FrameSample {
         return record;
     }
 
+    @Override
     public String toString() {
         return          "--- FrameSample ---\n" +
                         "sclkCoarse (target)     = " + this.sclkCoarse                                  + "\n" +
@@ -513,4 +547,16 @@ public class FrameSample {
 
         return sb.toString();
     };
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        FrameSample that = (FrameSample) o;
+        return sclkCoarse == that.sclkCoarse && sclkFine == that.sclkFine && ertExplicitlySet == that.ertExplicitlySet && ertStrExplicitlySet == that.ertStrExplicitlySet && pathId == that.pathId && vcid == that.vcid && vcfc == that.vcfc && mcfc == that.mcfc && tkSclkCoarse == that.tkSclkCoarse && tkSclkFine == that.tkSclkFine && tkVcid == that.tkVcid && tkVcfc == that.tkVcfc && suppVcid == that.suppVcid && suppVcfc == that.suppVcfc && suppMcfc == that.suppMcfc && suppErtExplicitlySet == that.suppErtExplicitlySet && suppErtStrExplicitlySet == that.suppErtStrExplicitlySet && Double.compare(derivedTdBe, that.derivedTdBe) == 0 && frameSizeBits == that.frameSizeBits && Objects.equals(ert, that.ert) && Objects.equals(ertStr, that.ertStr) && Objects.equals(scet, that.scet) && Objects.equals(tkDataRateBps, that.tkDataRateBps) && Objects.equals(tkRfEncoding, that.tkRfEncoding) && tkIsValid == that.tkIsValid && Objects.equals(suppErt, that.suppErt) && Objects.equals(suppErtStr, that.suppErtStr);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sclkCoarse, sclkFine, ert, ertExplicitlySet, ertStr, ertStrExplicitlySet, scet, pathId, vcid, vcfc, mcfc, tkSclkCoarse, tkSclkFine, tkVcid, tkVcfc, tkDataRateBps, tkRfEncoding, tkIsValid, suppVcid, suppVcfc, suppMcfc, suppErt, suppErtExplicitlySet, suppErtStr, suppErtStrExplicitlySet, derivedTdBe, frameSizeBits);
+    }
 }

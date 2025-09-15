@@ -356,7 +356,7 @@ import spice.basic.*;
 
     /**
      * Converts a CCSDS Day Segmented Time (CDS) code formatted time value
-     * to an ISO UTC calender string. CDS is the time format used by the
+     * to an ISO UTC calendar string. CDS is the time format used by the
      * NASA Deep Space Network (DSN) to indicate Earth Received Time (ERT) in
      * the Ground Receipt Header (GRH) that it attaches to all received
      * telemetry frames.
