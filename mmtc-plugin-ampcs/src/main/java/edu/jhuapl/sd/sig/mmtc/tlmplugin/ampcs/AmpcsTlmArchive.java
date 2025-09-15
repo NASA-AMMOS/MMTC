@@ -77,8 +77,8 @@ public class AmpcsTlmArchive extends AmpcsTelemetrySource {
      * @throws MmtcException when unable to query or parse telemetry
      */
     public List<FrameSample> getSamplesInRange(OffsetDateTime start, OffsetDateTime stop) throws MmtcException {
-        if (!connectedToAmpcs) {
-            throw new MmtcException("Session ID not provided. Call connect(sessionID).");
+        if (! connectedToAmpcs) {
+            throw new MmtcException("Not connected; call connect().");
         }
 
         final List<FrameSample> samples = new ArrayList<>();

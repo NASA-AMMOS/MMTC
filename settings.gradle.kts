@@ -21,6 +21,7 @@ dependencyResolutionManagement {
             library("log4j-api", "org.apache.logging.log4j:log4j-api:2.25.1")
             library("log4j-core", "org.apache.logging.log4j:log4j-core:2.25.1")
             library("log4j-jcl", "org.apache.logging.log4j:log4j-jcl:2.25.1")
+            library("log4j-slf4j", "org.apache.logging.log4j:log4j-slf4j2-impl:2.25.1")
         }
 
         create("testlibs") {
