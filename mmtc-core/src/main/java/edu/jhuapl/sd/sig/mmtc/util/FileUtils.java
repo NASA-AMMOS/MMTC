@@ -1,9 +1,12 @@
 package edu.jhuapl.sd.sig.mmtc.util;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -41,5 +44,9 @@ public class FileUtils {
 
     public static boolean fileExistsAndIsWritable(Path p) {
         return Files.exists(p) && Files.isWritable(p);
+    }
+
+    public static String readResourceToString(String resourceName) throws IOException {
+        return IOUtils.toString(FileUtils.class.getResourceAsStream(resourceName), Charset.defaultCharset());
     }
 }

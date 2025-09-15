@@ -19,6 +19,16 @@ dependencies {
 
     implementation("commons-beanutils:commons-beanutils:1.11.0")
     implementation("org.apache.commons:commons-configuration2:2.12.0")
+    implementation("com.google.guava:guava:33.4.8-jre")
+
+    // implementation(platform("org.jdbi:jdbi3-bom:3.39.1"))
+    // implementation("org.jdbi:jdbi3-core")
+    // implementation("org.jdbi:jdbi3-sqlite")
+    implementation("org.jdbi:jdbi3-core:3.39.1")
+    implementation("org.jdbi:jdbi3-sqlite:3.39.1")
+    implementation(libs.log4j.slf4j) // jdbi3-core uses slf4j-api, and we need to provide it a logging implementation
+    implementation("org.xerial:sqlite-jdbc:3.50.3.0")
+
     implementation(libs.commons.cli)
     implementation(libs.commons.csv)
     implementation(libs.commons.lang3)

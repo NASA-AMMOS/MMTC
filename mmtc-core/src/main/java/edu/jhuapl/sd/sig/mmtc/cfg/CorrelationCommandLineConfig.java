@@ -259,7 +259,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
      * @param dateTimeStr IN:the date/time string
      * @return the date/time as an OffsetDateTime object
      */
-    public OffsetDateTime formDateTime(String dateTimeStr) {
+    public static OffsetDateTime formDateTime(String dateTimeStr) {
 
         String workingStr;
         OffsetDateTime date_time;

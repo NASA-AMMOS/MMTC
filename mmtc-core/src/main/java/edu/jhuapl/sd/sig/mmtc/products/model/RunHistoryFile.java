@@ -17,26 +17,11 @@ import java.util.Arrays;
 import java.util.List;
 
 public class RunHistoryFile extends AbstractTimeCorrelationTable {
-    private static final Logger logger = LogManager.getLogger();
-
     public static final String RUN_TIME = "Run Time";
     public static final String RUN_ID = "Run ID";
     public static final String ROLLEDBACK = "Rolled Back?";
     public static final String RUN_USER = "Run User";
     public static final String CLI_ARGS = "MMTC Invocation Args Used";
-
-    /*
-    public static final String PRERUN_SCLK = "Latest SCLK Kernel Pre-run";
-    public static final String POSTRUN_SCLK = "Latest SCLK Kernel Post-run";
-    public static final String PRERUN_SCLKSCET = "Latest SCLKSCET File Pre-run";
-    public static final String POSTRUN_SCLKSCET = "Latest SCLKSCET File Post-run";
-    public static final String PRERUN_TIMEHIST = "Latest TimeHistoryFile Line Pre-run";
-    public static final String POSTRUN_TIMEHIST = "Latest TimeHistoryFile Line Post-run";
-    public static final String PRERUN_RAWTLMTABLE = "Latest RawTlmTable Line Pre-run";
-    public static final String POSTRUN_RAWTLMTABLE = "Latest RawTlmTable Line Post-run";
-    public static final String PRERUN_UPLINKCMD = "Latest Uplink Command File Pre-run";
-    public static final String POSTRUN_UPLINKCMD = "Latest Uplink Command File Post-run";
-     */
 
     public enum RollbackEntryOption {
         IGNORE_ROLLBACKS,
@@ -81,8 +66,6 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
             headers.add(getPreRunProductColNameFor(def));
             headers.add(getPostRunProductColNameFor(def));
         });
-
-        logger.info("Run History File headers: " + headers.toString());
 
         return headers;
     }
