@@ -2,8 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.app;
 
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.sandbox.MmtcSandboxCreator;
-import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
-import org.apache.commons.cli.*;
+import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.TelemetryCacheUserOperations;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -24,7 +23,9 @@ public class MmtcCli {
     public enum ApplicationCommand {
         CORRELATION,
         ROLLBACK,
-        CREATE_SANDBOX
+        CREATE_SANDBOX,
+        PRECACHE,
+        CACHE_STATS,
     }
 
     private static class ApplicationInvocation {
@@ -45,16 +46,19 @@ public class MmtcCli {
 
         if (Arrays.asList("-h", "--help").contains(cliArgs[0])) {
             final String helpMessage =
-                    "usage: mmtc [correlation|rollback|create-sandbox] [options] <additional arguments>\n" +
+                    "usage: mmtc [correlation|rollback|create-sandbox|precache|cache-stats] [options] <additional arguments>\n" +
                     " -h,--help      Print this message.\n" +
-                    " -v,--version   Print the MMTC version number.\n" +
+                    " -v,--version   Print the MMTC version.\n" +
                     "\n" +
-                    "MMTC can be invoked with one of three commands:\n" +
+                    "MMTC can be invoked with one of the following commands:\n" +
                     "- correlation: run a new correlation (this is the default command if none\n" +
                     "is specified)\n" +
                     "- rollback: roll back (undo) one or many correlations\n" +
                     "- create-sandbox: create a copy of this MMTC installation to run locally,\n" +
                     "without affecting this installation\n" +
+                    "- precache: query the configured telemetry source to proactively retrieve\n" +
+                    "and store time correlation telemetry into a local cache\n" +
+                    "- cache-stats: log statistics about the locally-cached telemetry\n" +
                     "\n" +
                     "For more information on any of these commands, run: mmtc <command> --help";
             System.out.println(helpMessage);
@@ -67,6 +71,10 @@ public class MmtcCli {
             return new ApplicationInvocation(ApplicationCommand.CREATE_SANDBOX, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("correlation")) {
             return new ApplicationInvocation(ApplicationCommand.CORRELATION, removeFirstElement(cliArgs));
+        } else if (cliArgs[0].equalsIgnoreCase("precache")) {
+            return new ApplicationInvocation(ApplicationCommand.PRECACHE, removeFirstElement(cliArgs));
+        } else if (cliArgs[0].equalsIgnoreCase("cache-stats")) {
+            return new ApplicationInvocation(ApplicationCommand.CACHE_STATS, removeFirstElement(cliArgs));
         } else {
             // to maintain backwards compatibility on MMTC's CLI
             return new ApplicationInvocation(ApplicationCommand.CORRELATION, cliArgs);
@@ -116,6 +124,28 @@ public class MmtcCli {
                     logger.fatal("Sandbox creation failed.", e);
                     System.exit(1);
                 }
+                break;
+            }
+            case PRECACHE: {
+                try {
+                    TelemetryCacheUserOperations.precache(appInvoc.args);
+                } catch (Exception e) {
+                    logger.fatal("Precaching failed.", e);
+                    System.exit(1);
+                }
+                break;
+            }
+            case CACHE_STATS: {
+                try {
+                    TelemetryCacheUserOperations.logCacheStatistics(appInvoc.args);
+                } catch (Exception e) {
+                    logger.fatal("Failed to calculate cache statistics.", e);
+                    System.exit(1);
+                }
+                break;
+            }
+            default: {
+                throw new RuntimeException("No such command: " + appInvoc.command);
             }
         }
     }

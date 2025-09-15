@@ -3,6 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.util;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 
 import java.time.OffsetDateTime;
+import java.util.Objects;
 
 /**
  * This class represents a CCSDS Day Segmented (CDS) Time Code, which includes
@@ -196,5 +197,17 @@ public class CdsTimeCode {
     public OffsetDateTime toTime() throws TimeConvertException {
         String utcStr = TimeConvert.cdsToIsoUtc(this.day, this.msOfDay, this.subMs);
         return TimeConvert.parseIsoDoyUtcStr(utcStr);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        CdsTimeCode that = (CdsTimeCode) o;
+        return day == that.day && msOfDay == that.msOfDay && subMs == that.subMs && resolution == that.resolution;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(day, msOfDay, subMs, resolution);
     }
 }
