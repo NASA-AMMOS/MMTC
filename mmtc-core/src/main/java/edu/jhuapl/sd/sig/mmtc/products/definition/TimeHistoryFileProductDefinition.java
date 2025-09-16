@@ -10,8 +10,9 @@ import edu.jhuapl.sd.sig.mmtc.products.model.TimeHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class TimeHistoryFileProductDefinition extends AppendedFileOutputProductDefinition {
     public TimeHistoryFileProductDefinition() {
@@ -37,8 +38,13 @@ public class TimeHistoryFileProductDefinition extends AppendedFileOutputProductD
         } catch (TimeConvertException e) {
             throw new RuntimeException(e);
         }
-        return String.format("Updated Time History file records: %s \n %s", new TimeHistoryFile(ctx.config.getTimeHistoryFilePath()).getHeaders(),
-                timeHistRecord.getValues().toString());
+        List<String> thHeaders = new TimeHistoryFile(ctx.config.getTimeHistoryFilePath()).getHeaders();
+        Collection<String> thValues = timeHistRecord.getValues();
+        String zippedThRow = IntStream.range(0, thHeaders.size())
+                .mapToObj(i -> "\t" + thHeaders.get(i) + "\t:\t"+new ArrayList<>(thValues)
+                .get(i))
+                .collect(Collectors.joining("\n"));
+        return String.format("[DRY RUN] Updated Time History file records: \n%s", zippedThRow);
     }
 
     public ProductWriteResult appendToProduct(TimeCorrelationContext ctx) throws MmtcException {

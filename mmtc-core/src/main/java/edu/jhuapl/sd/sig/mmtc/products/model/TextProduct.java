@@ -5,6 +5,7 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.xml.soap.Text;
 import java.io.*;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -185,6 +186,21 @@ abstract class TextProduct {
      */
     public Path createFile() throws TextProductException, TimeConvertException {
         return createFile(sourceFilespec, dirname, filename);
+    }
+
+    /**
+     * Creates a new product file from an existing source file and writes it to the directory
+     * and name specified with the current time in UTC as the product creation time. This is
+     * the top-level method in this class and the one that would be called from an external
+     * method. This overload is intended for dry runs where a temporary output dir is to be
+     * specified.
+     *
+     * @throws TextProductException if the file cannot be created
+     * @throws TimeConvertException if an error occurred in a computation
+     * @return the Path representing the location where the new file was written
+     */
+    public Path createFile(String tempPath) throws TextProductException, TimeConvertException {
+        return createFile(sourceFilespec, tempPath, filename);
     }
 
 

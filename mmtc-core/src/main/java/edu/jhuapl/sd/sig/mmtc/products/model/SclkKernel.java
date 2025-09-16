@@ -37,7 +37,7 @@ public class SclkKernel extends TextProduct {
     /* Clock change rate for the new time correlation record. */
     private Double clockChgRate;
 
-    /* New interpolated clock change reate to ovewrite the predicted rate in the existing SCLK kernel record. */
+    /* New interpolated clock change rate to overwrite the predicted rate in the existing SCLK kernel record. */
     private Double updatedClockChgRate;
 
     /* Indicates if the new time correlation data have been set. */
@@ -388,6 +388,10 @@ public class SclkKernel extends TextProduct {
         return Paths.get(getPath()).getFileName().toString().replace(sclkBaseName + separator, "").replace(FILE_SUFFIX, "");
     }
 
+    public boolean hasNewClkChgRateSet() {
+        return newClkChgRateSet;
+    }
+
 
     /**
      * Generates a new SCLK Kernel but doesn't yet write it to file. Helper method for writeNewProduct
@@ -395,7 +399,7 @@ public class SclkKernel extends TextProduct {
      * @return
      * @throws TimeConvertException
      */
-    public static SclkKernel calculateNewProduct(TimeCorrelationContext ctx) throws TimeConvertException, TextProductException {
+    public static void calculateNewProduct(TimeCorrelationContext ctx) throws TimeConvertException, TextProductException {
         final SclkKernel newSclkKernel = new SclkKernel(ctx.currentSclkKernel.get());
 
         newSclkKernel.setProductCreationTime(ctx.appRunTime);
@@ -410,7 +414,7 @@ public class SclkKernel extends TextProduct {
         if (ctx.correlation.interpolated_clock_change_rate.isSet()) {
             newSclkKernel.setReplacementClockChgRate(ctx.correlation.interpolated_clock_change_rate.get());
         }
-        return newSclkKernel;
+        ctx.newSclkKernel.set(newSclkKernel);
     }
 
     /**
@@ -422,10 +426,17 @@ public class SclkKernel extends TextProduct {
      */
     public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         try {
-            final SclkKernel newSclkKernel = calculateNewProduct(ctx);
-            newSclkKernel.createFile();
+            calculateNewProduct(ctx);
 
-            final Path path = Paths.get(newSclkKernel.getPath());
+            // If this is a dry run, write the new kernel to the temp output path for subsequent deletion. If not,
+            // write it to the usual location.
+            if(ctx.config.isDryRun()) {
+                ctx.newSclkKernel.get().createFile("/tmp");
+            } else {
+                ctx.newSclkKernel.get().createFile();
+            }
+
+            final Path path = Paths.get(ctx.newSclkKernel.get().getPath());
             ctx.newSclkKernelPath.set(path);
 
             return new ProductWriteResult(

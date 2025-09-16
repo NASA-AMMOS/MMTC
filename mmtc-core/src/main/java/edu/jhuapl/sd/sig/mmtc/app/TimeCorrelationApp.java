@@ -2,6 +2,8 @@ package edu.jhuapl.sd.sig.mmtc.app;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.math.BigDecimal;
 
@@ -379,7 +381,7 @@ public class TimeCorrelationApp {
             logger.warn(String.format("Test mode is enabled! One-way light time will be set to the provided value %f and ancillary positional and velocity calculations will be skipped.", config.getTestModeOwlt()));
         }
         if (config.isDryRun()) {
-            logger.warn("Dry run mode is enabled! No products/outputs will be kept and will only be recorded in the log at {}/log/", System.getenv("MMTC_HOME"));
+            logger.warn("Dry run mode is enabled! No data products from this run will be kept and will instead be printed to the console and recorded in the log at {}/log/", System.getenv("MMTC_HOME"));
         }
 
 
@@ -498,18 +500,22 @@ public class TimeCorrelationApp {
             } else if (prodDef.shouldBeWritten(ctx) && ctx.config.isDryRun()) {
                 // Log/print output products instead of writing them to files
                 final String productPrintout = prodDef.getDryRunPrintout(ctx);
-                logger.info(productPrintout);
+                logger.info(USER_NOTICE, productPrintout);
             } else {
                 newRunHistoryFileRecord.setValue(postRunColProdColName,  runHistoryFile.getLatestNonEmptyValueOfCol(postRunColProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
             }
         }
 
+        // Update run history file if this isn't a dry run. If it is, delete the previously created temp SCLK kernel.
         if (!ctx.config.isDryRun()) {
             runHistoryFile.writeRecord(newRunHistoryFileRecord);
+            logger.info(USER_NOTICE, "Appended a new entry to Run History File located at " + runHistoryFile.getPath());
+            logger.info(String.format("Run at %s recorded to %s", ctx.appRunTime, config.getRunHistoryFilePath().toString()));
+        } else {
+            Files.deleteIfExists(ctx.newSclkKernelPath.get());
+            logger.info(USER_NOTICE, "Deleted temporary SCLK kernel {}. No other output products were written to disk.", ctx.newSclkKernelPath.get());
         }
 
-        logger.info(USER_NOTICE, "Appended a new entry to Run History File located at " + runHistoryFile.getPath());
-        logger.info(String.format("Run at %s recorded to %s", ctx.appRunTime, config.getRunHistoryFilePath().toString()));
         logger.info(USER_NOTICE, "MMTC completed successfully.");
     }
 

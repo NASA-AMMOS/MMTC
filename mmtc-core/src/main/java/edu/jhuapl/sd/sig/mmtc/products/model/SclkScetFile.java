@@ -7,6 +7,10 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -20,6 +24,11 @@ import java.util.*;
  * description of this product.
  */
 public class SclkScetFile extends TextProduct {
+
+    /**
+     * The TimeCorrelationContext for the current run. The newly created SCLK kernel is accessed from here.
+     */
+    private TimeCorrelationContext ctx;
 
     /**
      * The time in UTC that the product was created.
@@ -56,6 +65,8 @@ public class SclkScetFile extends TextProduct {
     private OffsetDateTime endSclkScetTime;
 
     private final TimeCorrelationAppConfig.SclkScetFileLeapSecondSclkRate leapSecondSclkRateMode;
+
+    private int numAddedLines;
 
     /**
      * Metadata parameters for the SCLK/SCET file header if not read-in from an existing SCLK/SCET file.
@@ -148,11 +159,11 @@ public class SclkScetFile extends TextProduct {
     @Override
     public String[] getLastXRecords(int numRecords) {
         if(numRecords < 1) { return new String[0]; }
-        int lastRecordIndex = lastDataRecNum(sourceProductLines);
+        int lastRecordIndex = lastDataRecNum(newProductLines);
 
         String[] records = new String[numRecords];
         for(int i=lastRecordIndex-(numRecords-1), j=0;i < lastRecordIndex+1; i++, j++) {
-            records[j] = sourceProductLines.get(i);
+            records[j] = newProductLines.get(i);
         }
         return records;
     }
@@ -194,6 +205,8 @@ public class SclkScetFile extends TextProduct {
          */
         List<SclkScet> sclkScetRecs = convertSclkKernelDataToScetData();
 
+        int numInitialRecs = sclkScetRecs.size();
+
         /* Get the data start time and create the file header block. */
         OffsetDateTime startTime  = sclkScetRecs.get(0).getScet();
         if (endSclkScetTime == null) {
@@ -232,6 +245,7 @@ public class SclkScetFile extends TextProduct {
         sclkScetRecs.forEach(r -> newProductLines.add(r.toString()));
         newProductLines.add(SCLKSCET_FTR);
 
+        numAddedLines = sclkScetRecs.size() - numInitialRecs;
     }
 
     public static boolean isLeapSecondEntryPair(SclkScet a, SclkScet b) {
@@ -649,6 +663,7 @@ public class SclkScetFile extends TextProduct {
                 ctx.newSclkVersionString.get()
         );
 
+        scetFile.setCtx(ctx);
         scetFile.setProductCreationTime(ctx.appRunTime);
         scetFile.setClockTickRate(ctx.sclk_kernel_fine_tick_modulus.get());
         SclkScet.setScetStrSecondsPrecision(conf.getSclkScetScetUtcPrecision());
@@ -674,5 +689,35 @@ public class SclkScetFile extends TextProduct {
         } catch (TimeConvertException | TextProductException ex) {
             throw new MmtcException("Unable to write SCLK/SCET file", ex);
         }
+    }
+
+
+    /**
+     * Reads the product file and place its contents into the local sourceProduct buffer.
+     * Differs from inherited method in that it doesn't read a source product file and instead
+     * retrieves sourceProductLines from the newSclkKernel in the TimeCorrelationContext.
+     *
+     */
+    @Override
+    public void readSourceProduct() {
+
+        this.sourceProductLines = ctx.newSclkKernel.get().sourceProductLines;
+        sourceProductReadIn = true;
+    }
+
+    public void setCtx(TimeCorrelationContext ctx) {
+        this.ctx = ctx;
+    }
+
+    public List<String> getNewProductLines() {
+        return this.newProductLines;
+    }
+
+    public String getSclkscetFields() {
+        return SCLKSCET_FLDS;
+    }
+
+    public int getNumAddedLines() {
+        return numAddedLines;
     }
 }

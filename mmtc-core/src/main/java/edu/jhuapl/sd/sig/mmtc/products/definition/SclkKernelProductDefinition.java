@@ -49,14 +49,27 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         return true;
     }
 
+    /**
+     * This implementation is notable from that of other output products in that it does still write the SCLK kernel to
+     * disk. The only difference is that it's written to the /tmp directory and its latest two lines are recorded here.
+     * @param ctx The active run's TimeCorrelationContext
+     * @return A string with details about the changed SCLK kernel(s) ready to be logged.
+     * @throws MmtcException if there are any problems generating the SCLK kernel
+     */
     @Override
-
     public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
         try {
-            SclkKernel newKernel = SclkKernel.calculateNewProduct(ctx);
-            newKernel.updateFile();
-            String[] newSclkEntries = newKernel.getLastXRecords(2);
-            return String.format("New SCLK entries: \n" + newSclkEntries[0] + "\n " + newSclkEntries[1]);
+            SclkKernel.writeNewProduct(ctx);
+            ctx.newSclkKernel.get().updateFile();
+
+            String[] newSclkEntries = ctx.newSclkKernel.get().getLastXRecords(2);
+            // If an interpolated clock change rate has replaced the rate in the existing SCLK kernel record, retrieve the two latest records.
+            // Otherwise, just return the new record
+            if (ctx.newSclkKernel.get().hasNewClkChgRateSet()) {
+                return String.format("[DRY RUN] Updated SCLK entries: \n" + newSclkEntries[0] + "\n" + newSclkEntries[1]);
+            } else {
+                return String.format("[DRY RUN] New SCLK entry: \n" + newSclkEntries[0]);
+            }
         } catch (TimeConvertException | TextProductException | IOException e) {
             throw new MmtcException("Unable to generate SCLK kernel", e);
         }
