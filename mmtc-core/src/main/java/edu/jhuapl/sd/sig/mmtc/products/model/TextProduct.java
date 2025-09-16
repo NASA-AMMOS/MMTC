@@ -5,6 +5,7 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.xml.soap.Text;
 import java.io.*;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -163,16 +164,6 @@ abstract class TextProduct {
         return sourceProductLines.get(lastDataRecNum(sourceProductLines)).trim();
     }
 
-
-    /**
-     * Gets the last x records in the original source product
-     *
-     * @param numRecords the number of records to return
-     * @return a String array of records in their original order, else an empty array if numRecords is invalid
-     */
-    public abstract String[] getLastXRecords(int numRecords);
-
-
     /**
      * Creates a new product file from an existing source file and writes it to the directory
      * and name specified with the current time in UTC as the product creation time. This is
@@ -185,6 +176,21 @@ abstract class TextProduct {
      */
     public Path createFile() throws TextProductException, TimeConvertException {
         return createFile(sourceFilespec, dirname, filename);
+    }
+
+    /**
+     * Creates a new product file from an existing source file and writes it to the directory
+     * and name specified with the current time in UTC as the product creation time. This is
+     * the top-level method in this class and the one that would be called from an external
+     * method. This overload is intended for dry runs where a temporary output dir is to be
+     * specified.
+     *
+     * @throws TextProductException if the file cannot be created
+     * @throws TimeConvertException if an error occurred in a computation
+     * @return the Path representing the location where the new file was written
+     */
+    public Path createFile(String tempPath) throws TextProductException, TimeConvertException {
+        return createFile(sourceFilespec, tempPath, filename);
     }
 
 
@@ -352,7 +358,7 @@ abstract class TextProduct {
         String newFilePath = dirname + pathSep + filename;
         Path newFile       = Paths.get(newFilePath);
 
-        if (Files.exists(newFile)) {
+        if (Files.exists(newFile) && !dirname.equals("/tmp")) { // Ignore duplicate products if we're writing to the /tmp/ dir--it means this is likely a dry run and the last run was aborted
             throw new TextProductException("Error writing product file \"" + newFilePath + "\". It already exists.");
         }
 

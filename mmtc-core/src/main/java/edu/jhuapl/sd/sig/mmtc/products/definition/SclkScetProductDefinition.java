@@ -15,7 +15,10 @@ import java.util.Arrays;
 
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -50,12 +53,16 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
     public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
         SclkScetFile scetFile = SclkScetFile.calculateNewProduct(ctx);
         try {
-            scetFile.setSourceFilespec(ctx.config.getInputSclkKernelPath().toString()); // Can't use
+            scetFile.setSourceFilespec(ctx.newSclkKernel.get().getPath());
             scetFile.updateFile();
         } catch (TextProductException | TimeConvertException | IOException e) {
             throw new MmtcException("Failed to generate SCLKSCET file");
         }
-        return Arrays.toString(scetFile.getLastXRecords(1));
+        List<String> newProductLines = scetFile.getNewProductLines();
+        String newRecs = IntStream.range(Math.max(0, newProductLines.size() - scetFile.getNumAddedLines()), newProductLines.size())
+                .mapToObj(newProductLines::get)
+                .collect(Collectors.joining("\n\t"));
+        return String.format("[DRY RUN] New SCLKSCET file entry: \n\t%s\n\t%s", scetFile.getSclkscetFields(), newRecs);
     }
 
     /**

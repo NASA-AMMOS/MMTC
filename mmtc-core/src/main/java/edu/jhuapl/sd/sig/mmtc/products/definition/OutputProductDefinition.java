@@ -6,9 +6,12 @@ import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductLocation;
+import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +61,19 @@ public abstract class OutputProductDefinition<T extends ResolvedProductLocation>
      * @return true if the product should be written, false otherwise
      */
     public abstract boolean shouldBeWritten(TimeCorrelationContext context);
+
+    /**
+     * Generates a string summarizing the hypothetical changes to an output product that would have been made had this been a real
+     * run and the dry run flag wasn't passed. This generally involves all the steps usually taken to compute and produce an MMTC
+     * output product except actually writing it to disk (except the SCLK kernel which must be written but will later be deleted).
+     * @param ctx
+     * @return
+     * @throws MmtcException
+     * @throws TextProductException
+     * @throws IOException
+     * @throws TimeConvertException
+     */
+    public abstract String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException, TextProductException, IOException, TimeConvertException;
 
     /**
      * Write the product to the filesystem.  Called once per successful time correlation run.
