@@ -13,6 +13,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class TimeHistoryFileProductDefinition extends AppendedFileOutputProductDefinition {
     public TimeHistoryFileProductDefinition() {

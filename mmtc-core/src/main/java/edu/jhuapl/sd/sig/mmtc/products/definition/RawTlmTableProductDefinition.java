@@ -7,12 +7,15 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductPath;
 import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
-import edu.jhuapl.sd.sig.mmtc.products.model.TimeHistoryFile;
 
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RawTlmTableProductDefinition extends AppendedFileOutputProductDefinition {
     public RawTlmTableProductDefinition() {
@@ -41,8 +44,8 @@ public class RawTlmTableProductDefinition extends AppendedFileOutputProductDefin
         return String.format("[DRY RUN] Updated Raw TLM table records: \n%s", zippedRtRow);
     }
 
-public ProductWriteResult appendToProduct(TimeCorrelationContext context) throws MmtcException {
-
+    @Override
+    public ProductWriteResult appendToProduct(TimeCorrelationContext context) throws MmtcException {
         return RawTelemetryTable.appendCorrelationFrameSamplesToRawTelemetryTable(context);
     }
 

@@ -94,6 +94,7 @@ public class TimeCorrelationApp {
         }
 
         runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath(), config.getAllOutputProductDefs());
+        runHistoryFile.updateRowsForNewProducts();
         newRunHistoryFileRecord = new TableRecord(runHistoryFile.getHeaders());
         if (!ctx.config.isDryRun()) {
             recordRunHistoryFilePreRunValues();
@@ -191,13 +192,15 @@ public class TimeCorrelationApp {
      * Meant to be run after all output product objects have been initialized but before they've been modified by a successful run.
      */
     private void recordRunHistoryFilePreRunValues() throws MmtcException {
-        int newRunId;
-        List<TableRecord> prevRuns = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS);
+        final int newRunId;
+        {
+            List<TableRecord> prevRuns = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS);
 
-        if (prevRuns.isEmpty()) {
-            newRunId = 1;
-        } else {
-            newRunId = Integer.parseInt(prevRuns.get(prevRuns.size()-1).getValue("Run ID")) + 1;
+            if (prevRuns.isEmpty()) {
+                newRunId = 1;
+            } else {
+                newRunId = Integer.parseInt(prevRuns.get(prevRuns.size() - 1).getValue("Run ID")) + 1;
+            }
         }
 
         ctx.runId.set(newRunId);

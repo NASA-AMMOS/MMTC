@@ -92,7 +92,6 @@ public class TimeCorrelationRollback {
 
         final TableRecord latestRun = runHistoryRecords.get(runHistoryRecords.size() - 1);
 
-
         System.out.println("\nPlease choose a run to become the new latest run (including leading zeros), or enter '0' to roll back to MMTC's initial state (with no output products): ");
         String selectedRunId = scanner.nextLine();
 
@@ -220,7 +219,24 @@ public class TimeCorrelationRollback {
                 operation.ifPresent(calculatedRollbackOperations::add);
             }
 
+            checkForChangesInDeconfiguredProducts(runHistoryFile, newRunIdThatWouldBeCurrentAfterRollback);
+
             return new RollbackOperations(calculatedRollbackOperations);
+        }
+
+        private static void checkForChangesInDeconfiguredProducts(RunHistoryFile runHistoryFile, String newRunIdThatWouldBeCurrentAfterRollback) throws MmtcException {
+            final List<RunHistoryFile.DeconfiguredOutputProductColPair> deconfiguredOutputProductsToTrack = runHistoryFile.getDeconfiguredOutputProductsToTrack();
+            if (deconfiguredOutputProductsToTrack.isEmpty()) {
+                return;
+            }
+
+            for (RunHistoryFile.DeconfiguredOutputProductColPair deconfColPair : deconfiguredOutputProductsToTrack) {
+                Optional<String> currentLatestProductVersion = runHistoryFile.getLatestValueOfCol(deconfColPair.postRunColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS);
+                Optional<String> newLatestProductVersion = runHistoryFile.getValueOfColForRun(newRunIdThatWouldBeCurrentAfterRollback, deconfColPair.postRunColName);
+                if (! currentLatestProductVersion.equals(newLatestProductVersion)) {
+                    throw new MmtcException(String.format("Cannot roll back output products that are no longer configured (tracked in the Run History File by columns '%s' and '%s')", deconfColPair.preRunColName, deconfColPair.postRunColName));
+                }
+            }
         }
 
         public static RollbackOperations toInitialState(RunHistoryFile runHistoryFile, RollbackConfig config) throws MmtcException {
@@ -240,7 +256,24 @@ public class TimeCorrelationRollback {
                 operation.ifPresent(calculatedRollbackOperations::add);
             }
 
+            checkForChangesInDeconfiguredProductsVsInitialState(runHistoryFile);
+
             return new RollbackOperations(calculatedRollbackOperations);
+        }
+
+        private static void checkForChangesInDeconfiguredProductsVsInitialState(RunHistoryFile runHistoryFile) throws MmtcException {
+            final List<RunHistoryFile.DeconfiguredOutputProductColPair> deconfiguredOutputProductsToTrack = runHistoryFile.getDeconfiguredOutputProductsToTrack();
+            if (deconfiguredOutputProductsToTrack.isEmpty()) {
+                return;
+            }
+
+            for (RunHistoryFile.DeconfiguredOutputProductColPair deconfColPair : deconfiguredOutputProductsToTrack) {
+                Optional<String> currentLatestProductVersion = runHistoryFile.getLatestValueOfCol(deconfColPair.postRunColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS);
+                Optional<String> newLatestProductVersion = runHistoryFile.getValueOfColForRun(runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).get(0).getValue(RunHistoryFile.RUN_ID), deconfColPair.preRunColName);
+                if (! currentLatestProductVersion.equals(newLatestProductVersion)) {
+                    throw new MmtcException(String.format("Cannot roll back output products that are no longer configured (tracked in the Run History File by columns '%s' and '%s')", deconfColPair.preRunColName, deconfColPair.postRunColName));
+                }
+            }
         }
 
         public List<String> getDescriptionOfFilesToTruncate() {

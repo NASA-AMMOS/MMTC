@@ -14,7 +14,7 @@ import java.util.function.Supplier;
  * the values in the correct order.
  */
 public class TableRecord {
-    private Map<String, String> data;
+    private LinkedHashMap<String, String> data;
 
     /**
      * Create the record and set all values to '-'.
@@ -26,6 +26,14 @@ public class TableRecord {
 
         for (String header : headers) {
             data.put(header, "-");
+        }
+    }
+
+    public TableRecord(TableRecord other) {
+        data = new LinkedHashMap<>();
+
+        for (Map.Entry<String, String> otherData : other.data.entrySet()) {
+            data.put(otherData.getKey(), otherData.getValue());
         }
     }
 

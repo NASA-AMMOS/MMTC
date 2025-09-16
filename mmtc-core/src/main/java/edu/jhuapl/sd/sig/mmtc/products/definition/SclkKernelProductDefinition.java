@@ -15,6 +15,10 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Describes the set of SCLK kernel output products that MMTC performs operations on.
  * A single SCLK kernel is modeled by {@link SclkKernel}.
@@ -75,6 +79,7 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         }
     }
 
+    @Override
     public Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputDir) {
         final Map<String, String> confUpdates = new HashMap<>();
         confUpdates.put("spice.kernel.sclk.kerneldir", newProductOutputDir.toAbsolutePath().toString());
