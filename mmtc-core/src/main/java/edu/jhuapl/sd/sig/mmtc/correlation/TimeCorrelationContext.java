@@ -23,6 +23,7 @@ public class TimeCorrelationContext {
     public final Settable<Integer> runId = new Settable<>();
 
     public final Settable<SclkKernel> currentSclkKernel = new Settable<>();
+    public final Settable<SclkKernel> newSclkKernel = new Settable<>();
     public final Settable<String> newSclkVersionString = new Settable<>();
     public final Settable<Path> newSclkKernelPath = new Settable<>();
     public final Settable<Integer> tk_sclk_fine_tick_modulus = new Settable<>();

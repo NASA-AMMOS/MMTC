@@ -2,6 +2,8 @@ package edu.jhuapl.sd.sig.mmtc.app;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.math.BigDecimal;
 
@@ -92,8 +94,11 @@ public class TimeCorrelationApp {
         }
 
         runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath(), config.getAllOutputProductDefs());
+        runHistoryFile.updateRowsForNewProducts();
         newRunHistoryFileRecord = new TableRecord(runHistoryFile.getHeaders());
-        recordRunHistoryFilePreRunValues();
+        if (!ctx.config.isDryRun()) {
+            recordRunHistoryFilePreRunValues();
+        }
 
         tk_sclk_fine_tick_modulus = config.getTkSclkFineTickModulus();
         logger.info("tk_sclk_fine_tick_modulus set to: " + tk_sclk_fine_tick_modulus);
@@ -187,13 +192,15 @@ public class TimeCorrelationApp {
      * Meant to be run after all output product objects have been initialized but before they've been modified by a successful run.
      */
     private void recordRunHistoryFilePreRunValues() throws MmtcException {
-        int newRunId;
-        List<TableRecord> prevRuns = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS);
+        final int newRunId;
+        {
+            List<TableRecord> prevRuns = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS);
 
-        if (prevRuns.isEmpty()) {
-            newRunId = 1;
-        } else {
-            newRunId = Integer.parseInt(prevRuns.get(prevRuns.size()-1).getValue("Run ID")) + 1;
+            if (prevRuns.isEmpty()) {
+                newRunId = 1;
+            } else {
+                newRunId = Integer.parseInt(prevRuns.get(prevRuns.size() - 1).getValue("Run ID")) + 1;
+            }
         }
 
         ctx.runId.set(newRunId);
@@ -376,6 +383,10 @@ public class TimeCorrelationApp {
         if (config.isTestMode()) {
             logger.warn(String.format("Test mode is enabled! One-way light time will be set to the provided value %f and ancillary positional and velocity calculations will be skipped.", config.getTestModeOwlt()));
         }
+        if (config.isDryRun()) {
+            logger.warn("Dry run mode is enabled! No data products from this run will be kept and will instead be printed to the console and recorded in the log at {}/log/", System.getenv("MMTC_HOME"));
+        }
+
 
         // Select telemetry for this new time correlation run
         final TimeCorrelationTarget tcTarget = selectSampleSetAndTimeCorrelationTarget();
@@ -480,22 +491,34 @@ public class TimeCorrelationApp {
         // Perform all ancillary post-correlation operations
         new TimeCorrelationAncillaryOperations(ctx).perform();
 
-        // Write all output products
+        // Write or log all output products
         ctx.newSclkVersionString.set(getNextSclkKernelVersionString());
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
             final String postRunColProdColName = RunHistoryFile.getPostRunProductColNameFor(prodDef);
 
-            if (prodDef.shouldBeWritten(ctx)) {
+            if (prodDef.shouldBeWritten(ctx) && !ctx.config.isDryRun()) {
                 final ProductWriteResult res = prodDef.write(ctx);
                 newRunHistoryFileRecord.setValue(postRunColProdColName, res.newVersion);
+
+            } else if (prodDef.shouldBeWritten(ctx) && ctx.config.isDryRun()) {
+                // Log/print output products instead of writing them to files
+                final String productPrintout = prodDef.getDryRunPrintout(ctx);
+                logger.info(USER_NOTICE, productPrintout);
             } else {
                 newRunHistoryFileRecord.setValue(postRunColProdColName,  runHistoryFile.getLatestNonEmptyValueOfCol(postRunColProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
             }
         }
-        runHistoryFile.writeRecord(newRunHistoryFileRecord);
 
-        logger.info(USER_NOTICE, "Appended a new entry to Run History File located at " + runHistoryFile.getPath());
-        logger.info(String.format("Run at %s recorded to %s", ctx.appRunTime, config.getRunHistoryFilePath().toString()));
+        // Update run history file if this isn't a dry run. If it is, delete the previously created temp SCLK kernel.
+        if (!ctx.config.isDryRun()) {
+            runHistoryFile.writeRecord(newRunHistoryFileRecord);
+            logger.info(USER_NOTICE, "Appended a new entry to Run History File located at " + runHistoryFile.getPath());
+            logger.info(String.format("Run at %s recorded to %s", ctx.appRunTime, config.getRunHistoryFilePath().toString()));
+        } else {
+            Files.deleteIfExists(ctx.newSclkKernelPath.get());
+            logger.info(USER_NOTICE, "Deleted temporary SCLK kernel {}. No other output products were written to disk.", ctx.newSclkKernelPath.get());
+        }
+
         logger.info(USER_NOTICE, "MMTC completed successfully.");
     }
 
