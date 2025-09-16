@@ -62,8 +62,6 @@ public class SclkScetFile extends TextProduct {
 
     private final TimeCorrelationAppConfig.SclkScetFileLeapSecondSclkRate leapSecondSclkRateMode;
 
-    private int numAddedLines;
-
     /**
      * Metadata parameters for the SCLK/SCET file header if not read-in from an existing SCLK/SCET file.
      */
@@ -130,7 +128,7 @@ public class SclkScetFile extends TextProduct {
      * @param product_version_id IN the version of this product
      */
     private void setHeaderData(String mission_name, int mission_id, String spacecraft_name, int spacecraft_id,
-                              String data_set_id, String producer_id, String product_version_id, int applicableDurationDays) {
+                               String data_set_id, String producer_id, String product_version_id, int applicableDurationDays) {
 
         this.missionId        = mission_id;
         this.missionName      = mission_name;
@@ -152,7 +150,8 @@ public class SclkScetFile extends TextProduct {
         endSclkScetTime = datetime;
     }
 
-     /**
+
+    /**
      * Creates the new SCLK kernel product. Implements the corresponding abstract method in the parent class.
      *
      * @throws TextProductException if the product cannot be created
@@ -189,8 +188,6 @@ public class SclkScetFile extends TextProduct {
          */
         List<SclkScet> sclkScetRecs = convertSclkKernelDataToScetData();
 
-        int numInitialRecs = sclkScetRecs.size();
-
         /* Get the data start time and create the file header block. */
         OffsetDateTime startTime  = sclkScetRecs.get(0).getScet();
         if (endSclkScetTime == null) {
@@ -202,6 +199,9 @@ public class SclkScetFile extends TextProduct {
 
         /* Add the leap second records to the end of the new SCLK/SCET records. */
         sclkScetRecs.addAll(leapSecRecs);
+
+        // record size of record set prior to adding new entries (but after leap second recs have been added)
+        int numInitialRecs = sclkScetRecs.size();
 
         /* Sort the SCLK/SCET records by SCET time. */
         sclkScetRecs.sort(Comparator.comparing(SclkScet::getScet));
@@ -229,7 +229,6 @@ public class SclkScetFile extends TextProduct {
         sclkScetRecs.forEach(r -> newProductLines.add(r.toString()));
         newProductLines.add(SCLKSCET_FTR);
 
-        numAddedLines = sclkScetRecs.size() - numInitialRecs;
     }
 
     public static boolean isLeapSecondEntryPair(SclkScet a, SclkScet b) {
@@ -263,7 +262,7 @@ public class SclkScetFile extends TextProduct {
         }
 
         // SCET values should be exactly two seconds apart
-         if (Duration.between(a.getScet(), b.getScet()).getSeconds() != 2.0 ) {
+        if (Duration.between(a.getScet(), b.getScet()).getSeconds() != 2.0 ) {
             return false;
         }
 
@@ -654,7 +653,6 @@ public class SclkScetFile extends TextProduct {
 
         return scetFile;
     }
-
     /**
      * Writes a new SCLK-SCET File
      * @param ctx the current time correlation context from which to pull information for the output product
@@ -663,24 +661,9 @@ public class SclkScetFile extends TextProduct {
      * @return a ProductWriteResult describing the updated product
      */
     public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
-        final TimeCorrelationAppConfig conf = ctx.config;
 
         try {
-            final String newSclkScetFilename = conf.getSclkScetFileBasename() +
-                    conf.getSclkScetFileSeparator() +
-                    ctx.newSclkVersionString.get() +
-                    conf.getSclkScetFileSuffix();
-
-            // Create the new SCLK/SCET file from the newly-created SCLK kernel.
-            final SclkScetFile scetFile = new SclkScetFile(
-                    conf,
-                    newSclkScetFilename,
-                    ctx.newSclkVersionString.get()
-            );
-
-            scetFile.setProductCreationTime(ctx.appRunTime);
-            scetFile.setClockTickRate(ctx.sclk_kernel_fine_tick_modulus.get());
-            SclkScet.setScetStrSecondsPrecision(conf.getSclkScetScetUtcPrecision());
+            final SclkScetFile scetFile = calculateNewProduct(ctx);
 
             return new ProductWriteResult(
                     scetFile.createNewSclkScetFile(ctx.newSclkKernelPath.get().toString()),
@@ -715,9 +698,5 @@ public class SclkScetFile extends TextProduct {
 
     public String getSclkscetFields() {
         return SCLKSCET_FLDS;
-    }
-
-    public int getNumAddedLines() {
-        return numAddedLines;
     }
 }

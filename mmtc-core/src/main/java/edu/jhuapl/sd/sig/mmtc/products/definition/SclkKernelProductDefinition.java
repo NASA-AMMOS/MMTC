@@ -57,20 +57,16 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
      */
     @Override
     public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
-        try {
-            SclkKernel.writeNewProduct(ctx);
-            ctx.newSclkKernel.get().updateFile();
+        SclkKernel.writeNewProduct(ctx);
+        // ctx.newSclkKernel.get().updateFile();
 
-            String[] newSclkEntries = ctx.newSclkKernel.get().getLastXRecords(2);
-            // If an interpolated clock change rate has replaced the rate in the existing SCLK kernel record, retrieve the two latest records.
-            // Otherwise, just return the new record
-            if (ctx.newSclkKernel.get().hasNewClkChgRateSet()) {
-                return String.format("[DRY RUN] Updated SCLK entries: \n" + newSclkEntries[0] + "\n" + newSclkEntries[1]);
-            } else {
-                return String.format("[DRY RUN] New SCLK entry: \n" + newSclkEntries[0]);
-            }
-        } catch (TimeConvertException | TextProductException | IOException e) {
-            throw new MmtcException("Unable to generate SCLK kernel", e);
+        String[] newSclkEntries = ctx.newSclkKernel.get().getLastXRecords(2);
+        // If an interpolated clock change rate has replaced the rate in the existing SCLK kernel record, retrieve the two latest records.
+        // Otherwise, just return the new record
+        if (ctx.newSclkKernel.get().hasNewClkChgRateSet()) {
+            return String.format("[DRY RUN] Updated SCLK entries: \n" + newSclkEntries[0] + "\n" + newSclkEntries[1]);
+        } else {
+            return String.format("[DRY RUN] New SCLK entry: \n" + newSclkEntries[0]);
         }
     }
 

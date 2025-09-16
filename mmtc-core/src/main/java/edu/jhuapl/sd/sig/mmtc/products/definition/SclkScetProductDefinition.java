@@ -32,6 +32,7 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
     public SclkScetProductDefinition() {
         super("SCLKSCET File");
     }
+    private final int ENTRIES_TO_PRINT = 4;
 
     @Override
     public ResolvedProductDirPrefixSuffix resolveLocation(MmtcConfig conf) throws MmtcException {
@@ -59,10 +60,10 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
             throw new MmtcException("Failed to generate SCLKSCET file");
         }
         List<String> newProductLines = scetFile.getNewProductLines();
-        String newRecs = IntStream.range(Math.max(0, newProductLines.size() - scetFile.getNumAddedLines()), newProductLines.size())
+        String newRecs = IntStream.range(Math.max(0, newProductLines.size() - ENTRIES_TO_PRINT), newProductLines.size())
                 .mapToObj(newProductLines::get)
                 .collect(Collectors.joining("\n\t"));
-        return String.format("[DRY RUN] New SCLKSCET file entry: \n\t%s\n\t%s", scetFile.getSclkscetFields(), newRecs);
+        return String.format("[DRY RUN] Latest %d SCLKSCET file entries: \n\t%s\n\t%s", ENTRIES_TO_PRINT, scetFile.getSclkscetFields(), newRecs);
     }
 
     /**
