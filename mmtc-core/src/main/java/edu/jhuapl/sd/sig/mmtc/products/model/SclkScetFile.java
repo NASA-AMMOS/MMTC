@@ -200,9 +200,6 @@ public class SclkScetFile extends TextProduct {
         /* Add the leap second records to the end of the new SCLK/SCET records. */
         sclkScetRecs.addAll(leapSecRecs);
 
-        // record size of record set prior to adding new entries (but after leap second recs have been added)
-        int numInitialRecs = sclkScetRecs.size();
-
         /* Sort the SCLK/SCET records by SCET time. */
         sclkScetRecs.sort(Comparator.comparing(SclkScet::getScet));
 
