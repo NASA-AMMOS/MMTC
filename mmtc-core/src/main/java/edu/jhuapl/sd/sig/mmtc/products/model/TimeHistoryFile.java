@@ -163,8 +163,8 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         newThfRec.setValue(TimeHistoryFile.OWLT_SEC, String.format("%.6f", ctx.correlation.owlt_sec.get()));
 
         // Record the ground computed TDT, ET, and SCET (UTC) values. These are the ground time equivalents of the SCLK.
-        final String tdtGStr = TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG());
-        final String equivalent_scet_utc_for_tdt_g_iso_doy = TimeConvert.tdtStrToUtc(tdtGStr, ctx.config.getTimeHistoryFileScetUtcPrecision());
+        final String tdtGStr = TimeConvert.tdtToTdtCalStr(ctx.correlation.target.get().getTargetSampleTdtG());
+        final String equivalent_scet_utc_for_tdt_g_iso_doy = TimeConvert.tdtCalStrToUtc(tdtGStr, ctx.config.getTimeHistoryFileScetUtcPrecision());
         {
             newThfRec.setValue(TimeHistoryFile.TDT_G, tdf.format(ctx.correlation.target.get().getTargetSampleTdtG()));
             newThfRec.setValue(TimeHistoryFile.TDT_G_STR, tdtGStr);
@@ -266,7 +266,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         newThfRec.setValue(TimeHistoryFile.TDT_1,                     () -> String.valueOf(ctx.ancillary.gnc.tdt_1.get()));
         newThfRec.setValue(TimeHistoryFile.TDT_1_STRING,              () -> {
             try {
-                return TimeConvert.tdtToTdtStr(ctx.ancillary.gnc.tdt_1.get());
+                return TimeConvert.tdtToTdtCalStr(ctx.ancillary.gnc.tdt_1.get());
             } catch (TimeConvertException e) {
                 throw new RuntimeException(e);
             }
@@ -279,7 +279,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         newThfRec.setValue(TimeHistoryFile.TDT_S,                     () -> String.format("%.6f", ctx.ancillary.gnc.tdt_s.get()));
         newThfRec.setValue(TimeHistoryFile.TDT_S_STR,                 () -> {
             try {
-                return TimeConvert.tdtToTdtStr(ctx.ancillary.gnc.tdt_s.get());
+                return TimeConvert.tdtToTdtCalStr(ctx.ancillary.gnc.tdt_s.get());
             } catch (TimeConvertException e) {
                 throw new RuntimeException(e);
             }

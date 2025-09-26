@@ -57,6 +57,9 @@
     <entry key="compute.tdtG.rate.predicted.lookBackDays"></entry>
     <entry key="compute.tdtG.rate.predicted.maxLookBackDays"></entry>
 
+    <entry key="compute.additionalSmoothingCorrelationRecordInsertion.enabled"></entry>
+    <entry key="compute.additionalSmoothingCorrelationRecordInsertion.coarseSclkTickDuration"></entry>
+
     <entry key="compute.tdtS.threshold.errorMsecWarning"></entry>
 
     <entry key="filter.contact.deltaUpperThreshold"></entry>

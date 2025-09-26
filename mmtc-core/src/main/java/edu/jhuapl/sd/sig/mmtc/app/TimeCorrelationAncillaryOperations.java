@@ -48,12 +48,12 @@ public class TimeCorrelationAncillaryOperations {
 
     private double computeDt() throws TimeConvertException, TextProductException {
         // The TDT(G) value can be either a calendar string or a numeric value inside an SCLK kernel
-        String tdtGPrevStr = ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TDTG);
+        String tdtGPrevStr = ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX);
         final double tdtGPrev;
         if (SclkKernel.isNumVal(tdtGPrevStr)) {
             tdtGPrev = Double.parseDouble(tdtGPrevStr);
         } else {
-            tdtGPrev = TimeConvert.tdtStrToTdt(tdtGPrevStr.replace("@", ""));
+            tdtGPrev = TimeConvert.tdtCalStrToTdt(tdtGPrevStr.replace("@", ""));
         }
 
         return (ctx.correlation.target.get().getTargetSampleTdtG() - tdtGPrev) / TimeConvert.SECONDS_PER_DAY;

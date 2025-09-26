@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 import java.time.OffsetDateTime;
 import java.util.*;
 
-public class TimeCorrelationAppConfig extends MmtcConfig{
+public class TimeCorrelationAppConfig extends MmtcConfig {
     public static final String CONTACT_FILTER = "contact";
     public static final String MIN_DATARATE_FILTER = "minDataRate";
     public static final String MAX_DATARATE_FILTER = "maxDataRate";
@@ -32,8 +32,8 @@ public class TimeCorrelationAppConfig extends MmtcConfig{
     private final TelemetrySource telemetrySource;
 
     private ClockChangeRateMode clockChangeRateMode;
-
     private double clockChangeRateAssignedValue;
+    private AdditionalSmoothingRecordConfig additionalSmoothingRecordConfig;
 
     public String getCmdLineOptionValue(char shortOpt) {
         return cmdLineConfig.getOptionValue(shortOpt);
@@ -55,6 +55,16 @@ public class TimeCorrelationAppConfig extends MmtcConfig{
         NO_DRIFT
     }
 
+    public static class AdditionalSmoothingRecordConfig {
+        public final boolean enabled;
+        public final int coarseSclkTickDuration;
+
+        public AdditionalSmoothingRecordConfig(boolean enabled, int coarseSclkTickDuration) {
+            this.enabled = enabled;
+            this.coarseSclkTickDuration = coarseSclkTickDuration;
+        }
+    }
+
     public TimeCorrelationAppConfig(String... args) throws Exception {
         super();
 
@@ -73,6 +83,11 @@ public class TimeCorrelationAppConfig extends MmtcConfig{
 
         if (clockChangeRateMode == ClockChangeRateMode.ASSIGN || clockChangeRateMode == ClockChangeRateMode.ASSIGN_KEY) {
             logger.info(MmtcCli.USER_NOTICE, String.format("Assigned clock change rate: %f", clockChangeRateAssignedValue));
+        }
+
+        setInsertAdditionalSmoothingRecord();
+        if (additionalSmoothingRecordConfig.enabled && clockChangeRateMode == ClockChangeRateMode.COMPUTE_INTERPOLATED) {
+            throw new MmtcException("Cannot insert 'smoothing' correlation records into products with --clkchgrate-compute i");
         }
 
         // todo would be ideal if config was immutable
@@ -168,6 +183,24 @@ public class TimeCorrelationAppConfig extends MmtcConfig{
                 throw new MmtcException("Config file does not specify a value for " + assignedClockChangeRateKey);
             }
         }
+    }
+
+    private void setInsertAdditionalSmoothingRecord() throws MmtcException {
+        final Optional<AdditionalSmoothingRecordConfig> additionalSmoothingRecordInsertionOverride = cmdLineConfig.getAdditionalSmoothingRecordInsertionOverride();
+
+        if (additionalSmoothingRecordInsertionOverride.isPresent()) {
+            this.additionalSmoothingRecordConfig = additionalSmoothingRecordInsertionOverride.get();
+            return;
+        }
+
+        this.additionalSmoothingRecordConfig = new AdditionalSmoothingRecordConfig(
+                isAdditionalSmoothingCorrelationRecordInsertionEnabled(),
+                getAdditionalSmoothingCorrelationRecordInsertionCoarseSclkTickDuration()
+        );
+    }
+
+    public AdditionalSmoothingRecordConfig getAdditionalSmoothingRecordConfig() {
+        return this.additionalSmoothingRecordConfig;
     }
 
     /**

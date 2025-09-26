@@ -1,6 +1,5 @@
 package edu.jhuapl.sd.sig.mmtc;
 
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
 import edu.jhuapl.sd.sig.mmtc.util.CdsTimeCode;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
@@ -352,7 +351,7 @@ public class TimeConvertTests {
         KernelDatabase.load("src/test/resources/nh_kernels/lsk/naif0012.tls");
 
         /* Function to test */
-        Double tdt = TimeConvert.tdtStrToTdt("19-DEC-2017-05:50:08.956750");
+        Double tdt = TimeConvert.tdtCalStrToTdt("19-DEC-2017-05:50:08.956750");
 
         DecimalFormat secfmt = new DecimalFormat("##.######");
         secfmt.setRoundingMode(RoundingMode.HALF_UP);
@@ -376,7 +375,7 @@ public class TimeConvertTests {
         KernelDatabase.load("src/test/resources/nh_kernels/lsk/naif0012.tls");
 
         /* Function to test */
-        String tdtstr = TimeConvert.tdtToTdtStr(new Double(566934608.95675));
+        String tdtstr = TimeConvert.tdtToTdtCalStr(new Double(566934608.95675));
 
         System.out.println("tdtToTdtStr_test1: TDT value          = " + tdtstr);
 

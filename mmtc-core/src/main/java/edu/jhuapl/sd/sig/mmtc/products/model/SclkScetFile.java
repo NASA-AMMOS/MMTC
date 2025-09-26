@@ -19,6 +19,7 @@ import java.util.*;
  * <P>See <I>Generic SCLK versus SCET Correlation File, SIS (MGSS DOC-000574, Rev. E)</I> for a full
  * description of this product.
  */
+// todo think about how to protect or account for the interaction of leap seconds and smoothing records
 public class SclkScetFile extends TextProduct {
 
     /**
@@ -352,7 +353,7 @@ public class SclkScetFile extends TextProduct {
                 else {
                     tdtStr = fields[1];
                 }
-                scetUtc = TimeConvert.parseIsoDoyUtcStr(TimeConvert.tdtStrToUtc(tdtStr, SclkScet.getScetStrSecondsPrecision()));
+                scetUtc = TimeConvert.parseIsoDoyUtcStr(TimeConvert.tdtCalStrToUtc(tdtStr, SclkScet.getScetStrSecondsPrecision()));
                 logger.trace("SclkScetFile.List(): tdtStr = " + tdtStr + ", scetUtc = " + scetUtc);
 
                 /* Compute the Delta Universal TIme (DUT) offset of UTC from TDT. */
