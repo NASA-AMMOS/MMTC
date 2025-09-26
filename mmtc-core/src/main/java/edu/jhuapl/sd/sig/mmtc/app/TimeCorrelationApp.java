@@ -156,8 +156,8 @@ public class TimeCorrelationApp {
             final int sclk_p;
 
             try {
-                lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tcTarget.getTargetSampleTdtG(), 0.0);
-                sclk_p = TimeConvert.encSclkToSclk(config.getNaifSpacecraftId(), sclk_kernel_fine_tick_modulus, Double.parseDouble(lookBackRec[SclkKernel.ENCSCLK])).intValue();
+                lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tcTarget.getTargetSampleTdtG(), 0.0, runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
+                sclk_p = TimeConvert.encSclkToSclk(config.getNaifSpacecraftId(), sclk_kernel_fine_tick_modulus, Double.parseDouble(lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX])).intValue();
             } catch (TextProductException | TimeConvertException e) {
                 throw new MmtcException("Could not find or convert lookback record for Contact Filter in SCLK kernel", e);
             }
@@ -167,8 +167,8 @@ public class TimeCorrelationApp {
             } else {
                 ContactFilter contactFilter = new ContactFilter();
 
-                contactFilter.setEncSclk_previous(lookBackRec[SclkKernel.ENCSCLK]);
-                contactFilter.setTdt_g_previous(lookBackRec[SclkKernel.TDTG]);
+                contactFilter.setEncSclk_previous(lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX]);
+                contactFilter.setTdt_g_previous(lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX]);
                 contactFilter.setTdt_g_current(tcTarget.getTargetSampleTdtG());
 
                 if (contactFilter.process(tcTarget.getTargetSample(), config, sclk_kernel_fine_tick_modulus)) {
@@ -290,18 +290,18 @@ public class TimeCorrelationApp {
      * @throws MmtcException if the new SCLK or TDT values overlap a previous time correlation
      */
     private Double computePredictedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException, MmtcException {
-        String[] lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tdt_g, config.getPredictedClkRateLookBackDays()*24.);
+        String[] lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tdt_g, config.getPredictedClkRateLookBackDays()*24., runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
 
         logger.debug("computePredictedClkChgRate(): lookBackRec from SCLK = " +
-                lookBackRec[SclkKernel.ENCSCLK] + " " + lookBackRec[SclkKernel.TDTG] + " "
-                + lookBackRec[SclkKernel.CLKCHGRATE]);
-        String tdtGStr = TimeConvert.tdtToTdtStr(tdt_g);
+                lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX] + " " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX] + " "
+                + lookBackRec[SclkKernel.TRIPLET_CLKCHGRATE_FIELD_INDEX]);
+        String tdtGStr = TimeConvert.tdtToTdtCalStr(tdt_g);
         logger.debug("computePredictedClkChgRate(): New TDT(G) = " + tdtGStr + ".");
 
-        Double priorEncSclk  = Double.parseDouble(lookBackRec[SclkKernel.ENCSCLK]);
+        Double priorEncSclk  = Double.parseDouble(lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX]);
         int naifScId         = config.getNaifSpacecraftId();
         int sclk0            = TimeConvert.encSclkToSclk(naifScId, sclk_kernel_fine_tick_modulus, priorEncSclk).intValue();
-        Double tdt_g0        = TimeConvert.tdtStrToTdt(lookBackRec[SclkKernel.TDTG].substring(1));
+        Double tdt_g0        = TimeConvert.tdtCalStrToTdt(lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
 
         logger.debug("computePredictedClkChgRate(): sclk0 = " + sclk0 + ", tdt_g0 = " + tdt_g0 + ", sclk = " + sclk + ", tdt_g = " + tdt_g);
 
@@ -312,15 +312,15 @@ public class TimeCorrelationApp {
         // compute the CLKRATE.
         final double deltaTDT = tdt_g - tdt_g0;
         logger.debug("computePredictedClkChgRate(): The look back record from the SCLK Kernel used to compute the " +
-                " Predicted CLKRATE is " + lookBackRec[SclkKernel.TDTG] + ",\nwhich is " + deltaTDT/3600 + " hours earlier than the current TDT(G) of " +
+                " Predicted CLKRATE is " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX] + ",\nwhich is " + deltaTDT/3600 + " hours earlier than the current TDT(G) of " +
                 tdtGStr + ". Processing continues.");
 
         if (deltaTDT > (config.getMaxPredictedClkRateLookBackHours()) * 3600.) {
             String errorMsg = "Insufficient earlier data in the input SCLK Kernel to compute the Predicted CLKRATE. ";
-            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + lookBackRec[SclkKernel.TDTG].substring(1) + ",";
+            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1) + ",";
             errorMsg       += "which is " + deltaTDT/3600 + " hours older than the new record being generated. ";
             errorMsg       += "The most recent lookback record is determined using a combination of the lookback and max lookback configuration values, and may not necessarily be the most recent entry in the latest SCLK Kernel. ";
-            errorMsg       += String.format("However, the maximum allowable difference specified by the compute.tdtG.rate.predicted.maxLookBackDays configuration option is %d hours. ", config.getMaxPredictedClkRateLookBackHours());
+            errorMsg       += String.format("However, the maximum allowable difference specified by the compute.tdtG.rate.predicted.maxLookBackDays configuration option is %f hours. ", config.getMaxPredictedClkRateLookBackHours());
             errorMsg       += "Please consider rerunning MMTC with either the --clkchgrate-assign or --clkchgrate-nodrift mode selected, or rerun within a different time period.";
 
             throw new MmtcException(errorMsg);
@@ -342,23 +342,26 @@ public class TimeCorrelationApp {
      * @throws TimeConvertException if the TDT values could not be computed
      * @throws MmtcException if the input SCLK or TDT overlaps a previous time correlation
      */
-    private Double computeInterpolatedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException, MmtcException {
+    private Double computeInterpolatedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException {
         final SclkKernel currentSclkKernel = ctx.currentSclkKernel.get();
 
         logger.debug("computeInterpolatedClkChgRate(): Last rec in existing SCLK kernel = " +
-                currentSclkKernel.getLastRecValue(SclkKernel.ENCSCLK) + " " +
-                currentSclkKernel.getLastRecValue(SclkKernel.TDTG) + " " +
-                currentSclkKernel.getLastRecValue(SclkKernel.CLKCHGRATE));
+                currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX) + " " +
+                currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX) + " " +
+                currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_CLKCHGRATE_FIELD_INDEX));
 
         int naifScId = config.getNaifSpacecraftId();
 
         // Get parameters from the last record in the existing SCLK kernel.
-        String existingKernelEncSclkStr = currentSclkKernel.getLastRecValue(SclkKernel.ENCSCLK);
-        String existingKernelTdt_gStr   = currentSclkKernel.getLastRecValue(SclkKernel.TDTG);
+        // These will never be (and should never be) a smoothing record, as:
+        // - a smoothing entry will always be a penultimate record, not a final one
+        // - the User Guide recommends never mixing the use of smoothing entries with interpolated mode
+        String existingKernelEncSclkStr = currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX);
+        String existingKernelTdt_gStr   = currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX);
 
         double priorEncSclk = Double.parseDouble(existingKernelEncSclkStr);
         int sclk0           = TimeConvert.encSclkToSclk(naifScId, sclk_kernel_fine_tick_modulus, priorEncSclk).intValue();
-        double tdt_g0       = TimeConvert.tdtStrToTdt(existingKernelTdt_gStr.replace("@", ""));
+        double tdt_g0       = TimeConvert.tdtCalStrToTdt(existingKernelTdt_gStr.replace("@", ""));
 
         logger.debug("computeInterpolatedClkChgRate(): existingKernelEncSclkStr = " + existingKernelEncSclkStr);
         logger.debug("computeInterpolatedClkChgRate(): existingKernelTdt_gStr = " + existingKernelTdt_gStr);
@@ -386,8 +389,8 @@ public class TimeCorrelationApp {
 
         // Calculate and set SCET (UTC) values that correspond to the target's TDT(G)
         {
-            final String tdtGStr = TimeConvert.tdtToTdtStr(tcTarget.getTargetSampleTdtG());
-            ctx.correlation.equivalent_scet_utc_for_tdt_g_iso_doy.set(TimeConvert.tdtStrToUtc(tdtGStr, 6)); // set to ms precision
+            final String tdtGStr = TimeConvert.tdtToTdtCalStr(tcTarget.getTargetSampleTdtG());
+            ctx.correlation.equivalent_scet_utc_for_tdt_g_iso_doy.set(TimeConvert.tdtCalStrToUtc(tdtGStr, 6)); // set to ms precision
             ctx.correlation.equivalent_scet_utc_for_tdt_g.set(TimeConvert.parseIsoDoyUtcStr(ctx.correlation.equivalent_scet_utc_for_tdt_g_iso_doy.get()));
         }
 
@@ -406,7 +409,7 @@ public class TimeCorrelationApp {
             logger.info(USER_NOTICE, tcTarget.getTargetSample().toSummaryString(tcTarget.getTargetSampleGroundStationId()));
             logger.info(USER_NOTICE, "---------------------------------------------");
 
-            logger.debug("TargetSample:\n");
+            logger.debug("Full target sample details:\n");
             logger.debug(tcTarget.getTargetSample().toString());
 
             {
@@ -471,13 +474,18 @@ public class TimeCorrelationApp {
 
                     // Compute and record the drift rate of the SCLK counter in ms/day
                     ctx.correlation.sclk_drift_ms_per_day.set(((1.0 / predictedClockChangeRate) - 1.0) * TimeConvert.SECONDS_PER_DAY * TimeConvert.MSEC_PER_SECOND);
-
                     break;
                 default:
                     throw new MmtcException("Invalid clock change rate method selected.");
             }
 
             ctx.correlation.predicted_clock_change_rate.set(predictedClockChangeRate);
+        }
+
+        // Compute 'smoothing' record, if enabled
+        if (config.getAdditionalSmoothingRecordConfig().enabled) {
+            computeAdditionalSmoothingRecord(ctx);
+            newRunHistoryFileRecord.setValue(RunHistoryFile.SMOOTHING_TRIPLET_TDT, ctx.correlation.smoothingTriplet.get().tdtStr);
         }
 
         // Perform all ancillary post-correlation operations
@@ -502,27 +510,108 @@ public class TimeCorrelationApp {
         logger.info(USER_NOTICE, "MMTC completed successfully.");
     }
 
+    private static void computeAdditionalSmoothingRecord(TimeCorrelationContext ctx) throws MmtcException {
+        /*
+            With:
+            - prior triplet Tp
+            - latest triplet Tl
+            - new smoothing triplet Ts
+
+            1. Ts.coarseSclk = Tl.coarseSclk - n
+            2. Ts.TDT_G = Ts.coarseSclk converted to TDT, using 'current' (soon to be penultimate) SCLK kernel
+            3. Ts.clkrate = the calculated clock rate between Tl and Ts
+         */
+
+        try {
+            // 1. Ts.coarseSclk = Tl.coarseSclk - n
+            final int smoothingRecordCoarseSclk;
+            {
+                smoothingRecordCoarseSclk = ctx.correlation.target.get().getTargetSample().getTkSclkCoarse() - ctx.config.getAdditionalSmoothingRecordConfig().coarseSclkTickDuration;
+            }
+
+            // 2a. Ensure we're not going to be inserting a record to smooth the transition from an SCLK kernel triplet in one partition to another triplet in a different partition
+            final int partitionForSmoothingRecord;
+            {
+                // TimeConvert.tdtCalStrToTdt(existingKernelTdt_gStr.replace("@", ""))
+                final int curLatestTripletPartition = ctx.config.getSclkPartition(
+                        TimeConvert.parseIsoDoyUtcStr(
+                            TimeConvert.tdtCalStrToUtc(
+                                    ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX).replace("@", ""),
+                                    9
+                            )
+                        )
+                );
+                final int newTripletPartition = ctx.config.getSclkPartition(ctx.correlation.equivalent_scet_utc_for_tdt_g.get());
+                if (curLatestTripletPartition != newTripletPartition) {
+                    throw new MmtcException("Cannot calculate a smoothing record between triplets that span an SCLK partition. Please disable the additional smoothing record feature and rerun.");
+                }
+                partitionForSmoothingRecord = newTripletPartition;
+            }
+
+            // 2b. Ts.TDT_G = Using 'current' (soon to be penultimate) SCLK kernel, convert Ts.coarseSclk to TDT
+            final double smoothingRecordTdtG;
+            {
+                smoothingRecordTdtG = TimeConvert.etToTdt(
+                        TimeConvert.sclkToEt(
+                                ctx.config.getNaifSpacecraftId(),
+                                partitionForSmoothingRecord,
+                                smoothingRecordCoarseSclk,
+                                0
+                        )
+                );
+            }
+
+            // 3. Compute clock change rate from new smoothing record to new record by interpolating between the two
+            final double smoothingRecordClkChgRate;
+            {
+                smoothingRecordClkChgRate = computeClkChgRate(
+                        smoothingRecordCoarseSclk,
+                        smoothingRecordTdtG,
+                        ctx.correlation.target.get().getTargetSample().getTkSclkCoarse(),
+                        ctx.correlation.target.get().getTargetSampleTdtG()
+                );
+            }
+
+            logger.info(USER_NOTICE, String.format("Calculated additional smoothing triplet: %d %s %f", smoothingRecordCoarseSclk, TimeConvert.tdtToTdtCalStr(smoothingRecordTdtG), smoothingRecordClkChgRate));
+
+            SclkKernel.CorrelationTriplet newSmoothingTriplet = new SclkKernel.CorrelationTriplet(
+                    TimeConvert.sclkToEncSclk(
+                            ctx.config.getNaifSpacecraftId(),
+                            partitionForSmoothingRecord,
+                            smoothingRecordCoarseSclk,
+                            0
+                    ),
+                    TimeConvert.tdtToTdtCalStr(smoothingRecordTdtG),
+                    smoothingRecordClkChgRate
+            );
+
+            ctx.correlation.smoothingTriplet.set(newSmoothingTriplet);
+        } catch (TextProductException | TimeConvertException e) {
+            throw new MmtcException("Could not calculate additional smoothing record", e);
+        }
+    }
+
     private static void ensureIncreasingTdtAndSclkCorrelationValues(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException, MmtcException {
         final TimeCorrelationTarget tcTarget = ctx.correlation.target.get();
         final double targetTdtG = tcTarget.getTargetSampleTdtG();
 
-        final String prevTdtGStr = ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TDTG);
+        final String prevTdtGStr = ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX);
         final double prevTdtG;
         if (SclkKernel.isNumVal(prevTdtGStr)) {
             prevTdtG = Double.parseDouble(prevTdtGStr);
         } else {
-            prevTdtG = TimeConvert.tdtStrToTdt(prevTdtGStr.replace("@", ""));
+            prevTdtG = TimeConvert.tdtCalStrToTdt(prevTdtGStr.replace("@", ""));
         }
 
         if (!(targetTdtG > prevTdtG)) {
             throw new MmtcException(String.format(
                     "Error: the target sample has an earlier or equal TDT(G) as compared to the last triplet in the input SCLK kernel; new correlations must have subsequent SCLK and TDT(G) values that are strictly increasing. Target sample TDT(G): %s; SCLK kernel's latest TDT(G): %s",
-                    TimeConvert.tdtToTdtStr(targetTdtG),
+                    TimeConvert.tdtToTdtCalStr(targetTdtG),
                     prevTdtGStr
             ));
         }
 
-        final double prevEncSclk = Double.parseDouble(ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.ENCSCLK));
+        final double prevEncSclk = Double.parseDouble(ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX));
         if (!(tcTarget.getTargetSampleEncSclk() > prevEncSclk)) {
             throw new MmtcException(String.format(
                     "Error: the target sample has an earlier or equal SCLK as compared to the last triplet in the input SCLK kernel; new correlations must have subsequent SCLK and TDT(G) values that are strictly increasing. Target sample enc SCLK: %f; SCLK kernel's latest enc SCLK: %f",

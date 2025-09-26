@@ -104,7 +104,7 @@ public class ContactFilter {
 
             // The SCLK and TDT(G) from the previous time correlation (i.e., from last contact).
             int sclk_p = TimeConvert.encSclkToSclk(naifScId, sclk_kernel_fine_tick_modulus, priorEncSclk).intValue();
-            Double tdtG_p = TimeConvert.tdtStrToTdt(tdt_g0_previous);
+            Double tdtG_p = TimeConvert.tdtCalStrToTdt(tdt_g0_previous);
 
             logger.debug("ContactFilter.process(): Previous contact SCLK = " + sclk_p +
                     ", Previous TDT(G) = " + tdtG_p + "." + " Current SCLK = " + targetSample.getTkSclkCoarse() +

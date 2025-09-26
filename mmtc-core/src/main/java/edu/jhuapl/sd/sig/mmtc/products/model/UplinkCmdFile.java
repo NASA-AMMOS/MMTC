@@ -61,7 +61,7 @@ public class UplinkCmdFile {
                     ctx.correlation.target.get().getTargetSample().getTkSclkCoarse(),
                     ctx.correlation.target.get().getTargetSampleEtG(),
                     ctx.correlation.target.get().getTargetSampleTdtG(),
-                    TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG()),
+                    TimeConvert.tdtToTdtCalStr(ctx.correlation.target.get().getTargetSampleTdtG()),
                     ctx.correlation.predicted_clock_change_rate.get()
             );
 

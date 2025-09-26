@@ -25,6 +25,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
     public static final String ROLLEDBACK = "Rolled Back?";
     public static final String RUN_USER = "Run User";
     public static final String CLI_ARGS = "MMTC Invocation Args Used";
+    public static final String SMOOTHING_TRIPLET_TDT = "Smoothing Triplet TDT";
 
     private final List<String> headers;
     private final List<String> newOutputProductHeadersToEstablishEmptyVersionsFor;
@@ -91,7 +92,8 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
                     RUN_ID,
                     ROLLEDBACK,
                     RUN_USER,
-                    CLI_ARGS
+                    CLI_ARGS,
+                    SMOOTHING_TRIPLET_TDT
             ));
 
             // a column for each currently-configured output product
@@ -207,7 +209,7 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
 
         for (CSVRecord record : parser) {
             TableRecord newRecord = new TableRecord(getHeaders());
-            if (record.get("Rolled Back?").equals("true") && option.equals(RollbackEntryOption.IGNORE_ROLLBACKS)) {
+            if (record.get(ROLLEDBACK).equals("true") && option.equals(RollbackEntryOption.IGNORE_ROLLBACKS)) {
                 continue;
             }
 
@@ -224,6 +226,13 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
             throw new MmtcRollbackException("Rollback failed while reading RunHistoryFile: could not close parser");
         }
         return records;
+    }
+
+    public Collection<String> getSmoothingTripletTdtGValsToIgnoreDuringLookback() throws MmtcException {
+        return readRecords(RollbackEntryOption.IGNORE_ROLLBACKS).stream()
+                .map(rec -> rec.getValue(SMOOTHING_TRIPLET_TDT))
+                .filter(tdtG -> ! tdtG.equals("-"))
+                .collect(Collectors.toSet());
     }
 
     private TableRecord getRunHistoryRowForRunId(String runId) throws MmtcException {

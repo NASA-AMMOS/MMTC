@@ -2,6 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.correlation;
 
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
 
 import java.time.OffsetDateTime;
@@ -19,15 +20,10 @@ public class CorrelationInfo {
     public final Settable<Double> predicted_clock_change_rate = new Settable<>();
     public final Settable<Double> interpolated_clock_change_rate = new Settable<>();
 
-    // other computed information
-    // public final Settable<Double> etG = new Settable<>();
+    public Settable<SclkKernel.CorrelationTriplet> smoothingTriplet = new Settable<>();
 
+    // other computed information
     public final Settable<Double> sclk_drift_ms_per_day = new Settable<>();
     public final Settable<String> equivalent_scet_utc_for_tdt_g_iso_doy = new Settable<>();
     public final Settable<OffsetDateTime> equivalent_scet_utc_for_tdt_g = new Settable<>();
-
-    public final Settable<Double> tdt_s_error_ms = new Settable<>();
-
-
-
 }

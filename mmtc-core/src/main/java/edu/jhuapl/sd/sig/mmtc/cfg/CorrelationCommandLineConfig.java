@@ -13,6 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -26,10 +27,14 @@ public class CorrelationCommandLineConfig implements IConfiguration {
     private String[] args;
     private OffsetDateTime startTime;
     private OffsetDateTime stopTime;
+
     private ClockChangeRateMode clockChangeRateMode;
     private double clockChangeRateAssignedValue;
     private String clockChangeRateAssignedKey;
     private boolean isClockChangeRateModeExplicitlySet;
+
+    private boolean isInsertAdditionalSmoothingRecordExplicitlySet;
+    private TimeCorrelationAppConfig.AdditionalSmoothingRecordConfig additionalSmoothingRecordConfig;
 
     private static final String ClockChangeRateOptionCompute = "clkchgrate-compute";
     private static final String ClockChangeRateOptionNoDrift = "clkchgrate-nodrift";
@@ -82,7 +87,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
                 "F",
                 "disable-contact-filter",
                 false,
-                "Disable the contact filter. This overrides the presence of the contact filter settings in the configuration file."
+                "Disable the contact filter. If specified, overrides the presence of the contact filter settings in the configuration file."
         );
 
         opts.addOption(
@@ -90,6 +95,20 @@ public class CorrelationCommandLineConfig implements IConfiguration {
                 "test-mode-owlt",
                 true,
                 "Run in test mode, which allows the user to override one-way-light-time."
+        );
+
+        opts.addOption(
+                "s",
+                "with-smoothing-record",
+                true,
+                "Insert an additional 'smoothing' record to ensure continuity in SCLK-TDT relationship, at the given number of SCLK coarse ticks earlier than the new correlation record. Cannot be used with clkchgrate-compute interpolate. If specified, overrides the presence of related configuration in the configuration file."
+        );
+
+        opts.addOption(
+                "x",
+                "without-smoothing-record",
+                false,
+                "Do not insert an additional 'smoothing' record.  If specified, overrides the presence of related configuration in the configuration file."
         );
 
         opts.addOption("h", "help", false, "Print this message.");
@@ -131,6 +150,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
             }
 
             setClockChangeRateMode();
+            setAdditionalSmoothingRecord();
 
             if (posArgs.length == 2) {
                 // Convert the input data start/stop times to Java OffsetDateTime.
@@ -233,6 +253,43 @@ public class CorrelationCommandLineConfig implements IConfiguration {
         }
         else {
             isClockChangeRateModeExplicitlySet = false;
+        }
+    }
+
+    private boolean hasAdditionalSmoothingRecordBehaviorSpecified() {
+        return cmdLine.hasOption("s")
+                || cmdLine.hasOption("with-smoothing-record")
+                || cmdLine.hasOption("x")
+                || cmdLine.hasOption("without-smoothing-record");
+    }
+
+    private void setAdditionalSmoothingRecord() {
+        if (! hasAdditionalSmoothingRecordBehaviorSpecified()) {
+            this.isInsertAdditionalSmoothingRecordExplicitlySet = false;
+            this.additionalSmoothingRecordConfig = null;
+            return;
+        }
+
+        boolean isInsertAdditionalSmoothingRecord = cmdLine.hasOption("s") || cmdLine.hasOption("with-smoothing-record");
+        boolean isDoNotInsertAdditionalSmoothingRecord = cmdLine.hasOption("x") || cmdLine.hasOption("without-smoothing-record");
+
+        if (isInsertAdditionalSmoothingRecord && isDoNotInsertAdditionalSmoothingRecord) {
+            throw new IllegalStateException("The command-line arguments specified mutually incompatible options to both enable and disable the additional smoothing record.  Please address and rerun.");
+        }
+
+        this.isInsertAdditionalSmoothingRecordExplicitlySet = true;
+        if (isInsertAdditionalSmoothingRecord) {
+            this.additionalSmoothingRecordConfig = new TimeCorrelationAppConfig.AdditionalSmoothingRecordConfig(true, Integer.parseInt(cmdLine.getOptionValue("s")));
+        } else {
+            this.additionalSmoothingRecordConfig = new TimeCorrelationAppConfig.AdditionalSmoothingRecordConfig(false, 0);
+        }
+    }
+
+    public Optional<TimeCorrelationAppConfig.AdditionalSmoothingRecordConfig> getAdditionalSmoothingRecordInsertionOverride() {
+        if (isInsertAdditionalSmoothingRecordExplicitlySet) {
+            return Optional.of(this.additionalSmoothingRecordConfig);
+        } else {
+            return Optional.empty();
         }
     }
 
