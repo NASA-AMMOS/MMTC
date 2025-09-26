@@ -48,11 +48,11 @@ public class UplinkCmdFile {
     }
 
     public static UplinkCommand generateNewProduct(TimeCorrelationContext ctx) throws TimeConvertException {
-        UplinkCommand uplinkCmd = new UplinkCommand(
+        final UplinkCommand uplinkCmd = new UplinkCommand(
                 ctx.correlation.target.get().getTargetSample().getTkSclkCoarse(),
                 ctx.correlation.target.get().getTargetSampleEtG(),
                 ctx.correlation.target.get().getTargetSampleTdtG(),
-                TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG()),
+                TimeConvert.tdtToTdtCalStr(ctx.correlation.target.get().getTargetSampleTdtG()),
                 ctx.correlation.predicted_clock_change_rate.get()
         );
 

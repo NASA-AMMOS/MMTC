@@ -345,6 +345,28 @@ public abstract class MmtcConfig {
     }
 
     /**
+     * Get whether to insert an additional 'smoothing' record to the SCLK kernel and SCLK-SCET files.  If unset,
+     * defaults to false
+     * @return true if this feature is enabled, false otherwise
+     */
+    public boolean isAdditionalSmoothingCorrelationRecordInsertionEnabled() {
+        return timeCorrelationConfig.getConfig().getBoolean("compute.additionalSmoothingCorrelationRecordInsertion.enabled", false);
+    }
+
+    /**
+     * Get whether to insert an additional 'smoothing' record to the SCLK kernel and SCLK-SCET files.  If unset,
+     * defaults to false
+     * @return true if this feature is enabled, false otherwise
+     */
+    public int getAdditionalSmoothingCorrelationRecordInsertionCoarseSclkTickDuration() throws MmtcException {
+        final int val = timeCorrelationConfig.getConfig().getInt("compute.additionalSmoothingCorrelationRecordInsertion.coarseSclkTickDuration", 100);
+        if (val < 1) {
+            throw new MmtcException("The config key 'compute.additionalSmoothingCorrelationRecordInsertion.coarseSclkTickDuration' must have a value of 1 or greater.");
+        }
+        return val;
+    }
+
+    /**
      * Get the maximum virtual channel frame counter value a frame can be assigned before the next frame's virtual
      * channel frame index is assigned zero. Depending on mission, this can range anywhere from a few hundred to 
      * a few million, so MMTC needs to know when to expect a VCFC rollover.
@@ -817,13 +839,12 @@ public abstract class MmtcConfig {
      * purposes of computing the predicted clock change rate. This specifies how far back is too far
      * in finding the previous time correlation in computing Predicted CLKRATE. This value is read-in
      * from the config parameters as a floating point type representing days, multiplied by 24 to produce
-     * hours, and then the fractional part truncated to the integer whole hour.
+     * hours
      *
      * @return the maximum number of hours to look back
      */
-    public Integer getMaxPredictedClkRateLookBackHours() {
-        Float maxLookBack = timeCorrelationConfig.getConfig().getFloat("compute.tdtG.rate.predicted.maxLookBackDays") * 24;
-        return new Integer(maxLookBack.intValue());
+    public double getMaxPredictedClkRateLookBackHours() {
+        return timeCorrelationConfig.getConfig().getFloat("compute.tdtG.rate.predicted.maxLookBackDays") * 24.0;
     }
 
     /**
@@ -873,7 +894,6 @@ public abstract class MmtcConfig {
     public SclkScetFileLeapSecondSclkRate getSclkScetLeapSecondRateMode() {
         final String mode = timeCorrelationConfig.getConfig().getString("product.sclkScetFile.leapSecondSclkRateMode", "PRIOR_RATE");
         return SclkScetFileLeapSecondSclkRate.valueOf(mode);
-
     }
 
     /**

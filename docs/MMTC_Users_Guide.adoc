@@ -1140,6 +1140,16 @@ source.name is not set to rawTlmTable.
 |FLT
 |The maximum number of days to look back into previous contacts to get SCLK and TDT values when computing the predicted clock change rate. This value is a float type and will be converted to truncated integer whole hours internally. If there is no time correlation record in the input SCLK Kernel within this amount of time prior to the current sample time, the MMTC will terminate with an error.
 
+|compute.additionalSmoothingCorrelationRecordInsertion.enabled
+|OPTIONAL
+|BOOL
+|Whether to insert an additional 'smoothing' correlation triplet into written SCLK kernels and SCLK-SCET files that ensures SCLK-SCET continuity with `--clkchgrate-compute p`, `--clkchgrate-nodrift`, or `--clkchgrate-assign` modes.  This helps keep time conversions stable between correlation output products, for the majority of the covered SCLK or SCET times, while providing continuity in the SCLK-SCET relationship.  Not useful or applicable when using `--clkchgrate-compute i`; MMTC will not allow runs with both `--clkchgrate-i` and this mode enabled.  It is not recommended to mix runs with interpolated mode and smoothing records enabled. Defaults to `false`.
+
+|compute.additionalSmoothingCorrelationRecordInsertion.coarseSclkTickDuration
+|OPTIONAL
+|INT
+|A positive integer that specifies how much earlier the additional 'smoothing' record should be placed, as compared to the new final 'actual' correlation record, in terms of SCLK coarse ticks. In other words, this value is the SCLK duration of the record that 'smooths' the transition from one correlation record to the next. Default value is `100`.
+
 |compute.tdtS.threshold.errorMsecWarning
 |OPTIONAL
 |DBL

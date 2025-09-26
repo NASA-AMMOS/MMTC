@@ -16,6 +16,8 @@ import java.text.DecimalFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Optional;
 
 /**
  * The SclkKernel class creates the SCLK kernel file and its contents. The SCLK Kernel is the primary product of MMTC.
@@ -23,25 +25,18 @@ import java.util.ArrayList;
 public class SclkKernel extends TextProduct {
     public static final String FILE_SUFFIX = ".tsc";
 
+    /* The number of fields in an SCLK kernel triplet time correlation record. */
+    public static final int NUM_FIELDS_IN_TRIPLET = 3;
+
     /* Indices for the fields in a triplet record. */
-    public static final int ENCSCLK    = 0;
-    public static final int TDTG       = 1;
-    public static final int CLKCHGRATE = 2;
+    public static final int TRIPLET_ENCSCLK_FIELD_INDEX = 0;
+    public static final int TRIPLET_TDTG_FIELD_INDEX = 1;
+    public static final int TRIPLET_CLKCHGRATE_FIELD_INDEX = 2;
 
-    /* Encoded SCLK value for the new time correlation record. */
-    private Double encSclk;
-
-    /* TDT value in calendar string form for the new time correlation record. */
-    private String tdtStr;
-
-    /* Clock change rate for the new time correlation record. */
-    private Double clockChgRate;
+    private Optional<CorrelationTriplet> newTriplet = Optional.empty();
 
     /* New interpolated clock change rate to overwrite the predicted rate in the existing SCLK kernel record. */
     private Double updatedClockChgRate;
-
-    /* Indicates if the new time correlation data have been set. */
-    private boolean newTripletSet = false;
 
     /* Indicates if an interpolated clock change rate is to replace the rate in the existing SCLK kernel record. */
     private boolean newClkChgRateSet = false;
@@ -49,9 +44,7 @@ public class SclkKernel extends TextProduct {
     /* The zero-based index of the last data record in the SCLK kernel (i.e., the last record containing a triplet. */
     private int endDataNum = -1;
 
-    /* The number of fields in an SCLK kernel triplet time correlation record. */
-    private int numFieldsInRecord = 3;
-
+    private Optional<CorrelationTriplet> smoothingTriplet = Optional.empty();
 
     /**
      * Class constructor.
@@ -101,10 +94,19 @@ public class SclkKernel extends TextProduct {
      * @param clockChgRate IN clock change rate
      */
     public void setNewTriplet(Double encSclk, String tdtStr, Double clockChgRate) {
-        this.encSclk      = encSclk;
-        this.tdtStr       = tdtStr;
-        this.clockChgRate = clockChgRate;
-        newTripletSet     = true;
+        this.newTriplet = Optional.of(new CorrelationTriplet(encSclk, tdtStr, clockChgRate));
+    }
+
+    public static class CorrelationTriplet {
+        public final double encSclk;
+        public final String tdtStr;
+        public final double clkChgRate;
+
+        public CorrelationTriplet(double encSclk, String tdtStr, double clkChgRate) {
+            this.encSclk = encSclk;
+            this.tdtStr = tdtStr;
+            this.clkChgRate = clkChgRate;
+        }
     }
 
 
@@ -140,35 +142,40 @@ public class SclkKernel extends TextProduct {
             throw new TextProductException("Valid source SCLK Kernel data have not been loaded.");
         }
 
-        if (newTripletSet && sourceProductReadIn) {
-
-            /* Create the new SCLK kernel from the Old. */
-            newProductLines = new ArrayList<>(sourceProductLines);
-
-            /* Replace the FILENAME field. */
-            String newname = "FILENAME = " + "\"" + getName() + "\"";
-            replaceFieldValue("FILENAME =", newname, "=");
-
-            /* Replace the CREATION_DATE field. */
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
-            OffsetDateTime productCreationTime = getProductCreationTime();
-            String newDate = "CREATION_DATE = " + "\"" + productCreationTime.format(formatter) + "\"";
-            replaceFieldValue("CREATION_DATE =", newDate, "=");
-
-            /* Replace the clock change rate of the last record in the product with the new rate, if selected. */
-            if (newClkChgRateSet) {
-                String updatedTriplet = replaceChgRate();
-                newProductLines.remove(endDataNum);
-                newProductLines.add(endDataNum, updatedTriplet);
-            }
-
-            /* Form a new time correlation record from the triplet values and append it to the SCLK kernel data. */
-            String newTriplet = assembleNewTripletRecord();
-            newProductLines.add(endDataNum+1, newTriplet);
-        }
-        else {
+        if (! (newTriplet.isPresent() && sourceProductReadIn)) {
             throw new TextProductException("Cannot create SCLK kernel. New record values have not been set.");
         }
+
+        /* Create the new SCLK kernel from the Old. */
+        newProductLines = new ArrayList<>(sourceProductLines);
+
+        /* Replace the FILENAME field. */
+        String newname = "FILENAME = " + "\"" + getName() + "\"";
+        replaceFieldValue("FILENAME =", newname, "=");
+
+        /* Replace the CREATION_DATE field. */
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        OffsetDateTime productCreationTime = getProductCreationTime();
+        String newDate = "CREATION_DATE = " + "\"" + productCreationTime.format(formatter) + "\"";
+        replaceFieldValue("CREATION_DATE =", newDate, "=");
+
+        final String previousFinalRecordForFormattingReference = sourceProductLines.get(endDataNum);
+
+        // Replace the clock change rate of the last record in the product with the new rate, if selected
+        if (newClkChgRateSet) {
+            String updatedTriplet = replaceChgRate();
+            newProductLines.remove(endDataNum);
+            newProductLines.add(endDataNum, updatedTriplet);
+        }
+
+        // Append the smoothing record, if selected
+        if (smoothingTriplet.isPresent()) {
+            newProductLines.add(endDataNum + 1, assembleNewTripletRecord(smoothingTriplet.get(), previousFinalRecordForFormattingReference));
+            endDataNum += 1;
+        }
+
+        // Form a new time correlation record from the triplet values and append it to the SCLK kernel data
+        newProductLines.add(endDataNum + 1, assembleNewTripletRecord(newTriplet.get(), previousFinalRecordForFormattingReference));
     }
 
 
@@ -183,13 +190,13 @@ public class SclkKernel extends TextProduct {
     private String replaceChgRate() throws TextProductException {
 
         String record          = sourceProductLines.get(endDataNum);
-        String[] tripletFields = parseRecord(record, numFieldsInRecord);
+        String[] tripletFields = parseRecord(record, NUM_FIELDS_IN_TRIPLET);
 
         /* Replace the existing clock change rate value with the new one. */
         String newChgRateStr = formatChgRateStr(updatedClockChgRate);
 
         /* Replace the clock change rate. It is the third field of the SCLK kernel record. */
-        String record1 = record.replaceFirst(tripletFields[CLKCHGRATE], newChgRateStr);
+        String record1 = record.replaceFirst(tripletFields[TRIPLET_CLKCHGRATE_FIELD_INDEX], newChgRateStr);
 
         return record1;
     }
@@ -201,7 +208,7 @@ public class SclkKernel extends TextProduct {
      * @param clkChgRate the clock change rate in numeric form
      * @return the clock change rate as a formatted string
      */
-    private String formatChgRateStr(Double clkChgRate) {
+    private static String formatChgRateStr(Double clkChgRate) {
         DecimalFormat clkChgRateFormat = new DecimalFormat("0.00000000000");
         clkChgRateFormat.setRoundingMode(RoundingMode.HALF_UP);
         String chgRateStr = clkChgRateFormat.format(clkChgRate);
@@ -226,7 +233,7 @@ public class SclkKernel extends TextProduct {
         // Remove any parentheses that might be in the record.
         String recstr  = record.replace("(", "");
         recstr         = recstr.replace(")", "");
-        String[] tripletFields = parseRecord(recstr, numFieldsInRecord);
+        String[] tripletFields = parseRecord(recstr, NUM_FIELDS_IN_TRIPLET);
 
         return tripletFields[index];
     }
@@ -240,30 +247,38 @@ public class SclkKernel extends TextProduct {
      * @return the parsed record that is the number of hours back
      * @throws TextProductException if the prior record could not be found
      */
-    public String[] getPriorRec(Double fromTdt, Double lookBackHours) throws TextProductException {
-        String[] tripletFields = null;
-
+    public String[] getPriorRec(Double fromTdt, Double lookBackHours, Collection<String> smoothingRecordTdtStringsToIgnore) throws TextProductException {
         try {
-            double minLookbackSeconds = lookBackHours * 3600.;
+            final double minLookbackSeconds = lookBackHours * 3600.;
 
             for (int i = endDataNum; i > 0; i--) {
                 String record = sourceProductLines.get(i);
+
                 if (! isDataRecord(record)) {
                     throw new TextProductException("Look back time invalid for the specified SCLK kernel.");
                 }
-                tripletFields = parseRecord(record, numFieldsInRecord);
-                double tdtsec = TimeConvert.tdtStrToTdt(tripletFields[TDTG].substring(1));
 
-                if ((fromTdt - tdtsec) >= minLookbackSeconds) {
-                    break;
+                final String[] tripletFields = parseRecord(record, NUM_FIELDS_IN_TRIPLET);
+                final String tdtStr = tripletFields[TRIPLET_TDTG_FIELD_INDEX].substring(1);
+                final double tdtSec = TimeConvert.tdtCalStrToTdt(tdtStr);
+
+                if (smoothingRecordTdtStringsToIgnore.contains(tdtStr)) {
+                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to it being a smoothing record", tdtStr));
+                    continue;
                 }
-            }
 
+                if ((fromTdt - tdtSec) < minLookbackSeconds) {
+                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to not meeting lookback minimum", tdtStr));
+                    continue;
+                }
+
+                return tripletFields;
+            }
         } catch (TimeConvertException e) {
             throw new TextProductException("Unable to convert TDT string to numeric TDT seconds.", e);
         }
 
-        return tripletFields;
+        throw new TextProductException("Look back time invalid for the specified SCLK kernel.");
     }
 
 
@@ -274,33 +289,32 @@ public class SclkKernel extends TextProduct {
      * @return the new SCLK kernel time correlation record
      * @throws TextProductException if the kernel record could not be assembled
      */
-    private String assembleNewTripletRecord() throws TextProductException {
+    private static String assembleNewTripletRecord(CorrelationTriplet triplet, String sourceTripletAsStringForFormatting) throws TextProductException {
 
         /* Use the last existing record in the SCLK kernel data as the template to create the new one.
            This assures consistency of format and spacing. */
-        String record          = sourceProductLines.get(endDataNum);
-        String[] tripletFields = parseRecord(record, numFieldsInRecord);
+        String[] tripletFields = parseRecord(sourceTripletAsStringForFormatting, NUM_FIELDS_IN_TRIPLET);
 
         /* New encoded SCLK value. */
         DecimalFormat encSclkFormat = new DecimalFormat("#.#");
         encSclkFormat.setRoundingMode(RoundingMode.HALF_UP);
-        String encSclkStr = encSclkFormat.format(encSclk);
+        String encSclkStr = encSclkFormat.format(triplet.encSclk);
 
         /* Format the encoded SCLK field such that the new triplet entry left-aligns with the previous entry. */
         String record0;
-        if (encSclkStr.length() > tripletFields[ENCSCLK].length()) {
-            String paddedEncSclk = StringUtils.leftPad(tripletFields[ENCSCLK],encSclkStr.length(), ' ');
-            record0 = record.replaceFirst(paddedEncSclk, encSclkStr);
+        if (encSclkStr.length() > tripletFields[TRIPLET_ENCSCLK_FIELD_INDEX].length()) {
+            String paddedEncSclk = StringUtils.leftPad(tripletFields[TRIPLET_ENCSCLK_FIELD_INDEX],encSclkStr.length(), ' ');
+            record0 = sourceTripletAsStringForFormatting.replaceFirst(paddedEncSclk, encSclkStr);
         } else {
-            record0 = record.replaceFirst(tripletFields[ENCSCLK], encSclkStr);
+            record0 = sourceTripletAsStringForFormatting.replaceFirst(tripletFields[TRIPLET_ENCSCLK_FIELD_INDEX], encSclkStr);
         }
 
         /* New TDT value in calendar string form. */
-        String record1 = record0.replaceFirst(tripletFields[TDTG], "@" + tdtStr);
+        String record1 = record0.replaceFirst(tripletFields[TRIPLET_TDTG_FIELD_INDEX], "@" + triplet.tdtStr);
 
         /* New clock change rate value. */
-        String chgRateStr = formatChgRateStr(clockChgRate);
-        String record2    = record1.replaceFirst(tripletFields[CLKCHGRATE], chgRateStr);
+        String chgRateStr = formatChgRateStr(triplet.clkChgRate);
+        String record2    = record1.replaceFirst(tripletFields[TRIPLET_CLKCHGRATE_FIELD_INDEX], chgRateStr);
 
         return record2;
     }
@@ -342,7 +356,7 @@ public class SclkKernel extends TextProduct {
         recstr = recstr.replace(")", "");
 
         String[] fields = recstr.trim().split("\\s+");
-        if (fields.length == (ENCSCLK+TDTG+CLKCHGRATE)) {
+        if (fields.length == (TRIPLET_ENCSCLK_FIELD_INDEX + TRIPLET_TDTG_FIELD_INDEX + TRIPLET_CLKCHGRATE_FIELD_INDEX)) {
             isdata = fields[1].startsWith("@") ||
                     (isNumVal(fields[0]) && isNumVal(fields[1]) && isNumVal(fields[2]));
         }
@@ -405,13 +419,18 @@ public class SclkKernel extends TextProduct {
         newSclkKernel.setName(ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc");
         newSclkKernel.setNewTriplet(
                 ctx.correlation.target.get().getTargetSampleEncSclk(),
-                TimeConvert.tdtToTdtStr(ctx.correlation.target.get().getTargetSampleTdtG()),
+                TimeConvert.tdtToTdtCalStr(ctx.correlation.target.get().getTargetSampleTdtG()),
                 ctx.correlation.predicted_clock_change_rate.get()
         );
 
         if (ctx.correlation.interpolated_clock_change_rate.isSet()) {
             newSclkKernel.setReplacementClockChgRate(ctx.correlation.interpolated_clock_change_rate.get());
         }
+
+        if (ctx.correlation.smoothingTriplet.isSet()) {
+            newSclkKernel.setSmoothingTriplet(ctx.correlation.smoothingTriplet.get());
+        }
+
         ctx.newSclkKernel.set(newSclkKernel);
     }
 
@@ -444,5 +463,9 @@ public class SclkKernel extends TextProduct {
         } catch (TextProductException | TimeConvertException ex) {
             throw new MmtcException("Unable to write SCLK kernel", ex);
         }
+    }
+
+    private void setSmoothingTriplet(CorrelationTriplet smoothingTriplet) {
+        this.smoothingTriplet = Optional.of(smoothingTriplet);
     }
 }

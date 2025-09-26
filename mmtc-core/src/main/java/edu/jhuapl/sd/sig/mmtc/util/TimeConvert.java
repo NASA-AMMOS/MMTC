@@ -13,7 +13,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.time.Year;
 
-import org.apache.commons.beanutils.converters.BigDecimalConverter;
 import org.apache.commons.lang3.StringUtils;
 
 import spice.basic.*;
@@ -26,7 +25,7 @@ import spice.basic.*;
  * JNISpice Java interface to their CSPICE library. Unless loaded already in
  * the calling application, the <code>loadSpiceLib()</code> function should be
  * called to load CSPICE and the necessary SPICE kernels before any
- * other functions in this class are called. It need be called only once.
+ * other functions in this class are called. It needs be called only once.
  *
  * <P>The NAIF SPICE documentation is extensive, available on-line, and provides
  * a full description of SPICE and its usage.
@@ -595,16 +594,16 @@ import spice.basic.*;
      *  dd-MMM-yyyy-hh:mm:ss.ssssss
      *  e.g., "19-DEC-2017-05:50:08.956750"
      *
-     * @param tdtstr  IN the TDT in calendar string form
+     * @param tdtCalStr  IN the TDT in calendar string form
      * @return TDT in numeric seconds of J2000 epoch form
      * @throws TimeConvertException when there is a SPICE error
      */
-    public static Double tdtStrToTdt(String tdtstr) throws TimeConvertException {
+    public static Double tdtCalStrToTdt(String tdtCalStr) throws TimeConvertException {
 
         Double tdt;
 
         try {
-            double et = CSPICE.str2et(tdtstr + " TDT");
+            double et = CSPICE.str2et(tdtCalStr + " TDT");
             tdt = etToTdt(et);
 
         } catch (SpiceErrorException e) {
@@ -626,7 +625,7 @@ import spice.basic.*;
      * @return TDT in calendar string form
      * @throws TimeConvertException when there is a SPICE error
      */
-    public static String tdtToTdtStr(Double tdt) throws TimeConvertException {
+    public static String tdtToTdtCalStr(Double tdt) throws TimeConvertException {
 
         String tdtStr;
 
@@ -651,18 +650,18 @@ import spice.basic.*;
     /**
      * Converts a TDT string to a UTC ISO day of year calendar string.
      *
-     * @param tdtStr     IN the TDT as a calendar string
-     * @param precision  IN the number of digits of fractional seconds
+     * @param tdtCalStr     IN the TDT as a calendar string
+     * @param precision          IN the number of digits of fractional seconds
      * @return the UTC string
      * @throws TimeConvertException if the TDT could not be converted to UTC
      */
-    public static String tdtStrToUtc(String tdtStr, Integer precision) throws TimeConvertException {
+    public static String tdtCalStrToUtc(String tdtCalStr, Integer precision) throws TimeConvertException {
 
         String utc;
 
         try {
 
-            double et  = CSPICE.str2et(tdtStr + " TDT");
+            double et  = CSPICE.str2et(tdtCalStr + " TDT");
             utc        = CSPICE.et2utc(et, "ISOD", precision);
 
         } catch (SpiceErrorException e) {

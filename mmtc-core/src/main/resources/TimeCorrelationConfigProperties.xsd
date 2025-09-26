@@ -89,6 +89,9 @@
       <!-- Alarm thresholds -->
       <xs:enumeration value="compute.tdtS.threshold.errorMsecWarning"/>
 
+      <xs:enumeration value="compute.additionalSmoothingCorrelationRecordInsertion.enabled"/>
+      <xs:enumeration value="compute.additionalSmoothingCorrelationRecordInsertion.coarseSclkTickDuration"/>
+
       <!-- Contact Filter Settings: The enabled setting can be overriden at the command line. Drift threshold values
       are in milliseconds/day.  -->
       <xs:enumeration value="filter.contact.enabled"/>
