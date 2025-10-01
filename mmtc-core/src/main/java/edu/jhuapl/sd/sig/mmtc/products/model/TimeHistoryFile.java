@@ -154,7 +154,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         final DecimalFormat tdf = new DecimalFormat("#.000000");
         tdf.setRoundingMode(RoundingMode.HALF_UP);
 
-        if (timeHistoryFile.exists() && ctx.correlation.interpolated_clock_change_rate.isSet()) {
+        if (timeHistoryFile.exists() && ctx.correlation.interpolated_clock_change_rate.isSet() && !ctx.config.isDryRun()) {
             Map<String, String> lastRecord = timeHistoryFile.readLastRecord();
             lastRecord.replace(TimeHistoryFile.INTERP_CLK_CHANGE_RATE, String.valueOf(ctx.correlation.interpolated_clock_change_rate.get()));
             timeHistoryFile.replaceLastRecord(lastRecord);
