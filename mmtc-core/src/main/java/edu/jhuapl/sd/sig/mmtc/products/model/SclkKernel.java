@@ -394,8 +394,7 @@ public class SclkKernel extends TextProduct {
 
     /**
      * Generates a new SCLK Kernel but doesn't yet write it to file. Helper method for writeNewProduct
-     * @param ctx
-     * @return
+     * @param ctx The current TimeCorrelationContext
      * @throws TimeConvertException
      */
     public static void calculateNewProduct(TimeCorrelationContext ctx) throws TimeConvertException, TextProductException {

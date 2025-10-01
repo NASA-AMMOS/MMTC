@@ -144,10 +144,9 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
     /**
      * Helper function for creation of a new Time History file record. Takes a reference to a time history file record
      * and modifies it in place so its caller can eventually write it or print it in the case of dry runs
-     * @param ctx
-     * @param timeHistoryFile
-     * @param newThfRec
-     * @return a TableRecord with the updated contents of the time history file
+     * @param ctx The current TimeCorrelationContext
+     * @param timeHistoryFile The Time hist file to be modified
+     * @param newThfRec A reference to the TableRecord that will be modified by this method
      * @throws MmtcException
      * @throws TimeConvertException
      */
