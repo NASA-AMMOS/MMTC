@@ -681,7 +681,7 @@ public class SclkScetFile extends TextProduct {
     @Override
     public void readSourceProduct() {
 
-        this.sourceProductLines = ctx.newSclkKernel.get().sourceProductLines;
+        this.sourceProductLines = ctx.newSclkKernel.get().newProductLines;
         sourceProductReadIn = true;
     }
 
