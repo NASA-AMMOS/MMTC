@@ -66,8 +66,8 @@ public abstract class OutputProductDefinition<T extends ResolvedProductLocation>
      * Generates a string summarizing the hypothetical changes to an output product that would have been made had this been a real
      * run and the dry run flag wasn't passed. This generally involves all the steps usually taken to compute and produce an MMTC
      * output product except actually writing it to disk (except the SCLK kernel which must be written but will later be deleted).
-     * @param ctx
-     * @return
+     * @param ctx The current TimeCorrelationContext
+     * @return A string representation of any additions that would have been made to an output product
      * @throws MmtcException
      * @throws TextProductException
      * @throws IOException
