@@ -26,6 +26,7 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.appender.RollingFileAppender;
 
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
@@ -384,7 +385,7 @@ public class TimeCorrelationApp {
             logger.warn(String.format("Test mode is enabled! One-way light time will be set to the provided value %f and ancillary positional and velocity calculations will be skipped.", config.getTestModeOwlt()));
         }
         if (config.isDryRun()) {
-            logger.warn("Dry run mode is enabled! No data products from this run will be kept and will instead be printed to the console and recorded in the log at {}/log/", System.getenv("MMTC_HOME"));
+            logger.warn("Dry run mode is enabled! No data products from this run will be kept and will instead be printed to the console and recorded in the log file according to log4j2.xml");
         }
 
 
@@ -514,9 +515,6 @@ public class TimeCorrelationApp {
             runHistoryFile.writeRecord(newRunHistoryFileRecord);
             logger.info(USER_NOTICE, "Appended a new entry to Run History File located at " + runHistoryFile.getPath());
             logger.info(String.format("Run at %s recorded to %s", ctx.appRunTime, config.getRunHistoryFilePath().toString()));
-        } else {
-            Files.deleteIfExists(ctx.newSclkKernelPath.get());
-            logger.info(USER_NOTICE, "Deleted temporary SCLK kernel {}. No other output products were written to disk.", ctx.newSclkKernelPath.get());
         }
 
         logger.info(USER_NOTICE, "MMTC completed successfully.");

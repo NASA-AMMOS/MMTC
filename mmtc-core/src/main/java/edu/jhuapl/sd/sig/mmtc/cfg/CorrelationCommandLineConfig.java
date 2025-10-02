@@ -96,8 +96,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
                 "D",
                 "dry-run",
                 false,
-                "Executes a dry run of MMTC with outputs calculated as otherwise configured " +
-                        "but only records them in the log without writing/modifying product files."
+                "Enables dry-run mode, resulting in correlation outputs being printed & logged but not written to the filesystem. The run history file likewise won't be modified."
         );
 
         opts.addOption("h", "help", false, "Print this message.");

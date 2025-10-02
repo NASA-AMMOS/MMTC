@@ -358,17 +358,27 @@ abstract class TextProduct {
         String newFilePath = dirname + pathSep + filename;
         Path newFile       = Paths.get(newFilePath);
 
-        if (Files.exists(newFile) && !dirname.equals("/tmp")) { // Ignore duplicate products if we're writing to the /tmp/ dir--it means this is likely a dry run and the last run was aborted
+        if (Files.exists(newFile)) {
             throw new TextProductException("Error writing product file \"" + newFilePath + "\". It already exists.");
         }
 
         try {
+            if(dirname.equals("/tmp")) {
+                File tempKernel = File.createTempFile("temp_sclk_kernel-", "-"+filename);
+                newFile = tempKernel.toPath();
+                filename = tempKernel.getName();
+                tempKernel.deleteOnExit();
+            }
             Files.write(newFile, newProductLines);
         } catch (IOException e) {
             throw new TextProductException("Error creating new Time Correlation file \"" + newFilePath + "\".", e);
         }
 
-        logger.info(MmtcCli.USER_NOTICE, "Created new time correlation product file: " + newFilePath);
+        if (dirname.equals("/tmp")) {
+            logger.debug("Wrote temporary SCLK kernel {} to {} and set to delete on exit", filename, dirname);
+        } else {
+            logger.info(MmtcCli.USER_NOTICE, "Created new time correlation product file: " + newFilePath);
+        }
 
         return newFile;
     }
