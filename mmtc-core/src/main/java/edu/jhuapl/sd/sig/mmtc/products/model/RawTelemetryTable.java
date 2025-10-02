@@ -66,8 +66,8 @@ public class RawTelemetryTable extends AbstractTimeCorrelationTable {
 
         for (FrameSample sample : ctx.correlation.target.get().getSampleSet()) {
             rawTlmTableRecord = sample.toRawTelemetryTableRecord(rawTlmTable.getHeaders());
-            rawTlmTableRecord.setValue(RawTelemetryTable.RUN_TIME, ctx.appRunTime.toString());
         }
+        rawTlmTableRecord.setValue(RawTelemetryTable.RUN_TIME, ctx.appRunTime.toString());
 
         return rawTlmTableRecord;
     }

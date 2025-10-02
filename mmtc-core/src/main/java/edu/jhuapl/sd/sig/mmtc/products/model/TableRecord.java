@@ -1,9 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.products.model;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
@@ -42,8 +39,8 @@ public class TableRecord {
      *
      * @return the list of values as strings.
      */
-    public Collection<String> getValues() {
-        return data.values();
+    public List<String> getValues() {
+        return new ArrayList<>(data.values());
     }
 
     /**
