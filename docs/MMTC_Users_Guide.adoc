@@ -662,6 +662,13 @@ This option and any other *--clkchgrate-** options are mutually exclusive.
 |N/A
 |In a testing environment and in certain operational scenarios, it can be necessary to have MMTC assign the clock change rate of the new time correlation to 1.0, indicating no clock drift, rather than computing it. Also, if this option is selected,  MMTC will not replace the existing clock change rate in the SCLK kernel with an interpolated value. The value 1.00000000000 will appear in the new (latest) time correlation record in the SCLK kernel and SCLK/SCET file. This option and any other *--clkchgrate-** options are mutually exclusive.
 
+|-D
+|--dry-run
+|N/A
+|Runs MMTC in dry run mode. No output products will be modified or created and "what-if" output
+products will instead be printed to the console and written to the log. The run history file will likewise
+remain unappended. Otherwise runs MMTC normally according to other options and config keys.
+
 |-F
 |--disable-contact-filter
 |N/A
