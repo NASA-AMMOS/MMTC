@@ -5,6 +5,8 @@ import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.util.CdsTimeCode;
 
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,7 +46,7 @@ public class ErtFilter implements TimeCorrelationFilter {
             logger.error("Sample set contains unordered ERT values");
             return false;
         }
-        
+
         final double firstFrameDeltaSec = Math.abs(samples.get(1).getErt().getDeltaSeconds(lastErt));
         logger.debug(String.format("ERT Filter: Baseline frame delta from first two samples: %f seconds; Acceptable variance: +/- %f seconds", firstFrameDeltaSec, maxDeltaVarianceSec));
 
@@ -53,20 +55,25 @@ public class ErtFilter implements TimeCorrelationFilter {
             FrameSample sample = samples.get(i);
             double deltaSeconds = Math.abs(sample.getErt().getDeltaSeconds(lastErt));
 
-            logger.debug(String.format("ERT Filter: Current ERT: %s; Previous ERT: %s; Delta seconds: %f",
-                    sample.getErt().toString(),
-                    lastErt.toString(),
-                    deltaSeconds));
+            try {
+                logger.debug(String.format("ERT Filter: Current ERT: %s; Previous ERT: %s; Delta seconds: %f",
+                        sample.getErtStr(),
+                        TimeConvert.cdsToIsoUtc(lastErt),
+                        deltaSeconds));
 
-            if (Math.abs(firstFrameDeltaSec - deltaSeconds) > maxDeltaVarianceSec) {
-                logger.warn(String.format("ERT Filter failed: Current ERT: %s; Previous ERT: %s. Delta seconds of %f" +
-                        " exceeds threshold of %f +/- %f seconds",
-                        sample.getErt().toString(),
-                        lastErt.toString(),
-                        deltaSeconds,
-                        firstFrameDeltaSec,
-                        maxDeltaVarianceSec));
-                return false;
+                if (Math.abs(firstFrameDeltaSec - deltaSeconds) > maxDeltaVarianceSec) {
+                    logger.warn(String.format("ERT Filter failed: Current ERT: %s; Previous ERT: %s. Delta seconds of %f" +
+                                    " exceeds threshold of %f +/- %f seconds",
+                            sample.getErtStr(),
+                            TimeConvert.cdsToIsoUtc(lastErt),
+                            deltaSeconds,
+                            firstFrameDeltaSec,
+                            maxDeltaVarianceSec));
+                    return false;
+                }
+
+            } catch (TimeConvertException e) {
+                throw new MmtcException("Failed to convert between CDS and UTC timecodes", e);
             }
 
             lastErt = sample.getErt();
