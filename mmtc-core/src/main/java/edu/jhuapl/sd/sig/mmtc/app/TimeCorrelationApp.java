@@ -443,7 +443,7 @@ public class TimeCorrelationApp {
             final double predictedClockChangeRate;
 
             final TimeCorrelationAppConfig.ClockChangeRateMode actualClockChangeRateMode;
-            if (config.getClockChangeRateMode().equals(TimeCorrelationAppConfig.ClockChangeRateMode.COMPUTE_INTERPOLATED) && ctx.currentSclkKernel.get().getSourceProductDataRecCount() == 1) {
+            if (config.getClockChangeRateMode().equals(TimeCorrelationAppConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE) && ctx.currentSclkKernel.get().getSourceProductDataRecCount() == 1) {
                 /*
                  * If this is the very first run of the application for a mission, the input SCLK Kernel is assumed to be the seed kernel.
                  * In this case and ONLY in this case, only compute the predicted clock change rate value, so as
@@ -451,7 +451,7 @@ public class TimeCorrelationApp {
                  * CLKRATE method anyway for the first few runs.
                  */
                 logger.warn("Not computing interpolated rate for prior SCLK kernel record so as not to overwrite seed kernel entry; switching clock change rate mode to compute-predicted");
-                actualClockChangeRateMode = TimeCorrelationAppConfig.ClockChangeRateMode.COMPUTE_PREDICTED;
+                actualClockChangeRateMode = TimeCorrelationAppConfig.ClockChangeRateMode.COMPUTE_PREDICT;
             } else {
                 actualClockChangeRateMode = config.getClockChangeRateMode();
             }
@@ -466,10 +466,10 @@ public class TimeCorrelationApp {
                 case ASSIGN:
                     predictedClockChangeRate = config.getClockChangeRateAssignedValue();
                     break;
-                case COMPUTE_INTERPOLATED:
+                case COMPUTE_INTERPOLATE:
                     ctx.correlation.interpolated_clock_change_rate.set(computeInterpolatedClkChgRate(curr_sclk_coarse, curr_tdt_g));
                     // purposeful fall-through to also compute the predicted (forward-looking) clock change rate
-                case COMPUTE_PREDICTED:
+                case COMPUTE_PREDICT:
                     predictedClockChangeRate = computePredictedClkChgRate(tcTarget.getTargetSample().getTkSclkCoarse(), curr_tdt_g);
 
                     // Compute and record the drift rate of the SCLK counter in ms/day

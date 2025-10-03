@@ -36,11 +36,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 /**
- * Defines a wrapper of the configuration parameters for the entire time correlation. These include the
- * parameters read from the TimeCorrelationConfigProperties.xml file, the options provided buy a user from
- * the command line, Ground Station Map associations, and the SCLK Partition Map associations.
+ * A class assisting with loading and providing access to values in file-based configuration. These include the
+ * parameters read from the TimeCorrelationConfigProperties.xml file, Ground Station Map associations,
+ * and the SCLK Partition Map associations.
  *
- * Functions in this class also provide access to each item in the TimeCorrelationConfigProperties.xml
+ * Functions in this class provide access to each item in the TimeCorrelationConfigProperties.xml
  * configuration parameters file.
  */
 public abstract class MmtcConfig {

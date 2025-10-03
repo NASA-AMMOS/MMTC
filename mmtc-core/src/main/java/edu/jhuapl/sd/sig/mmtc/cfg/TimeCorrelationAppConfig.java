@@ -1,15 +1,15 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
-import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
-import org.apache.commons.configuration2.ex.ConversionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.OffsetDateTime;
 import java.util.*;
+
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 public class TimeCorrelationAppConfig extends MmtcConfig {
     public static final String CONTACT_FILTER = "contact";
@@ -23,7 +23,8 @@ public class TimeCorrelationAppConfig extends MmtcConfig {
     public static final String VCID_FILTER = "vcid";
     public static final String CONSEC_MC_FRAME_FILTER = "consecutiveMasterChannelFrames";
 
-    private static final ClockChangeRateMode defaultClockChangeRateMode = ClockChangeRateMode.COMPUTE_INTERPOLATED;
+    private static final List<ClockChangeRateMode> CLOCK_CHANGE_RATE_ASSIGN_MODES = Arrays.asList(ClockChangeRateMode.ASSIGN, ClockChangeRateMode.ASSIGN_KEY);
+    private static final ClockChangeRateMode DEFAULT_CLOCK_CHANGE_RATE_MODE = ClockChangeRateMode.COMPUTE_INTERPOLATE;
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -48,8 +49,8 @@ public class TimeCorrelationAppConfig extends MmtcConfig {
     }
 
     public enum ClockChangeRateMode {
-        COMPUTE_INTERPOLATED,
-        COMPUTE_PREDICTED,
+        COMPUTE_INTERPOLATE,
+        COMPUTE_PREDICT,
         ASSIGN,
         ASSIGN_KEY,
         NO_DRIFT
@@ -69,24 +70,16 @@ public class TimeCorrelationAppConfig extends MmtcConfig {
         super();
 
         this.telemetrySource = this.initTlmSource();
-
         this.cmdLineConfig = new CorrelationCommandLineConfig(args, this.telemetrySource.getAdditionalCliArguments());
 
         if (! cmdLineConfig.load()) {
             throw new MmtcException("Error parsing command line arguments.");
         }
 
-        setClockChangeRateMode();
-        if (clockChangeRateMode == ClockChangeRateMode.ASSIGN) {
-            setClockChangeRateAssignedValue();
-        }
+        setClockChangeRateConfiguration();
+        setInsertAdditionalSmoothingRecordConfiguration();
 
-        if (clockChangeRateMode == ClockChangeRateMode.ASSIGN || clockChangeRateMode == ClockChangeRateMode.ASSIGN_KEY) {
-            logger.info(MmtcCli.USER_NOTICE, String.format("Assigned clock change rate: %f", clockChangeRateAssignedValue));
-        }
-
-        setInsertAdditionalSmoothingRecord();
-        if (additionalSmoothingRecordConfig.enabled && clockChangeRateMode == ClockChangeRateMode.COMPUTE_INTERPOLATED) {
+        if (additionalSmoothingRecordConfig.enabled && clockChangeRateMode == ClockChangeRateMode.COMPUTE_INTERPOLATE) {
             throw new MmtcException("Cannot insert 'smoothing' correlation records into products with --clkchgrate-compute i");
         }
 
@@ -111,32 +104,71 @@ public class TimeCorrelationAppConfig extends MmtcConfig {
 
     /**
      * Records how the clock change rate is to be computed (either predicted,
-     * interpolated, assigned, or set to zero (no drift)). This is determined by the
+     * interpolated, assigned, or set to the identity rate (no drift)). This is determined by the
      * command line options. If no relevant command line options are passed in, then
      * this is determined by the configuration file. If no relevant option is found
-     * in the configuration file, then this falls back to a default method.
+     * in the configuration file, then this falls back to a default value.
      *
-     * @throws MmtcException if the configuration file contains an
-     *                                  invalid value for the clock change rate mode
-     *                                  option.
+     * @throws MmtcException
      */
-    private void setClockChangeRateMode() throws MmtcException {
+    private void setClockChangeRateConfiguration() throws MmtcException {
         if (cmdLineConfig.hasClockChangeRateMode()) {
-            logger.info(String.format("Clock change rate mode is specified by command line argument, overriding default mode %s.", defaultClockChangeRateMode));
             clockChangeRateMode = cmdLineConfig.getClockChangeRateMode();
-            if (clockChangeRateMode == ClockChangeRateMode.ASSIGN_KEY) {
-                String clockChangeRatePresetKey = cmdLineConfig.getClockChangeRateAssignedKey();
-                try {
-                    logger.debug(String.format("Reading assigned clock change rate from config key compute.clkchgrate.assignedValuePresets.%s", clockChangeRatePresetKey));
-                    clockChangeRateAssignedValue = timeCorrelationConfig.getConfig().getDouble("compute.clkchgrate.assignedValuePresets." + clockChangeRatePresetKey);
-                } catch(NoSuchElementException e) {
-                    throw new MmtcException("Could not find a corresponding clkchgrate preset in the config with name compute.clkchgrate.assignedValuePresets."+clockChangeRatePresetKey);
-                }
+
+            // the 'assign' and 'nodrift' modes can only be set on the CLI; check for these first
+            if (isClockChangeRateModeAssign()) {
+                setAssignedClockChangeRateConfiguration();
+                logger.info(USER_NOTICE, String.format("Clock change rate mode is specified by command line argument: %s with rate %f", clockChangeRateMode, getClockChangeRateAssignedValue()));
+            } else {
+                // nothing else to do here
+                logger.info(USER_NOTICE, String.format("Clock change rate mode is specified by command line argument: %s", clockChangeRateMode));
             }
+        } else if (timeCorrelationConfig.getConfig().containsKey("compute.clkchgrate.mode")) {
+            final String modeFromConfig = timeCorrelationConfig.getConfig().getString("compute.clkchgrate.mode");
+            if (modeFromConfig.equalsIgnoreCase("compute-predict")) {
+                clockChangeRateMode = ClockChangeRateMode.COMPUTE_PREDICT;
+            } else if (modeFromConfig.equalsIgnoreCase("compute-interpolate")) {
+                clockChangeRateMode = ClockChangeRateMode.COMPUTE_INTERPOLATE;
+            } else {
+                throw new MmtcException(String.format("The clock change rate mode in configuration must be either 'compute-predict' or 'compute-interpolate', but it was '%s'", modeFromConfig));
+            }
+
+            logger.info(USER_NOTICE, String.format("Clock change rate mode specified in configuration: %s", clockChangeRateMode));
         } else {
-            logger.info(String.format("Command line does not specify a clkchgrate mode, using default mode %s.", defaultClockChangeRateMode));
-            clockChangeRateMode = defaultClockChangeRateMode;
+            clockChangeRateMode = DEFAULT_CLOCK_CHANGE_RATE_MODE;
+            logger.info(USER_NOTICE, String.format("Clock change rate mode is set to default: %s", DEFAULT_CLOCK_CHANGE_RATE_MODE));
         }
+    }
+
+    /**
+     * Records the fixed value of the clock change rate to be written to the time
+     * correlation records. This value is taken from the command line if available,
+     * or else from the configuration file if specified there, or else from a
+     * hardcoded default. This method should only be used when the user has opted to
+     * assign the clock change rate rather than compute it. This is typically done
+     * in test venues or in anomalous circumstances, or when a new SCLK clock
+     * partition is defined, or when there is an oscillator switch.
+     */
+    private void setAssignedClockChangeRateConfiguration() throws MmtcException {
+        if (! isClockChangeRateModeAssign()) {
+            throw new MmtcException("Clock change rate mode is not one of the 'assign' modes");
+        }
+
+        if (clockChangeRateMode == ClockChangeRateMode.ASSIGN) {
+            clockChangeRateAssignedValue = cmdLineConfig.getClockChangeRateAssignedValue();
+        } else if (clockChangeRateMode == ClockChangeRateMode.ASSIGN_KEY) {
+            String clockChangeRatePresetKey = cmdLineConfig.getClockChangeRateAssignedKey();
+            try {
+                logger.debug(String.format("Reading assigned clock change rate from config key compute.clkchgrate.assignedValuePresets.%s", clockChangeRatePresetKey));
+                clockChangeRateAssignedValue = timeCorrelationConfig.getConfig().getDouble("compute.clkchgrate.assignedValuePresets." + clockChangeRatePresetKey);
+            } catch(NoSuchElementException e) {
+                throw new MmtcException("Could not find a corresponding clkchgrate preset in the config with name compute.clkchgrate.assignedValuePresets." + clockChangeRatePresetKey);
+            }
+        }
+    }
+
+    public boolean isClockChangeRateModeAssign() {
+        return CLOCK_CHANGE_RATE_ASSIGN_MODES.contains(getClockChangeRateMode());
     }
 
     /**
@@ -158,34 +190,7 @@ public class TimeCorrelationAppConfig extends MmtcConfig {
         return clockChangeRateAssignedValue;
     }
 
-    /**
-     * Records the fixed value of the clock change rate to be written to the time
-     * correlation records. This value is taken from the command line if available,
-     * or else from the configuration file if specified there, or else from a
-     * hardcoded default. This method should only be used when the user has opted to
-     * assign the clock change rate rather than compute it. This is typically done
-     * in test venues or in anomalous circumstances, or when a new SCLK clock
-     * partition is defined, or when there is an oscillator switch.
-     */
-    private void setClockChangeRateAssignedValue() throws MmtcException {
-        final String assignedClockChangeRateKey = "compute.clkchgrate.assignedValue";
-
-        if (getClockChangeRateMode() == null || (! getClockChangeRateMode().equals(ClockChangeRateMode.ASSIGN))) {
-            throw new MmtcException("Attempted to set the clock change rate value in clock change rate mode: " + getClockChangeRateMode());
-        }
-
-        if (cmdLineConfig.hasClockChangeRateMode()) {
-            clockChangeRateAssignedValue = cmdLineConfig.getClockChangeRateAssignedValue();
-        } else {
-            try {
-                clockChangeRateAssignedValue = timeCorrelationConfig.getConfig().getDouble(assignedClockChangeRateKey);
-            } catch (NoSuchElementException | ConversionException ex) {
-                throw new MmtcException("Config file does not specify a value for " + assignedClockChangeRateKey);
-            }
-        }
-    }
-
-    private void setInsertAdditionalSmoothingRecord() throws MmtcException {
+    private void setInsertAdditionalSmoothingRecordConfiguration() throws MmtcException {
         final Optional<AdditionalSmoothingRecordConfig> additionalSmoothingRecordInsertionOverride = cmdLineConfig.getAdditionalSmoothingRecordInsertionOverride();
 
         if (additionalSmoothingRecordInsertionOverride.isPresent()) {

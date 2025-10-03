@@ -54,6 +54,8 @@
     <entry key="spice.kernel.fk.path"></entry>
     <entry key="spice.kernel.pck.path"></entry>
 
+    <entry key="compute.clkchgrate.mode"></entry>
+
     <entry key="compute.tdtG.rate.predicted.lookBackDays"></entry>
     <entry key="compute.tdtG.rate.predicted.maxLookBackDays"></entry>
 
