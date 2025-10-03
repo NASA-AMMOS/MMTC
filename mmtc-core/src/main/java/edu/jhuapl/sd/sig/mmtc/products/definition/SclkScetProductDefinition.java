@@ -60,7 +60,7 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
             throw new MmtcException("Failed to generate SCLKSCET file");
         }
         List<String> newProductLines = scetFile.getNewProductLines();
-        String newRecs = IntStream.range(Math.max(0, newProductLines.size() - ENTRIES_TO_PRINT), newProductLines.size())
+        String newRecs = IntStream.range(Math.max(0, newProductLines.size() - (ENTRIES_TO_PRINT+1)), newProductLines.size()-1) // Ignore footer row
                 .mapToObj(newProductLines::get)
                 .collect(Collectors.joining("\n\t"));
         return String.format("[DRY RUN] Latest %d SCLKSCET file entries: \n\t%s\n\t%s", ENTRIES_TO_PRINT, scetFile.getSclkscetFields(), newRecs);
