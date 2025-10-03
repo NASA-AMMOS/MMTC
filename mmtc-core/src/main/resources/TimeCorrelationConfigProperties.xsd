@@ -89,6 +89,8 @@
       <!-- Alarm thresholds -->
       <xs:enumeration value="compute.tdtS.threshold.errorMsecWarning"/>
 
+      <xs:enumeration value="compute.clkchgrate.mode"/>
+
       <xs:enumeration value="compute.additionalSmoothingCorrelationRecordInsertion.enabled"/>
       <xs:enumeration value="compute.additionalSmoothingCorrelationRecordInsertion.coarseSclkTickDuration"/>
 

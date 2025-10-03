@@ -198,10 +198,10 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         }
 
         switch (ctx.correlation.actual_clock_change_rate_mode.get()) {
-            case COMPUTE_INTERPOLATED:
+            case COMPUTE_INTERPOLATE:
                 newThfRec.setValue(TimeHistoryFile.CLK_CHANGE_RATE_MODE, "I");
                 break;
-            case COMPUTE_PREDICTED:
+            case COMPUTE_PREDICT:
                 newThfRec.setValue(TimeHistoryFile.CLK_CHANGE_RATE_MODE, "P");
                 break;
             case ASSIGN:

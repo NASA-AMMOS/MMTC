@@ -25,7 +25,7 @@ import spice.basic.*;
  * JNISpice Java interface to their CSPICE library. Unless loaded already in
  * the calling application, the <code>loadSpiceLib()</code> function should be
  * called to load CSPICE and the necessary SPICE kernels before any
- * other functions in this class are called. It needs be called only once.
+ * other functions in this class are called. It needs to be called only once.
  *
  * <P>The NAIF SPICE documentation is extensive, available on-line, and provides
  * a full description of SPICE and its usage.
