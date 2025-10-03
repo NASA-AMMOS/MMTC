@@ -109,7 +109,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
                 "s",
                 "with-smoothing-record",
                 true,
-                "Insert an additional 'smoothing' record to ensure continuity in SCLK-TDT relationship, at the given number of SCLK coarse ticks earlier than the new correlation record. Cannot be used with clkchgrate-compute interpolate. If specified, overrides the presence of related configuration in the configuration file."
+                "Insert an additional 'smoothing' record to ensure continuity in SCLK-TDT relationship, at the given number of SCLK coarse ticks earlier than the new correlation record. Cannot be used with clkchgrate-compute i. If specified, overrides the presence of related configuration in the configuration file."
         );
 
         opts.addOption(
@@ -239,10 +239,10 @@ public class CorrelationCommandLineConfig implements IConfiguration {
 
             switch (method) {
                 case "i":
-                    clockChangeRateMode = ClockChangeRateMode.COMPUTE_INTERPOLATED;
+                    clockChangeRateMode = ClockChangeRateMode.COMPUTE_INTERPOLATE;
                     break;
                 case "p":
-                    clockChangeRateMode = ClockChangeRateMode.COMPUTE_PREDICTED;
+                    clockChangeRateMode = ClockChangeRateMode.COMPUTE_PREDICT;
                     break;
                 default:
                     throw new ParseException("Invalid clock change rate compute method: " + method);
@@ -286,7 +286,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
         boolean isDoNotInsertAdditionalSmoothingRecord = cmdLine.hasOption("x") || cmdLine.hasOption("without-smoothing-record");
 
         if (isInsertAdditionalSmoothingRecord && isDoNotInsertAdditionalSmoothingRecord) {
-            throw new IllegalStateException("The command-line arguments specified mutually incompatible options to both enable and disable the additional smoothing record.  Please address and rerun.");
+            throw new IllegalStateException("The command-line arguments specified incompatible options to both enable and disable the additional smoothing record.  Please address and rerun.");
         }
 
         this.isInsertAdditionalSmoothingRecordExplicitlySet = true;

@@ -1130,6 +1130,11 @@ source.name is not set to rawTlmTable.
 |INT
 |The maximum number of seconds after the time correlation target frame SCET for which to query GNC telemetry (SCLK/TDT(S)) values. This allows for the SCET of the queried channel to be approximate. The GNC TDT(S) and SCLK (for TDT(S)) values) are expected to have an identical SCET and the TDT(S) value is expected to be at or after the time correlation target frame's TDT(G).  If not set, a default value of 600 seconds (10 minutes) is used.
 
+|compute.clkchgrate.mode
+|OPTIONAL
+|STR
+|The default clock change rate mode that MMTC will use for new correlations.  This must be either the string 'compute-predict' or 'compute-interpolate'.  If unset, the default value is 'compute-interpolate'.  This mode may be overridden on the command line with additional modes (to assign a custom value or assign a value of 1.0 (i.e., no-drift)).
+
 |compute.tdtG.rate.predicted.lookBackDays
 |REQUIRED
 |FLT
