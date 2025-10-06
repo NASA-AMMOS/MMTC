@@ -896,6 +896,17 @@ public abstract class MmtcConfig {
         return timeCorrelationConfig.getConfig().getInt("product.sclkScetFile.applicableDurationDays", 0);
     }
 
+    /**
+     * Getes the path at which to write zip archives containing backups of MMTC output products.
+     * @return the path as described above
+     */
+    public Path getProductArchiveLocation() {
+        if (containsKey("product.archive.directory")) {
+            return Paths.get(getString("product.archive.directory"));
+        } else {
+            return getRunHistoryFilePath().getParent().resolve("output-archives");
+        }
+    }
 
     public enum SclkScetFileLeapSecondSclkRate {
         ONE,

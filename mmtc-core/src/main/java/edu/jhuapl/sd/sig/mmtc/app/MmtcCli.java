@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
+import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.sandbox.MmtcSandboxCreator;
 import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.TelemetryCacheUserOperations;
@@ -24,8 +25,9 @@ public class MmtcCli {
         CORRELATION,
         ROLLBACK,
         CREATE_SANDBOX,
+        MIGRATE,
         PRECACHE,
-        CACHE_STATS,
+        CACHE_STATS
     }
 
     private static class ApplicationInvocation {
@@ -46,7 +48,7 @@ public class MmtcCli {
 
         if (Arrays.asList("-h", "--help").contains(cliArgs[0])) {
             final String helpMessage =
-                    "usage: mmtc [correlation|rollback|create-sandbox|precache|cache-stats] [options] <additional arguments>\n" +
+                    "usage: mmtc [correlation|rollback|create-sandbox|migrate|precache|cache-stats] [options] <additional arguments>\n" +
                     " -h,--help      Print this message.\n" +
                     " -v,--version   Print the MMTC version.\n" +
                     "\n" +
@@ -56,6 +58,7 @@ public class MmtcCli {
                     "- rollback: roll back (undo) one or many correlations\n" +
                     "- create-sandbox: create a copy of this MMTC installation to run locally,\n" +
                     "without affecting this installation\n" +
+                    "- migrate: migrate MMTC's output products from a prior version of MMTC\n" +
                     "- precache: query the configured telemetry source to proactively retrieve\n" +
                     "and store time correlation telemetry into a local cache\n" +
                     "- cache-stats: log statistics about the locally-cached telemetry\n" +
@@ -71,6 +74,8 @@ public class MmtcCli {
             return new ApplicationInvocation(ApplicationCommand.CREATE_SANDBOX, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("correlation")) {
             return new ApplicationInvocation(ApplicationCommand.CORRELATION, removeFirstElement(cliArgs));
+        } else if (cliArgs[0].equalsIgnoreCase("migrate")) {
+            return new ApplicationInvocation(ApplicationCommand.MIGRATE, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("precache")) {
             return new ApplicationInvocation(ApplicationCommand.PRECACHE, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("cache-stats")) {
@@ -126,6 +131,15 @@ public class MmtcCli {
                 }
                 break;
             }
+            case MIGRATE: {
+                try {
+                    new BuiltInOutputProductMigrationManager(appInvoc.args).migrate();
+                } catch (Exception e) {
+                    logger.fatal("Output product migration failed.", e);
+                    System.exit(1);
+                }
+                break;
+            }
             case PRECACHE: {
                 try {
                     TelemetryCacheUserOperations.precache(appInvoc.args);
@@ -145,7 +159,8 @@ public class MmtcCli {
                 break;
             }
             default: {
-                throw new RuntimeException("No such command: " + appInvoc.command);
+                logger.fatal("Unrecognized command: " + appInvoc.command);
+                System.exit(1);
             }
         }
     }
