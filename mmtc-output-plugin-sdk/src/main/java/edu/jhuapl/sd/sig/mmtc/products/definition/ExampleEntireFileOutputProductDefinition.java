@@ -5,6 +5,8 @@ import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
+import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -67,6 +69,13 @@ public class ExampleEntireFileOutputProductDefinition extends EntireFileOutputPr
     @Override
     public boolean shouldBeWritten(TimeCorrelationContext ctx) {
         return true;
+    }
+
+    @Override
+    public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException, TextProductException, IOException, TimeConvertException {
+        return String.format("This is the product's results for this run in the form of a string that will be printed and logged when the dry run option is used.\n" +
+                "This will generally be the latest x entries in the new product: \n" +
+                "\t%d,%s,%.11f\n", ctx.runId.get(), ctx.newSclkVersionString.get(), ctx.correlation.predicted_clock_change_rate.get());
     }
 
     @Override
