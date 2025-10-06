@@ -153,6 +153,7 @@
       <xs:enumeration value="product.uplinkCmdFile.create"/>
       <xs:enumeration value="product.uplinkCmdFile.outputDir"/>
       <xs:enumeration value="product.uplinkCmdFile.baseName"/>
+      <xs:enumeration value="product.archive.directory"/>
 
       <xs:enumeration value="product.plugin.outputProductNames"/>
     </xs:restriction>

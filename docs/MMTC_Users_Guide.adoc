@@ -421,12 +421,14 @@ Note that the MMTC RPM currently does not have special handling for configuratio
 
 If a user named “mmtc” does not already exist, the RPM installation will also create the mmtc user and group. All files installed by the RPM are world-readable; however, only the mmtc user and members of the mmtc group can modify configuration files and add or create files (such as new log files or additional telemetry source plugins) in the conf, log, and lib/plugins directories.
 
-After installing the RPM, do the following steps as needed:
+After installing the RPM, perform the following steps as needed:
 
 * Add users to the mmtc group.
 * To use a telemetry source other than AMPCS, add an appropriate telemetry source plugin to the lib/plugins folder.
 * Update the configuration files, in particular TimeCorrelationConfigProperties.xml, in the conf folder to suit the mission.
 * Place a seed SCLK kernel file in the output folder.
+
+After upgrading an MMTC installation, run `bin/mmtc migrate` in order to migrate output product structures forward to their new versions, where applicable.  A backup archive in ZIP format will be created, should the prior state of the files be needed.
 
 MMTC can then be invoked from the command line. Change the working directory to the MMTC installation directory (`/opt/local/mmtc` by default), and then run:
 
@@ -1444,6 +1446,10 @@ Defaults to 9 digits if key isn't included in config or if the value provided ca
 |STR
 |A comma-separated list of names that uniquely identify plugin-provided (custom) output product types.  If this parameter is populated, additional per-custom-product parameters are also required.  Please reference <<_configuring_custom_output_products>> for details.
 
+|product.archive.directory
+|OPTIONAL
+|STR
+|The path to a directory where zip archives of output products will be made before MMTC executes product migration or rollback commands.  If left blank, defaults to a new directory named 'output-archives', created within the same directory as the Run History File location.
 
 |===
 
@@ -1968,7 +1974,7 @@ Please note that a single plugin jar may include more than one _OutputProductDef
 
 == Output Product Rollback
 MMTC 1.5.0 and later provides a simple system for users to revert all of MMTC's output products back to an earlier state. Rollback makes use of the Run History File to determine which output products and
-records should and shouldn't be present after rolling back to the state MMTC's products were in after a prior run. Rollback is irreversible and should only be used when backup copies have been made of all relevant files.
+records should and shouldn't be present after rolling back to the state MMTC's products were in after a prior run. Rollback may be complicated to reverse; please use caution.  A backup archive in ZIP format will be created before output products are adjusted, which can be used to help restore the pre-rollback state if necessary.
 
 === Executing Rollback
 MMTC enters the rollback interface any time "rollback" is provided as the very first argument when invoking MMTC regardless of subsequent flags or arguments, i.e. `bin/mmtc rollback`. Users will immediately be provided with
@@ -1980,12 +1986,12 @@ output files that will be deleted (SCLK kernels, SCLKSCET files, and/or Uplink C
 After listing the effects of rollback, MMTC will ask users for Y/N confirmation to proceed. This marks the "point of no return" after which files will potentially be permanently deleted, so users are again reminded to make backups
 of *all* output products before initiating a rollback.
 
-After positive confirmation is received (only a "y" or "Y" is considered confirmation), MMTC will delete or truncate any output files necessary to return its products to the state they had after the specified prior run.
+After positive confirmation is received (only a "y" or "Y" is considered confirmation), MMTC will create a backup archive, and will then delete or truncate any output files necessary to return its products to the state they had after the specified prior run.
 MMTC will print out the names of all files modified (or potentially files that failed to be modified) and MMTC will exit with status code 0 if rollback was successful.
 
 Prior runs that were rolled back are not deleted from the Run History File but are flagged as previously involved in rollback and will be ignored by any future rollbacks.
 
-Insufficient system permissions to remove relevant files are the most likely source of rollback failures, so it is recommended that users verify that they have the requisite permissions to modify MMTC output products prior to initiating rollback.
+Insufficient system permissions to remove relevant files can be a source of rollback failures, so it is recommended that users verify that they have the requisite permissions to modify MMTC output products prior to initiating rollback.
 
 == Telemetry Caching
 

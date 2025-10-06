@@ -107,6 +107,8 @@
     <entry key="product.uplinkCmdFile.baseName"></entry>
     <entry key="product.sclkScetFile.scetUtcPrecision"></entry>
 
+    <entry key="product.archive.directory"></entry>
+
     <!-- AMPCS configuration keys -->
     <entry key="telemetry.source.plugin.ampcs.chillTimeoutSec"></entry>
     <entry key="telemetry.source.plugin.ampcs.tkPacket.tkPacketHeaderFineSclkModulus"></entry>
