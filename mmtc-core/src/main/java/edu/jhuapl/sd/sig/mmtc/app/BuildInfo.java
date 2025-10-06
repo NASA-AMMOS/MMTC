@@ -28,6 +28,10 @@ public class BuildInfo {
         commit = buildProperties.getProperty(COMMIT_KEY, UNKNOWN_VALUE);
     }
 
+    public String getNumericalVersion() {
+        return version.replace("-SNAPSHOT", "");
+    }
+
     public String toString() {
         return String.format("Version: %s\nBuild date: %s\nCommit: %s", version, buildDate, commit);
     }

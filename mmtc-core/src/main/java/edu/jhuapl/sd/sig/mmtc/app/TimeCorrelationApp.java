@@ -13,6 +13,7 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.model.*;
+import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.SamplingTelemetrySelectionStrategy;
@@ -68,6 +69,8 @@ public class TimeCorrelationApp {
      */
     private void init() throws Exception {
         config.validate();
+
+        new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
 
         logger.debug("Loading SPICE library");
         TimeConvert.loadSpiceLib();
@@ -202,11 +205,14 @@ public class TimeCorrelationApp {
         ctx.runId.set(newRunId);
 
         // Run info
-        newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_TIME,              ctx.appRunTime.toString());
-        newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_ID,                String.format("%05d",newRunId));
-        newRunHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,            "false");
-        newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,              System.getProperty("user.name"));
-        newRunHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,              String.join(" ", config.getCliArgs()));
+        final String mmtcVersion = new BuildInfo().getNumericalVersion();
+        newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_TIME,                               ctx.appRunTime.toString());
+        newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_ID,                                 String.format("%05d",newRunId));
+        newRunHistoryFileRecord.setValue(RunHistoryFile.MMTC_VERSION,                           mmtcVersion);
+        newRunHistoryFileRecord.setValue(RunHistoryFile.MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION,   mmtcVersion);
+        newRunHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,                             "false");
+        newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,                               System.getProperty("user.name"));
+        newRunHistoryFileRecord.setValue(RunHistoryFile.CLI_ARGS,                               String.join(" ", config.getCliArgs()));
 
         // Output products
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {

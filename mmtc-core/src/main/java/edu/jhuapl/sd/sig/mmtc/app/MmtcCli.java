@@ -1,9 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
+import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.sandbox.MmtcSandboxCreator;
-import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
-import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -24,7 +23,8 @@ public class MmtcCli {
     public enum ApplicationCommand {
         CORRELATION,
         ROLLBACK,
-        CREATE_SANDBOX
+        CREATE_SANDBOX,
+        MIGRATE
     }
 
     private static class ApplicationInvocation {
@@ -45,16 +45,18 @@ public class MmtcCli {
 
         if (Arrays.asList("-h", "--help").contains(cliArgs[0])) {
             final String helpMessage =
-                    "usage: mmtc [correlation|rollback|create-sandbox] [options] <additional arguments>\n" +
+                    "usage: mmtc [correlation|rollback|create-sandbox|migrate] [options] <additional arguments>\n" +
                     " -h,--help      Print this message.\n" +
                     " -v,--version   Print the MMTC version number.\n" +
                     "\n" +
-                    "MMTC can be invoked with one of three commands:\n" +
+                    "MMTC can be invoked with one of several commands:\n" +
                     "- correlation: run a new correlation (this is the default command if none\n" +
                     "is specified)\n" +
                     "- rollback: roll back (undo) one or many correlations\n" +
                     "- create-sandbox: create a copy of this MMTC installation to run locally,\n" +
                     "without affecting this installation\n" +
+                    "- migrate: migrate MMTC's built-in output products forward to match the structure\n" +
+                    "of the current version" +
                     "\n" +
                     "For more information on any of these commands, run: mmtc <command> --help";
             System.out.println(helpMessage);
@@ -67,6 +69,8 @@ public class MmtcCli {
             return new ApplicationInvocation(ApplicationCommand.CREATE_SANDBOX, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("correlation")) {
             return new ApplicationInvocation(ApplicationCommand.CORRELATION, removeFirstElement(cliArgs));
+        } else if (cliArgs[0].equalsIgnoreCase("migrate")) {
+            return new ApplicationInvocation(ApplicationCommand.MIGRATE, removeFirstElement(cliArgs));
         } else {
             // to maintain backwards compatibility on MMTC's CLI
             return new ApplicationInvocation(ApplicationCommand.CORRELATION, cliArgs);
@@ -116,6 +120,20 @@ public class MmtcCli {
                     logger.fatal("Sandbox creation failed.", e);
                     System.exit(1);
                 }
+                break;
+            }
+            case MIGRATE: {
+                try {
+                    new BuiltInOutputProductMigrationManager(appInvoc.args).migrate();
+                } catch (Exception e) {
+                    logger.fatal("Output product migration failed.", e);
+                    System.exit(1);
+                }
+                break;
+            }
+            default: {
+                logger.fatal("Unrecognized command: " + appInvoc.command);
+                System.exit(1);
             }
         }
     }

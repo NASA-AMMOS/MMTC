@@ -11,6 +11,7 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductLocation;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductPath;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
+import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.util.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,7 +56,9 @@ public class TimeCorrelationRollback {
      * @throws MmtcRollbackException if rollback is unsuccessful for any reason
      * (this includes products being modified between rollback being initiated and deletion confirmation being given by the user)
      */
-    public void rollback() throws MmtcRollbackException {
+    public void rollback() throws MmtcException {
+        new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
+
         try {
             prepareRollback();
         } catch (Exception e) {
