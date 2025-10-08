@@ -8,6 +8,7 @@ import edu.jhuapl.sd.sig.mmtc.webapp.controller.TimeCorrelationController;
 import edu.jhuapl.sd.sig.mmtc.webapp.controller.BaseController;
 import edu.jhuapl.sd.sig.mmtc.webapp.controller.OutputProductController;
 import edu.jhuapl.sd.sig.mmtc.webapp.controller.TelemetryController;
+import edu.jhuapl.sd.sig.mmtc.webapp.service.CorrelationPreviewService;
 import io.javalin.Javalin;
 import io.javalin.http.UnauthorizedResponse;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +26,8 @@ public class MmtcWebApp {
 
     private final Javalin javalinApp;
     private final MmtcWebAppConfig config;
+
+    private final CorrelationPreviewService correlationPreviewService;
 
     public static void main(String[] args) throws Exception {
         new MmtcWebApp().start();
@@ -73,10 +76,12 @@ public class MmtcWebApp {
         });
         logger.info("Auth service: " + authService.getClass().getSimpleName());
 
+        this.correlationPreviewService = new CorrelationPreviewService();
+
         // instantiate controllers and set up routes
         Collection<BaseController> controllers = new HashSet<>();
-        controllers.add(new TimeCorrelationController(config));
-        controllers.add(new TelemetryController(config));
+        controllers.add(new TimeCorrelationController(config, this.correlationPreviewService));
+        controllers.add(new TelemetryController(config, this.correlationPreviewService));
         controllers.add(new OutputProductController(config));
         controllers.forEach(c -> c.registerEndpoints(javalinApp));
 
