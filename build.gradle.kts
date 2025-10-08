@@ -158,6 +158,7 @@ tasks.getByName("mmtcEl9Rpm") {
 val mmtcWebAppEl8Rpm = tasks.register<Rpm>("mmtcWebAppEl8Rpm") {
     dependsOn(tasks.build)
 
+    packageName = "mmtc-webapp"
     distribution = "el8"
     release = "1.$distribution"
     archStr = "x86_64"
@@ -186,6 +187,7 @@ val mmtcWebAppEl8Rpm = tasks.register<Rpm>("mmtcWebAppEl8Rpm") {
 val mmtcWebAppEl9Rpm = tasks.register<Rpm>("mmtcWebAppEl9Rpm") {
     dependsOn(tasks.build)
 
+    packageName = "mmtc-webapp"
     distribution = "el9"
     release = "1.$distribution"
     archStr = "x86_64"

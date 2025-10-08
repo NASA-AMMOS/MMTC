@@ -22,6 +22,7 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
         AUTOGEN_BASIC_HTTP_AUTH
     }
 
+    // todo enable using defaults for these if unspecified
     public AuthMode getAuthMode() {
         return AuthMode.valueOf(getString("webapp.auth.mode").toUpperCase());
     }

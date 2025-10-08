@@ -81,7 +81,8 @@ tasks.jar {
             "Main-Class" to "edu.jhuapl.sd.sig.mmtc.webapp.MmtcWebApp",
             "Build-Date" to Instant.now().toString(),
             "Implementation-Title" to project.name,
-            "Implementation-Version" to project.version
+            "Implementation-Version" to project.version,
+            "Multi-Release" to "true"
         )
     }
 }

@@ -150,8 +150,8 @@ public class ExampleTelemetrySource implements TelemetrySource {
         // example usage of a command-line argument
         final int maxNumFramesToGenerate;
 
-        if (config.cmdLineHasOption('b')) {
-            maxNumFramesToGenerate = Integer.parseInt(config.getCmdLineOptionValue('b'));
+        if (config.getAdditionalOptionValue("Number of frames to generate") != null) {
+            maxNumFramesToGenerate = Integer.parseInt(config.getAdditionalOptionValue("Number of frames to generate"));
         } else {
             maxNumFramesToGenerate = 2000;
         }
