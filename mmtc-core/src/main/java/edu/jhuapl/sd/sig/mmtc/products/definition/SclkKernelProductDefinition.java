@@ -57,12 +57,13 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         SclkKernel.writeNewProduct(ctx);
 
         String[] newSclkEntries = ctx.newSclkKernel.get().getLastXRecords(2);
-        // If an interpolated clock change rate has replaced the rate in the existing SCLK kernel record, retrieve the two latest records.
+        // If an interpolated clock change rate has replaced the rate in the existing SCLK kernel record,
+        // or if a smoothing record was inserted, print the two latest records.
         // Otherwise, just return the new record
-        if (ctx.newSclkKernel.get().hasNewClkChgRateSet()) {
+        if (ctx.newSclkKernel.get().hasNewClkChgRateSet() || ctx.newSclkKernel.get().hasSmoothingRecordSet()) {
             return String.format("[DRY RUN] Updated SCLK entries: \n" + newSclkEntries[0] + "\n" + newSclkEntries[1]);
         } else {
-            return String.format("[DRY RUN] New SCLK entry: \n" + newSclkEntries[0]);
+            return String.format("[DRY RUN] New SCLK entry: \n" + newSclkEntries[1]);
         }
     }
 

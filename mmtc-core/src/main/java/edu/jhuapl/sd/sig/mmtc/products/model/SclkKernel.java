@@ -97,6 +97,10 @@ public class SclkKernel extends TextProduct {
         this.newTriplet = Optional.of(new CorrelationTriplet(encSclk, tdtStr, clockChgRate));
     }
 
+    public boolean hasSmoothingRecordSet() {
+        return smoothingTriplet.isPresent();
+    }
+
     public static class CorrelationTriplet {
         public final double encSclk;
         public final String tdtStr;
