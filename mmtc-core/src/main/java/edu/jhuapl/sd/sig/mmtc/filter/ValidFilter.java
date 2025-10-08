@@ -2,11 +2,12 @@ package edu.jhuapl.sd.sig.mmtc.filter;
 
 import java.util.List;
 
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 
 /**

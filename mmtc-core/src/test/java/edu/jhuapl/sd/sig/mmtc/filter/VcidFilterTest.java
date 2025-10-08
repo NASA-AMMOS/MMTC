@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
 import org.junit.jupiter.api.Test;
@@ -26,7 +26,7 @@ public class VcidFilterTest {
                     .thenReturn("src/test/resources/FilterTests/VcidFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
             testFilterPasses(
                     config,
@@ -98,7 +98,7 @@ public class VcidFilterTest {
                     .thenReturn("src/test/resources/FilterTests/VcidFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
             testFilterPasses(
                     config,
@@ -138,11 +138,11 @@ public class VcidFilterTest {
         }
     }
 
-    private void testFilterPasses(TimeCorrelationAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterPasses(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertTrue(vcidFilter.process(frameSamples, config), message);
     }
 
-    private void testFilterFails(TimeCorrelationAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterFails(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertFalse(vcidFilter.process(frameSamples, config), message);
     }
 

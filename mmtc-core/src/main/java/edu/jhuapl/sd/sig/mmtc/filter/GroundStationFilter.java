@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 
 import org.apache.logging.log4j.LogManager;

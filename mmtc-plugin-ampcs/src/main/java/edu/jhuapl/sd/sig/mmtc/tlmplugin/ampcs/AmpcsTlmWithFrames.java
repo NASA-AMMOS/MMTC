@@ -2,6 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketIterator;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;

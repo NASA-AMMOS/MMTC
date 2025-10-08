@@ -3,6 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
 import edu.jhuapl.sd.sig.mmtc.util.CdsTimeCode;
 import org.apache.commons.cli.Option;
@@ -86,7 +87,7 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<Option> getAdditionalCliArguments() {
+    public Collection<AdditionalOption> getAdditionalOptions() {
         return Collections.emptyList();
     }
 

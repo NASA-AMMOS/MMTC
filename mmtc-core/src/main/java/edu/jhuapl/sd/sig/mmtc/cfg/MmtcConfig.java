@@ -83,8 +83,45 @@ public abstract class MmtcConfig {
         this.allProductDefs = Collections.unmodifiableList(constructAllOutputProductDefinitions());
     }
 
+    public MmtcConfig(MmtcConfig config) {
+        this.mmtcHome = config.mmtcHome;
+        this.timeCorrelationConfig = config.timeCorrelationConfig;
+        this.groundStationMap = config.groundStationMap;
+        this.sclkPartitionMap = config.sclkPartitionMap;
+        this.allProductDefs = config.allProductDefs;
+    }
+
+    public Path getMmtcHome() {
+        return mmtcHome;
+    }
+
     public List<OutputProductDefinition<?>> getAllOutputProductDefs() {
         return this.allProductDefs;
+    }
+
+    public OutputProductDefinition<?> getOutputProductDefByName(String name) throws MmtcException {
+        return this.allProductDefs.stream()
+                .filter(def -> def.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new MmtcException("No such product found: " + name));
+    }
+
+    public EntireFileOutputProductDefinition getEntireFileProductDefByName(String name) throws MmtcException {
+        Optional<OutputProductDefinition<?>> maybeDef = this.allProductDefs.stream()
+                .filter(def -> def instanceof EntireFileOutputProductDefinition)
+                .filter(def -> def.getName().equals(name))
+                .findFirst();
+
+        return (EntireFileOutputProductDefinition) maybeDef.orElseThrow(() -> new MmtcException("No such product found: " + name));
+    }
+
+    public AppendedFileOutputProductDefinition getAppendedOutputProductDefByName(String name) throws MmtcException {
+        Optional<OutputProductDefinition<?>> maybeDef = this.allProductDefs.stream()
+                .filter(def -> def instanceof AppendedFileOutputProductDefinition)
+                .filter(def -> def.getName().equals(name))
+                .findFirst();
+
+        return (AppendedFileOutputProductDefinition) maybeDef.orElseThrow(() -> new MmtcException("No such product found: " + name));
     }
 
     private List<OutputProductDefinition<?>> constructAllOutputProductDefinitions() throws MmtcException, IOException {
@@ -1167,7 +1204,7 @@ public abstract class MmtcConfig {
         }
 
         // Parse TimeCorrelationConfigProperties-base.xml
-        ClassLoader classLoader = TimeCorrelationAppConfig.class.getClassLoader();
+        ClassLoader classLoader = TimeCorrelationCliAppConfig.class.getClassLoader();
         try (InputStream stream = classLoader.getResourceAsStream(BASE_CONFIG_FILENAME)) {
             Document document = builder.parse(stream);
             document.getDocumentElement().normalize();

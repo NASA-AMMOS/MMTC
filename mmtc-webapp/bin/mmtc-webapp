@@ -1,0 +1,8 @@
+#!/bin/bash
+
+MMTC_BIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+set -e
+
+export MMTC_JAR=mmtc-webapp-@VERSION@-app.jar
+${MMTC_BIN_DIR}/mmtc "$@"

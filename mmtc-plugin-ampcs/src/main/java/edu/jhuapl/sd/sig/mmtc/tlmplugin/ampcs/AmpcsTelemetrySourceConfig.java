@@ -33,10 +33,12 @@ public class AmpcsTelemetrySourceConfig {
     }
 
     String getSessionId() {
-        return this.timeCorrelationAppConfig.getCmdLineOptionValue('K');
+        return this.timeCorrelationAppConfig.getAdditionalOptionValue(AmpcsTelemetrySource.AMPCS_SESSION_ID_OPT);
     };
 
-    String getConnectionParms() { return this.timeCorrelationAppConfig.getCmdLineOptionValue('n'); };
+    String getConnectionParms() {
+        return this.timeCorrelationAppConfig.getAdditionalOptionValue(AmpcsTelemetrySource.ADDITIONAL_AMPCS_CLI_ARGS_OPT);
+    };
 
     /**
      * Gets the frame header fine SCLK modulus.

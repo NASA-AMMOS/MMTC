@@ -203,7 +203,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
         return isClockChangeRateModeExplicitlySet;
     }
 
-    ClockChangeRateMode getClockChangeRateMode() {
+    TimeCorrelationAppConfig.ClockChangeRateMode getClockChangeRateMode() {
         return clockChangeRateMode;
     }
 
@@ -247,7 +247,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
         }
     }
 
-    public String getOptionValue(char shortOpt) {
+    public String getOptionValue(String shortOpt) {
         return cmdLine.getOptionValue(shortOpt);
     }
 

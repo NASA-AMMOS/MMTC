@@ -3,6 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSampleValidator;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -33,7 +34,6 @@ public abstract class TelemetrySelectionStrategy {
 
     public TelemetrySelectionStrategy(TimeCorrelationAppConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
         this.tlmSource = tlmSource;
-
         this.config = config;
         this.tk_sclk_fine_tick_modulus = tk_sclk_fine_tick_modulus;
     }

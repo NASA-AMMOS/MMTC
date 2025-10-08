@@ -3,6 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.tlmplugin.example;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -34,7 +35,7 @@ public class ExampleTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<Option> getAdditionalCliArguments() {
+    public Collection<AdditionalOption> getAdditionalOptions() {
         /*
          * This is the second call that MMTC makes to the configured TelemetrySource during a correlation run.
          * It gives the TelemetrySource a chance to add additional CLI options/arguments to correlation runs.
@@ -45,11 +46,14 @@ public class ExampleTelemetrySource implements TelemetrySource {
          */
 
         return Arrays.asList(
-                new Option(
-                        "b",
-                        "number-of-frames-to-generate",
-                        true,
-                        "Specifies the number of fake FrameSamples to generate"
+                new AdditionalOption(
+                    new Option(
+                            "b",
+                            "number-of-frames-to-generate",
+                            true,
+                            "Specifies the number of fake FrameSamples to generate"
+                    ),
+            "Number of frames to generate"
                 )
         );
     }
@@ -72,9 +76,9 @@ public class ExampleTelemetrySource implements TelemetrySource {
          * This TelemetrySource, thus, will not populate that field, and we should not allow the corresponding filter to be enabled:
          */
         Set<String> enabledFilters = config.getFilters().keySet();
-        if (enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER)) {
+        if (enabledFilters.contains(TimeCorrelationCliAppConfig.CONSEC_MC_FRAME_FILTER)) {
             String errorString = "When using ExampleTelemetrySource, the " +
-                    TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER +
+                    TimeCorrelationCliAppConfig.CONSEC_MC_FRAME_FILTER +
                     " filter is not applicable and must be disabled by setting the configuration option " +
                     "filter.<filter name>.enabled to false.";
             throw new MmtcException(errorString);

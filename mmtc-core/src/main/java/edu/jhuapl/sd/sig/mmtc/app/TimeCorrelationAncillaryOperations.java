@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;

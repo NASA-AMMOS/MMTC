@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 
 import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
 import org.junit.jupiter.api.*;
@@ -12,7 +12,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RawTelemetryTableTests {
-    private TimeCorrelationAppConfig config;
+    private TimeCorrelationCliAppConfig config;
     private RawTelemetryTable table;
 
     void loadTable(String path) throws Exception {

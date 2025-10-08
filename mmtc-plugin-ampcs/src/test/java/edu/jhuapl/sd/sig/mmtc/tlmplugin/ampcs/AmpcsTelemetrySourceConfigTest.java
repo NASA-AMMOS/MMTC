@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.util.TemporaryTkConfigProperties;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
@@ -21,7 +21,7 @@ class AmpcsTelemetrySourceConfigTest {
                         .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
 
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTelemetrySourceConfig ampcsConfig = new AmpcsTelemetrySourceConfig(config);
 
@@ -36,7 +36,7 @@ class AmpcsTelemetrySourceConfigTest {
                         .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
 
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTelemetrySourceConfig ampcsConfig = new AmpcsTelemetrySourceConfig(config);
 
@@ -52,7 +52,7 @@ class AmpcsTelemetrySourceConfigTest {
                         .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
 
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTelemetrySourceConfig ampcsConfig = new AmpcsTelemetrySourceConfig(config);
 
@@ -70,7 +70,7 @@ class AmpcsTelemetrySourceConfigTest {
                         .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
 
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTelemetrySourceConfig ampcsConfig = new AmpcsTelemetrySourceConfig(config);
 
@@ -108,7 +108,7 @@ class AmpcsTelemetrySourceConfigTest {
                         .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
 
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTelemetrySourceConfig ampcsConfig = new AmpcsTelemetrySourceConfig(config);
 
@@ -152,7 +152,7 @@ class AmpcsTelemetrySourceConfigTest {
                         .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
 
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTelemetrySourceConfig ampcsConfig = new AmpcsTelemetrySourceConfig(config);
 
@@ -167,7 +167,7 @@ class AmpcsTelemetrySourceConfigTest {
                         .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
 
                 String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-                TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(cliArgs);
+                TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
 
                 AmpcsTelemetrySourceConfig ampcsConfig = new AmpcsTelemetrySourceConfig(config);
 

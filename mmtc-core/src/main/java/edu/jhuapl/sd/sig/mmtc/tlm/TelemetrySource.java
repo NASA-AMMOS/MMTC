@@ -41,7 +41,7 @@ public interface TelemetrySource {
      *
      * @return additional options to add to the MMTC CLI
      */
-    Collection<Option> getAdditionalCliArguments();
+    Collection<AdditionalOption> getAdditionalOptions();
 
     /**
      * This method is called when MMTC configuration has been fully initialized and validated, and provides a chance for
@@ -202,5 +202,15 @@ public interface TelemetrySource {
      */
     default GncParms getGncTkParms(OffsetDateTime noEarlierThanScet, Double noEarlierThanTdtS) {
         return new GncParms();
+    }
+
+    final class AdditionalOption {
+        public final Option cliOption;
+        public final String name;
+
+        public AdditionalOption(Option cliOption, String name) {
+            this.cliOption = cliOption;
+            this.name = name;
+        }
     }
 }

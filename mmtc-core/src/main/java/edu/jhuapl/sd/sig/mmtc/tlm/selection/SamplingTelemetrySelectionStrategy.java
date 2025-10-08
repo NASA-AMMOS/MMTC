@@ -21,6 +21,10 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
 
     public SamplingTelemetrySelectionStrategy(TimeCorrelationAppConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
         super(config, tlmSource, tk_sclk_fine_tick_modulus);
+
+        if (config.getDesiredTargetSampleErt().isPresent()) {
+            throw new IllegalStateException("This telemetry selection strategy does not support choosing a desired target sample");
+        }
     }
 
     @Override

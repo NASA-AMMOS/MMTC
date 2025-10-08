@@ -4,11 +4,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.util.CollectionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 
 public class VcidFilter implements TimeCorrelationFilter {

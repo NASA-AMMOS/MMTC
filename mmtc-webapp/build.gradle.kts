@@ -23,6 +23,9 @@ dependencies {
     implementation(project(":mmtc-core"))
     implementation("io.javalin:javalin:6.7.0")
     implementation("org.slf4j:slf4j-simple:2.0.16")
+    implementation(libs.log4j.api)
+    implementation(libs.log4j.core)
+    implementation(libs.log4j.jcl)
 
     testImplementation(project(":mmtc-core"))
     testImplementation(testlibs.junit.jupiter.api)
@@ -75,7 +78,7 @@ tasks.jar {
 
     manifest {
         attributes(
-            "Main-Class" to "edu.jhuapl.sd.sig.mmtc.webapp.MmtcApp",
+            "Main-Class" to "edu.jhuapl.sd.sig.mmtc.webapp.MmtcWebApp",
             "Build-Date" to Instant.now().toString(),
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version

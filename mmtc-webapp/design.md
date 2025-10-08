@@ -43,6 +43,7 @@ Extend the MMTC software to support additional concepts of operations to current
         - [PrimeVue](https://primevue.org)
         - [Naive UI](https://www.naiveui.com)
       - [Apache Echarts](https://echarts.apache.org/en/index.html) via [Vue-ECharts](https://vue-echarts.dev/)
+- Make sure UI can be used with all optional telemetry source options (like extra args to AMPCS)
 
 
 Gameplan:

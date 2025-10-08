@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.correlation;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;

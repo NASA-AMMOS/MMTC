@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;

@@ -3,6 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +24,9 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
     }
 
     public static WindowingTelemetrySelectionStrategy forSeparateConsecutiveWindows(TimeCorrelationAppConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
+        if (config.getDesiredTargetSampleErt().isPresent()) {
+            throw new IllegalStateException("This telemetry selection strategy does not support choosing a desired target sample");
+        }
         return new WindowingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus, config.getSamplesPerSet());
     }
 
@@ -105,6 +109,13 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
             }
 
             tcTarget = new TimeCorrelationTarget(sampleSet, config, tk_sclk_fine_tick_modulus);
+
+            if (config.getDesiredTargetSampleErt().isPresent()) {
+                final String desiredTargetFrameErt = config.getDesiredTargetSampleErt().get().targetFrameErt;
+                if (! tcTarget.getTargetSample().getErtStr().equals(desiredTargetFrameErt)) {
+                    logger.warn("Discarding the candidate sample set because it does not match the desired ERT");
+                }
+            }
 
             if (filterFunction.apply(tcTarget)) {
                 logger.info(USER_NOTICE, "The candidate sample set passed all filters and is valid. MMTC will use it as the sample set for time correlation.");

@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValsReader;
@@ -32,7 +33,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -44,6 +44,9 @@ import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
  * implemented.</P>
  */
 public abstract class AmpcsTelemetrySource implements TelemetrySource {
+    public static final String AMPCS_SESSION_ID_OPT = "AMPCS Session ID";
+    public static final String ADDITIONAL_AMPCS_CLI_ARGS_OPT = "Additional AMPCS CLI args";
+
     protected static final Logger logger = LogManager.getLogger();
 
     protected TimeCorrelationAppConfig config;
@@ -89,19 +92,25 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<Option> getAdditionalCliArguments() {
+    public Collection<AdditionalOption> getAdditionalOptions() {
         return Arrays.asList(
-                new Option(
-                        "K",
-                        "ampcs-session-id",
-                        true,
-                        "Specifies the session ID when using an AMPCS telemetry source."
+                new AdditionalOption(
+                        new Option(
+                                "K",
+                                "ampcs-session-id",
+                                true,
+                                "Specifies the session ID when using an AMPCS telemetry source."
+                        ),
+                        AMPCS_SESSION_ID_OPT
                 ),
-                new Option(
-                        "n",
-                        "connection-parms",
-                        true,
-                        "Provides any additional CLI parameters that will be passed down to the AMPCS CLI tools."
+                new AdditionalOption(
+                    new Option(
+                            "n",
+                            "connection-parms",
+                            true,
+                            "Provides any additional CLI parameters that will be passed down to the AMPCS CLI tools."
+                    ),
+                        ADDITIONAL_AMPCS_CLI_ARGS_OPT
                 )
         );
     }

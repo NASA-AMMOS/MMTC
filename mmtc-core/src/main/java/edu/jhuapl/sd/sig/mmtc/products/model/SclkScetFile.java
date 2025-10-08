@@ -2,6 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -60,7 +61,7 @@ public class SclkScetFile extends TextProduct {
     /* Specifies the SCET of the last data record in the new SCLK/SCET file. */
     private OffsetDateTime endSclkScetTime;
 
-    private final TimeCorrelationAppConfig.SclkScetFileLeapSecondSclkRate leapSecondSclkRateMode;
+    private final TimeCorrelationCliAppConfig.SclkScetFileLeapSecondSclkRate leapSecondSclkRateMode;
 
     /**
      * Metadata parameters for the SCLK/SCET file header if not read-in from an existing SCLK/SCET file.
