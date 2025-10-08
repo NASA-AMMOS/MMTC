@@ -34,7 +34,7 @@ public class TelemetryController extends BaseController {
 
             if (sclkKernelName != null && !sclkKernelName.isEmpty()) {
                 EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) config.getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
-                sclkKernelPath = sclkKernelDef.resolveLocation(config).findFileMatchingFilename(sclkKernelName);
+                sclkKernelPath = sclkKernelDef.resolveLocation(config).findMatchingFilename(sclkKernelName);
             } else if (correlationPreviewId != null && !correlationPreviewId.isEmpty()) {
                 sclkKernelPath = correlationPreviewService.get(UUID.fromString(correlationPreviewId)).tempSclkKernelOnDisk();
             } else {

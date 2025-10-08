@@ -116,6 +116,10 @@ public abstract class TimeCorrelationAppConfig extends MmtcConfigWithTlmSource {
 
     public abstract double getClockChangeRateAssignedValue() throws MmtcException;
 
+    public abstract boolean isDryRun();
+
+    public abstract boolean isCreateUplinkCmdFile();
+
     public static class TimeCorrelationTargetIdentifier {
         public final String targetFrameErt;
         public final String supplementalFrameErt;

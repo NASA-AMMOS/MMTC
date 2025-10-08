@@ -227,6 +227,7 @@ public class TimeCorrelationCliAppConfig extends TimeCorrelationAppConfig {
      *
      * @return true if an Uplink Command File is to be created
      */
+    @Override
     public boolean isCreateUplinkCmdFile() {
         if (cmdLineConfig.isGenerateCmdFile()) {
             return true;
@@ -260,6 +261,7 @@ public class TimeCorrelationCliAppConfig extends TimeCorrelationAppConfig {
      *
      * @return true if -D or --dry-run CLI options are invoked
      */
+    @Override
     public boolean isDryRun() {
         return cmdLineConfig.isDryRun();
     }

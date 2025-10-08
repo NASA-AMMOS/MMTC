@@ -83,12 +83,13 @@ public class TimeCorrelationWebAppConfig extends TimeCorrelationAppConfig {
     }
 
     @Override
-    public boolean isCreateUplinkCmdFile() {
-        if (containsKey("product.uplinkCmdFile.create")) {
-            return getBoolean("product.uplinkCmdFile.create");
-        }
+    public boolean isDryRun() {
+        return false; // todo
+    }
 
-        return false;
+    @Override
+    public boolean isCreateUplinkCmdFile() {
+        return false; // todo
     }
 
     @Override

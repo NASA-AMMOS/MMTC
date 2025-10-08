@@ -32,8 +32,8 @@ public class CachingTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<Option> getAdditionalCliArguments() {
-        return underlyingTelemetrySource.getAdditionalCliArguments();
+    public Collection<AdditionalOption> getAdditionalOptions() {
+        return underlyingTelemetrySource.getAdditionalOptions();
     }
 
     @Override

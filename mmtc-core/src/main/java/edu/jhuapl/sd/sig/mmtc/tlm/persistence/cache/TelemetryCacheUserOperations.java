@@ -2,6 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -44,7 +45,7 @@ public class TelemetryCacheUserOperations {
             System.exit(0);
         }
 
-        final TimeCorrelationAppConfig config = new TimeCorrelationAppConfig(args);
+        final TimeCorrelationAppConfig config = new TimeCorrelationCliAppConfig(args);
 
         logger.info(String.format("Querying and caching telemetry from %s to %s...", config.getStartTime(), config.getStopTime()));
         try {
