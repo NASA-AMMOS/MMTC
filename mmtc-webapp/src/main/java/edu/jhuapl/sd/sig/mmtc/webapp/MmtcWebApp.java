@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.webapp;
 
 import edu.jhuapl.sd.sig.mmtc.app.BuildInfo;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.AuthorizationService;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.AutoGenBasicHttpAuthorizationService;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.NoopAuthorizationService;
@@ -36,6 +37,8 @@ public class MmtcWebApp {
     public MmtcWebApp() throws Exception {
         this.config = new MmtcWebAppConfig();
 
+        TimeConvert.loadSpiceLib();
+
         // todo do migration assertion check
 
         javalinApp = Javalin.create(javalinConfig -> {
@@ -67,7 +70,6 @@ public class MmtcWebApp {
             case NONE                    -> new NoopAuthorizationService();
             case AUTOGEN_BASIC_HTTP_AUTH -> new AutoGenBasicHttpAuthorizationService();
         };
-
 
         javalinApp.beforeMatched(ctx -> {
             if (! authService.isAuthorized(ctx)) {

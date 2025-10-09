@@ -14,9 +14,12 @@ public abstract class MmtcConfigWithTlmSource extends MmtcConfig {
         this.telemetrySource = this.initTlmSource();
 
         this.additionalOptionsByName = new HashMap<>();
+
         telemetrySource.getAdditionalOptions().forEach(additionalOption -> {
             additionalOptionsByName.put(additionalOption.name, additionalOption);
         });
+
+        this.telemetrySource.applyConfiguration(this);
     }
 
     public MmtcConfigWithTlmSource(MmtcConfigWithTlmSource config) {

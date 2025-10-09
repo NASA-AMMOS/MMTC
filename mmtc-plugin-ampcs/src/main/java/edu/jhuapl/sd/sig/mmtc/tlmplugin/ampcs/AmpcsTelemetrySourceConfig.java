@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 
@@ -8,10 +9,10 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class AmpcsTelemetrySourceConfig {
-    private final TimeCorrelationAppConfig timeCorrelationAppConfig;
+    private final MmtcConfigWithTlmSource timeCorrelationAppConfig;
     private final Map<Integer, String> vcidsToOscillatorIds = new HashMap<>();
 
-    public AmpcsTelemetrySourceConfig(TimeCorrelationAppConfig timeCorrelationAppConfig) {
+    public AmpcsTelemetrySourceConfig(MmtcConfigWithTlmSource timeCorrelationAppConfig) {
         this.timeCorrelationAppConfig = timeCorrelationAppConfig;
 
         if (getActiveOscillatorSelectionMode().equals(ActiveOscillatorSelectionMode.by_vcid)) {

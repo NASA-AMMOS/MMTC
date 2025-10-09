@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
@@ -49,7 +50,7 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
 
     protected static final Logger logger = LogManager.getLogger();
 
-    protected TimeCorrelationAppConfig config;
+    protected MmtcConfigWithTlmSource config;
     protected AmpcsTelemetrySourceConfig ampcsConfig;
 
     protected String chillGdsPath;
@@ -80,7 +81,7 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
+    public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
         this.config = config;
         this.ampcsConfig = new AmpcsTelemetrySourceConfig(config);
         setSessionId(ampcsConfig.getSessionId());

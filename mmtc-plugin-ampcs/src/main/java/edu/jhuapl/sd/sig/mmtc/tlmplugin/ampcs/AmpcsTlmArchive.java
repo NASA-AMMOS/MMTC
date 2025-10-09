@@ -49,9 +49,7 @@ public class AmpcsTlmArchive extends AmpcsTelemetrySource {
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
-        super.applyConfiguration(config);
-
+    public void checkCorrelationConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
         Set<String> enabledFilters = config.getFilters().keySet();
         if (enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER)) {
             String errorString = "When using the AmpcsTlmArchive telemetry source, the " +

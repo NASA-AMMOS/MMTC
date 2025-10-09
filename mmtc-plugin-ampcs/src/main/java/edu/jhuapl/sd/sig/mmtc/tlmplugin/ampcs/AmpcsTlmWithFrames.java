@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
@@ -53,7 +54,7 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
+    public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
         super.applyConfiguration(config);
 
         if (config.getSamplesPerSet() != 1) {
@@ -63,14 +64,17 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
         if (! packetsHaveDownlinkDataRate()) {
             throw new MmtcException("ERROR: When using the AmpcsTlmWithFrames telemetry source plugin, the TK packets must contain the downlink data rate. These do not.");
         }
+    }
 
+    @Override
+    public void checkCorrelationConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
         Set<String> enabledFilters = config.getFilters().keySet();
         if (
                 enabledFilters.contains(TimeCorrelationAppConfig.ERT_FILTER) ||
-                enabledFilters.contains(TimeCorrelationAppConfig.SCLK_FILTER) ||
-                enabledFilters.contains(TimeCorrelationAppConfig.VCID_FILTER) ||
-                enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_FRAMES_FILTER) ||
-                enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER)
+                        enabledFilters.contains(TimeCorrelationAppConfig.SCLK_FILTER) ||
+                        enabledFilters.contains(TimeCorrelationAppConfig.VCID_FILTER) ||
+                        enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_FRAMES_FILTER) ||
+                        enabledFilters.contains(TimeCorrelationAppConfig.CONSEC_MC_FRAME_FILTER)
         ) {
             String errorString = "When using the AmpcsTlmWithFrames telemetry source, the " +
                     TimeCorrelationAppConfig.ERT_FILTER +  ", " +

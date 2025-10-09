@@ -137,13 +137,14 @@ import spice.basic.*;
      *
      * @throws TimeConvertException when System.loadLibrary() fails
      */
-    public static void loadSpiceLib() throws TimeConvertException {
-        try {
-            System.loadLibrary("JNISpice");
-            spiceLibIsLoaded = true;
-        }
-        catch (Exception e) {
-            throw new TimeConvertException("Error initializing SPICE library", e);
+    public static synchronized void loadSpiceLib() throws TimeConvertException {
+        if (! spiceLibIsLoaded) {
+            try {
+                System.loadLibrary("JNISpice");
+                spiceLibIsLoaded = true;
+            } catch (Exception e) {
+                throw new TimeConvertException("Error initializing SPICE library", e);
+            }
         }
     }
 

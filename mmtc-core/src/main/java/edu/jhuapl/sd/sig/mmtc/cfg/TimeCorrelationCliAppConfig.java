@@ -57,6 +57,8 @@ public class TimeCorrelationCliAppConfig extends TimeCorrelationAppConfig {
         // todo would be ideal if config was immutable
         this.telemetrySource.applyConfiguration(this);
 
+        this.telemetrySource.checkCorrelationConfiguration(this);
+
         logger.debug(toString());
     }
 
