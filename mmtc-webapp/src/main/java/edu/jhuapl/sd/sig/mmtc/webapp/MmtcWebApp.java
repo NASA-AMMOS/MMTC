@@ -5,10 +5,7 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.AuthorizationService;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.AutoGenBasicHttpAuthorizationService;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.NoopAuthorizationService;
-import edu.jhuapl.sd.sig.mmtc.webapp.controller.TimeCorrelationController;
-import edu.jhuapl.sd.sig.mmtc.webapp.controller.BaseController;
-import edu.jhuapl.sd.sig.mmtc.webapp.controller.OutputProductController;
-import edu.jhuapl.sd.sig.mmtc.webapp.controller.TelemetryController;
+import edu.jhuapl.sd.sig.mmtc.webapp.controller.*;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.CorrelationPreviewService;
 import io.javalin.Javalin;
 import io.javalin.http.UnauthorizedResponse;
@@ -21,8 +18,6 @@ import java.util.Collection;
 import java.util.HashSet;
 
 public class MmtcWebApp {
-    public static final BuildInfo BUILD_INFO = new BuildInfo();
-
     private static final Logger logger = LogManager.getLogger();
 
     private final Javalin javalinApp;
@@ -85,9 +80,8 @@ public class MmtcWebApp {
         controllers.add(new TimeCorrelationController(config, this.correlationPreviewService));
         controllers.add(new TelemetryController(config, this.correlationPreviewService));
         controllers.add(new OutputProductController(config));
+        controllers.add(new InfoController(config));
         controllers.forEach(c -> c.registerEndpoints(javalinApp));
-
-        javalinApp.get("/api/v1/info/version", ctx -> ctx.result("MMTC " + BUILD_INFO.toString()));
     }
 
     private SslContextFactory.Server getSslContextFactory() {

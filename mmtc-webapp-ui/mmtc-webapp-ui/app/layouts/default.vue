@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+import MmtcVersion from "../components/MmtcVersion.vue";
 
 const route = useRoute()
 const toast = useToast()
@@ -89,6 +90,7 @@ const groups = computed(() => [{
 }])
 
 onMounted(async () => {
+  /*
   const cookie = useCookie('cookie-consent')
   if (cookie.value === 'accepted') {
     return
@@ -111,6 +113,7 @@ onMounted(async () => {
       variant: 'ghost'
     }]
   })
+   */
 })
 </script>
 
@@ -124,11 +127,15 @@ onMounted(async () => {
       class="bg-elevated/25"
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
-      <template #header="{ collapsed }">
+      <!--template #header="{ collapsed }">
         <TeamsMenu :collapsed="collapsed" />
-      </template>
+      </template-->
 
       <template #default="{ collapsed }">
+        <span>
+          <UIcon name="i-lucide-clock-fading" class="size-5" />
+          MMTC
+          </span>
         <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
         <UNavigationMenu
@@ -139,6 +146,7 @@ onMounted(async () => {
           popover
         />
 
+        <!--
         <UNavigationMenu
           :collapsed="collapsed"
           :items="links[1]"
@@ -146,11 +154,9 @@ onMounted(async () => {
           tooltip
           class="mt-auto"
         />
+        -->
       </template>
 
-      <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
-      </template>
     </UDashboardSidebar>
 
     <UDashboardSearch :groups="groups" />
@@ -159,4 +165,5 @@ onMounted(async () => {
 
     <NotificationsSlideover />
   </UDashboardGroup>
+  <MmtcVersion/>
 </template>

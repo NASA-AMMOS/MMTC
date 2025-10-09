@@ -38,6 +38,11 @@ public class CachingTelemetrySource implements TelemetrySource {
     }
 
     @Override
+    public void checkCorrelationConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
+
+    }
+
+    @Override
     public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
         underlyingTelemetrySource.applyConfiguration(config);
     }

@@ -14,7 +14,11 @@ export default defineNuxtConfig({
 
   routeRules: {
     '/api/**': {
-      cors: true
+      cors: true,
+    },
+    '/backend-api/**': {
+      cors: true,
+      proxy: { to: "http://localhost:8080/api/**"}
     }
   },
 
