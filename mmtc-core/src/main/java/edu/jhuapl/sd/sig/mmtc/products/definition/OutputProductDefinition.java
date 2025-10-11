@@ -5,16 +5,18 @@ import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductLocation;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductPath;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Defines common fields and methods common across all OutputProductDefinition implementations.
@@ -106,4 +108,26 @@ public abstract class OutputProductDefinition<T extends ResolvedProductLocation>
      */
     public abstract Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputDir);
 
+    /**
+     * Resolve all filepaths related to this product that currently exist on disk
+     *
+     * @param config the loaded MMTC configuration
+     * @return the resolved product filepaths
+     * @throws MmtcException if any problem is encountered while determining the resolved product paths
+     */
+    public Set<Path> resolveAllExistingPaths(MmtcConfig config) throws MmtcException, IOException {
+        T resolvedLocation = resolveLocation(config);
+        if (resolvedLocation instanceof ResolvedProductPath) {
+            Path singlePath = ((ResolvedProductPath) resolvedLocation).pathToProduct;
+            if (Files.exists(singlePath)) {
+                return new HashSet<>(Arrays.asList(singlePath));
+            } else {
+                return Collections.emptySet();
+            }
+        } else if (resolvedLocation instanceof ResolvedProductDirPrefixSuffix) {
+            return new HashSet<>(((ResolvedProductDirPrefixSuffix) resolvedLocation).findAllMatching());
+        } else {
+            throw new IllegalStateException("Unrecognized resolved location: " + resolvedLocation);
+        }
+    }
 }

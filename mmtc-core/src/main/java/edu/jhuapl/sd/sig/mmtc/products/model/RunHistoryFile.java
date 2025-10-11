@@ -22,6 +22,8 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
 
     public static final String RUN_TIME = "Run Time";
     public static final String RUN_ID = "Run ID";
+    public static final String MMTC_VERSION = "MMTC Version";
+    public static final String MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION = "Built-In Output Product Version";
     public static final String ROLLEDBACK = "Rolled Back?";
     public static final String RUN_USER = "Run User";
     public static final String CLI_ARGS = "MMTC Invocation Args Used";
@@ -90,6 +92,8 @@ public class RunHistoryFile extends AbstractTimeCorrelationTable {
             final List<String> headers = new ArrayList<>(Arrays.asList(
                     RUN_TIME,
                     RUN_ID,
+                    MMTC_VERSION,
+                    MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION,
                     ROLLEDBACK,
                     RUN_USER,
                     CLI_ARGS,
