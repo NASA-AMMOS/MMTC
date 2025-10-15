@@ -24,6 +24,11 @@ public class RawTlmTableProductDefinition extends AppendedFileOutputProductDefin
     }
 
     @Override
+    public boolean isConfigured(MmtcConfig config) {
+        return true;
+    }
+
+    @Override
     public boolean shouldBeWritten(TimeCorrelationContext context) {
         return true;
     }

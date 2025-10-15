@@ -352,11 +352,11 @@ public class TimeCorrelationAppConfig extends MmtcConfig {
         super.validate();
 
         if (createSclkScetFile()) {
-            validateSclkScetConfiguration();
+            ensureValidSclkScetConfiguration();
         }
 
         if (isCreateUplinkCmdFile()) {
-            validateUplinkCmdFileConfiguration();
+            ensureValidUplinkCmdFileConfiguration();
         }
     }
 }

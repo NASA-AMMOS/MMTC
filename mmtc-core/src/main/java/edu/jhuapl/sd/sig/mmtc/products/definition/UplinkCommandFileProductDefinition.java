@@ -24,13 +24,18 @@ public class UplinkCommandFileProductDefinition extends EntireFileOutputProductD
 
     @Override
     public ResolvedProductDirPrefixSuffix resolveLocation(MmtcConfig conf) throws MmtcException {
-        conf.validateUplinkCmdFileConfiguration();
+        conf.ensureValidUplinkCmdFileConfiguration();
 
         return new ResolvedProductDirPrefixSuffix(
                 Paths.get(conf.getUplinkCmdFileDir()).toAbsolutePath(),
                 conf.getUplinkCmdFileBasename(),
                 UplinkCmdFile.FILE_SUFFIX
         );
+    }
+
+    @Override
+    public boolean isConfigured(MmtcConfig config) {
+        return config.getMissingUplinkCmdFileConfigurationKeys().isEmpty();
     }
 
     @Override

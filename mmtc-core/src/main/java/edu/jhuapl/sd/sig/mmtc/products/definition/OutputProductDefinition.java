@@ -42,10 +42,19 @@ public abstract class OutputProductDefinition<T extends ResolvedProductLocation>
         isBuiltIn.set(newIsBuiltInStatus);
     }
 
-
     public final boolean isBuiltIn() {
         return isBuiltIn.get();
     }
+
+    public abstract boolean isConfigured(MmtcConfig config);
+
+    /**
+     * Where this product should be written, given the current time correlation
+     *
+     * @param context an object describing the time correlation inputs and results, possibly to be used in determining whether an output product should be written
+     * @return true if the product should be written, false otherwise
+     */
+    public abstract boolean shouldBeWritten(TimeCorrelationContext context);
 
     /**
      * 'Resolve' the location of the output product file(s) on disk for this definition.
@@ -56,13 +65,6 @@ public abstract class OutputProductDefinition<T extends ResolvedProductLocation>
      */
     public abstract T resolveLocation(MmtcConfig config) throws MmtcException;
 
-    /**
-     * Where this product should be written, given the current time correlation
-     *
-     * @param context an object describing the time correlation inputs and results, possibly to be used in determining whether an output product should be written
-     * @return true if the product should be written, false otherwise
-     */
-    public abstract boolean shouldBeWritten(TimeCorrelationContext context);
 
     /**
      * Generates a string summarizing the hypothetical changes to an output product that would have been made had this been a real

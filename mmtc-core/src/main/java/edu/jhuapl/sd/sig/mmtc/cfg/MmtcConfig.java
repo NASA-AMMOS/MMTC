@@ -1248,7 +1248,7 @@ public abstract class MmtcConfig {
     }
 
 
-    private static final List<String> REQD_SCLK_SCET_CONFIG_KEY_GROUP = Arrays.asList(
+    public static final List<String> REQD_SCLK_SCET_CONFIG_KEY_GROUP = Arrays.asList(
             "product.sclkScetFile.create",
             "product.sclkScetFile.dir",
             "product.sclkScetFile.baseName",
@@ -1259,26 +1259,34 @@ public abstract class MmtcConfig {
             "product.sclkScetFile.scetUtcPrecision"
     );
 
-    private static final List<String> REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP = Arrays.asList(
+    public static final List<String> REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP = Arrays.asList(
             "product.uplinkCmdFile.create",
             "product.uplinkCmdFile.outputDir",
             "product.uplinkCmdFile.baseName"
     );
 
-    public void validateSclkScetConfiguration() throws MmtcException {
-        List<String> missingKeys = checkForMissingKeysInGroup(REQD_SCLK_SCET_CONFIG_KEY_GROUP);
+    public void ensureValidSclkScetConfiguration() throws MmtcException {
+        final List<String> missingKeys = getMissingSclkScetConfigurationKeys();
 
         if (! missingKeys.isEmpty()) {
             throw new MmtcException("SCLK-SCET operations require the following keys to be set: " + missingKeys.toString());
         }
     }
 
-    public void validateUplinkCmdFileConfiguration() throws MmtcException {
-        List<String> missingKeys = checkForMissingKeysInGroup(REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP);
+    public List<String> getMissingSclkScetConfigurationKeys() {
+        return checkForMissingKeysInGroup(REQD_SCLK_SCET_CONFIG_KEY_GROUP);
+    }
+
+    public void ensureValidUplinkCmdFileConfiguration() throws MmtcException {
+        List<String> missingKeys = getMissingUplinkCmdFileConfigurationKeys();
 
         if (! missingKeys.isEmpty()) {
             throw new MmtcException("Uplink command file operations require the following keys to be set: " + missingKeys.toString());
         }
+    }
+
+    public List<String> getMissingUplinkCmdFileConfigurationKeys() {
+        return checkForMissingKeysInGroup(REQD_UPLINK_CMD_FILE_CONFIG_KEY_GROUP);
     }
 
     private List<String> checkForMissingKeysInGroup(List<String> requiredKeys) {

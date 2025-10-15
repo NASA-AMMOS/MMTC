@@ -57,6 +57,11 @@ public class ExampleAppendedFileOutputProductDefinition extends AppendedFileOutp
     }
 
     @Override
+    public boolean isConfigured(MmtcConfig config) {
+        return true;
+    }
+
+    @Override
     public boolean shouldBeWritten(TimeCorrelationContext ctx) {
         return true;
     }

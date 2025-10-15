@@ -329,10 +329,10 @@ public class TimeCorrelationRollback {
         }
 
         public static Optional<ProductRollbackOperation<?>> calculateFor(OutputProductDefinition<?> outputProductDef, RollbackConfig config, Optional<String> currentLatestProductVersion, Optional<String> newLatestProductVersion) throws MmtcException {
+            // here, we purposefully only read config values if needed, so we don't e.g. read SCLK-SCET output product config keys if we're not rolling back a SCLK-SCET file)
             if (currentLatestProductVersion.equals(newLatestProductVersion)) {
                 return Optional.empty();
             } else {
-                // here, we purposefully lazily retrieve config values (only reading it when necessary, so we don't e.g. read SCLK-SCET output product config keys if we're not rolling back a SCLK-SCET file)
                 return Optional.of(outputProductDef.getRollbackOperation(config, newLatestProductVersion));
             }
         }
