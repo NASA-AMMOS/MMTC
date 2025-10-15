@@ -11,7 +11,6 @@ import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -19,10 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Describes the set of SCLK kernel output products that MMTC performs operations on.
@@ -35,8 +30,13 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
     private final int ENTRIES_TO_PRINT = 4;
 
     @Override
+    public boolean isConfigured(MmtcConfig conf) {
+        return conf.getMissingSclkScetConfigurationKeys().isEmpty();
+    }
+
+    @Override
     public ResolvedProductDirPrefixSuffix resolveLocation(MmtcConfig conf) throws MmtcException {
-        conf.validateSclkScetConfiguration();
+        conf.ensureValidSclkScetConfiguration();
 
         return new ResolvedProductDirPrefixSuffix(
                 conf.getSclkScetOutputDir().toAbsolutePath(),

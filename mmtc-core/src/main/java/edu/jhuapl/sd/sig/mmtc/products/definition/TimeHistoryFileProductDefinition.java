@@ -30,6 +30,11 @@ public class TimeHistoryFileProductDefinition extends AppendedFileOutputProductD
     }
 
     @Override
+    public boolean isConfigured(MmtcConfig config) {
+        return true;
+    }
+
+    @Override
     public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
         TimeHistoryFile timeHistFile = new TimeHistoryFile(ctx.config.getTimeHistoryFilePath(), ctx.config.getTimeHistoryFileExcludeColumns());
         TableRecord timeHistRecord = new TableRecord(timeHistFile.getHeaders());

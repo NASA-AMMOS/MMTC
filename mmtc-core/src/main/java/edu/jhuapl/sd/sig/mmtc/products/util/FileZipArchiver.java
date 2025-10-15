@@ -13,9 +13,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,7 +21,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
-import static edu.jhuapl.sd.sig.mmtc.util.TimeConvert.ISO_UTC_DOY_FORMAT_NO_SUBSECONDS;
 
 // Zips and stores a copy of files to a single zip on the filesystem
 public class FileZipArchiver {
@@ -71,7 +67,9 @@ public class FileZipArchiver {
 
         final Set<Path> allFilepathsToBackup = new HashSet<>();
         for (OutputProductDefinition<?> def : config.getAllOutputProductDefs()) {
-            allFilepathsToBackup.addAll(def.resolveAllExistingPaths(config));
+            if (def.isConfigured(config)) {
+                allFilepathsToBackup.addAll(def.resolveAllExistingPaths(config));
+            }
         }
         allFilepathsToBackup.add(config.getRunHistoryFilePath().toAbsolutePath());
 

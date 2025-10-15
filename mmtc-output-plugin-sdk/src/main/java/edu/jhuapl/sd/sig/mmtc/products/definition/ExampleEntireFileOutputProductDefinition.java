@@ -67,6 +67,11 @@ public class ExampleEntireFileOutputProductDefinition extends EntireFileOutputPr
     }
 
     @Override
+    public boolean isConfigured(MmtcConfig config) {
+        return true;
+    }
+
+    @Override
     public boolean shouldBeWritten(TimeCorrelationContext ctx) {
         return true;
     }

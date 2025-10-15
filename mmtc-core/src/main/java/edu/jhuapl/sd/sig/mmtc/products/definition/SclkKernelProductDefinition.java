@@ -41,6 +41,11 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     }
 
     @Override
+    public boolean isConfigured(MmtcConfig config) {
+        return true;
+    }
+
+    @Override
     public boolean shouldBeWritten(TimeCorrelationContext context) {
         return true;
     }

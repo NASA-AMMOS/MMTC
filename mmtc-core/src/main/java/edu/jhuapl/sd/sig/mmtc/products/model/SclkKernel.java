@@ -113,7 +113,6 @@ public class SclkKernel extends TextProduct {
         }
     }
 
-
     /**
      * Overwrites the clock change rate field in the last time correlation record in the product with
      * the supplied value.
