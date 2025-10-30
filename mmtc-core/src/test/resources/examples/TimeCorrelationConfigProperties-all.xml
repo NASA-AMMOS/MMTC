@@ -93,6 +93,7 @@
     <entry key="table.timeHistoryFile.path"></entry>
     <entry key="table.timeHistoryFile.excludeColumns"></entry>
     <entry key="table.timeHistoryFile.scetUtcPrecision"></entry>
+    <entry key="table.timeHistoryFile.oscTempFractionDigits">3</entry>
 
     <entry key="product.sclkScetFile.create"></entry>
     <entry key="product.sclkScetFile.dir"></entry>
