@@ -302,7 +302,11 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
 
         newThfRec.setValue(TimeHistoryFile.RADIO_ID,                  ctx.ancillary.active_radio_id.get());
         newThfRec.setValue(TimeHistoryFile.OSCILLATOR,                ctx.ancillary.oscillator_id.get());
-        newThfRec.setValue(TimeHistoryFile.OSCILLATOR_TEMP_DEGC,      String.valueOf(ctx.ancillary.oscillator_temperature_deg_c.get()));
+        DecimalFormat oscTempFormat = new DecimalFormat();
+        oscTempFormat.setMinimumFractionDigits(1);
+        oscTempFormat.setMaximumFractionDigits(ctx.config.getOscTempFractionDigits());
+        oscTempFormat.setRoundingMode(RoundingMode.HALF_UP);
+        newThfRec.setValue(TimeHistoryFile.OSCILLATOR_TEMP_DEGC,      oscTempFormat.format(ctx.ancillary.oscillator_temperature_deg_c.get()));
     }
 
     /**

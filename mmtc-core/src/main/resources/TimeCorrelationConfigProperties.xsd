@@ -138,6 +138,7 @@
       <xs:enumeration value="table.timeHistoryFile.path"/>
       <xs:enumeration value="table.timeHistoryFile.excludeColumns"/>
       <xs:enumeration value="table.timeHistoryFile.scetUtcPrecision"/>
+      <xs:enumeration value="table.timeHistoryFile.oscTempFractionDigits"/>
 
       <xs:enumeration value="product.sclkScetFile.create"/>
       <xs:enumeration value="product.sclkScetFile.dir"/>

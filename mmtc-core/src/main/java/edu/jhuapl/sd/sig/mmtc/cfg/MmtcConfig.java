@@ -896,6 +896,19 @@ public abstract class MmtcConfig {
         return timeCorrelationConfig.getConfig().getInt("product.sclkScetFile.applicableDurationDays", 0);
     }
 
+    /**
+     * Gets the number of decimal places/fractional digits to display when recording oscillator temperature in the
+     * time history file
+     * @return the integer specified in the config; if key isn't present, return default of 4
+     */
+    public int getOscTempFractionDigits() {
+        if (timeCorrelationConfig.getConfig().containsKey("table.timeHistoryFile.oscTempFractionDigits")) {
+            return timeCorrelationConfig.getConfig().getInt("table.timeHistoryFile.oscTempFractionDigits");
+        } else {
+            return 4;
+        }
+    }
+
 
     public enum SclkScetFileLeapSecondSclkRate {
         ONE,
