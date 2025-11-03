@@ -899,14 +899,22 @@ public abstract class MmtcConfig {
     /**
      * Gets the number of decimal places/fractional digits to display when recording oscillator temperature in the
      * time history file
-     * @return the integer specified in the config; if key isn't present, return default of 4
+     * @return the integer specified in the config unless key isn't present or can't be parsed, then return safe default
      */
     public int getOscTempFractionDigits() {
-        if (timeCorrelationConfig.getConfig().containsKey("table.timeHistoryFile.oscTempFractionDigits")) {
-            return timeCorrelationConfig.getConfig().getInt("table.timeHistoryFile.oscTempFractionDigits");
-        } else {
-            return 4;
+        final String keyName = "table.timeHistoryFile.oscTempFractionDigits";
+        int numDigits = 16; // selected as the (approximately) largest number of fractional digits in a normal Java double
+                            // before floating point precision errors take over
+        try {
+            if (timeCorrelationConfig.getConfig().containsKey(keyName)) {
+                numDigits = timeCorrelationConfig.getConfig().getInt(keyName);
+            } else {
+                logger.debug("Key {} not found in TimeCorrelationConfigProperties: defaulting to value {}", keyName, numDigits);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to parse integer provided in key {}, defaulting to {}", keyName, numDigits);
         }
+        return numDigits;
     }
 
 
