@@ -81,7 +81,8 @@ public class TableRecord {
      * @param value the value of the parameter as a string
      */
     private void setValueOrEmpty(String key, String value) {
-        if (value == null || value.equals("") || value.equals("NaN") || value.equals("-2147483648")) {
+        // � == <U+FFFD REPLACEMENT CHARACTER>, encountered when a NaN (such as the oscillator temp default value) is passed to DecimalFormat.format
+        if (value == null || value.equals("") || value.equals("NaN") || value.equals("-2147483648") || value.equals("�")) {
             value = "-";
         }
         data.put(key, value);
