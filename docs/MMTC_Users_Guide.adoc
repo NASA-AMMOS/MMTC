@@ -1368,6 +1368,11 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 |INT
 |The number of digits to which the SCET fraction of second is to be written in the Time History File.
 
+|table.timeHistoryFile.oscTempFractionDigits
+|OPTIONAL
+|INT
+|The maximum number of fractional/decimal digits to which the oscillator temperature is to be written in the Time History File before rounding takes place.
+
 |product.sclkScetFile.create
 |REQUIRED
 |BOOL
