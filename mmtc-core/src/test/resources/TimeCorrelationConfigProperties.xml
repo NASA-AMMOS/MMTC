@@ -104,7 +104,6 @@
   <entry key="table.timeHistoryFile.path">/opt/local/mmtc/output/TimeHistoryFile.csv</entry>
   <entry key="table.timeHistoryFile.excludeColumns"></entry>
   <entry key="table.timeHistoryFile.scetUtcPrecision">6</entry>
-  <entry key="table.timeHistoryFile.oscTempFractionDigits">3</entry>
 
   <entry key="product.sclkScetFile.create">true</entry>
   <entry key="product.sclkScetFile.dir">./output</entry>
