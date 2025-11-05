@@ -306,6 +306,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         oscTempFormat.setMinimumFractionDigits(1);
         oscTempFormat.setMaximumFractionDigits(ctx.config.getOscTempFractionDigits());
         oscTempFormat.setRoundingMode(RoundingMode.HALF_UP);
+        oscTempFormat.setGroupingUsed(false);                       // Prevents unwanted addition of commas in large numbers
         newThfRec.setValue(TimeHistoryFile.OSCILLATOR_TEMP_DEGC,      oscTempFormat.format(ctx.ancillary.oscillator_temperature_deg_c.get()));
     }
 
