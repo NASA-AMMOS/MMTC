@@ -903,8 +903,8 @@ public abstract class MmtcConfig {
      */
     public int getOscTempFractionDigits() {
         final String keyName = "table.timeHistoryFile.oscTempFractionDigits";
-        int numDigits = 16; // selected as the (approximately) largest number of fractional digits in a normal Java double
-                            // before floating point precision errors take over
+        int numDigits = 9;
+        
         try {
             if (timeCorrelationConfig.getConfig().containsKey(keyName)) {
                 numDigits = timeCorrelationConfig.getConfig().getInt(keyName);
