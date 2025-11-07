@@ -1372,6 +1372,7 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 |OPTIONAL
 |INT
 |The maximum number of fractional/decimal digits to which the oscillator temperature is to be written in the Time History File before rounding takes place.
+Defaults to 9 digits if key isn't included in config or if the value provided can't be parsed.
 
 |product.sclkScetFile.create
 |REQUIRED
