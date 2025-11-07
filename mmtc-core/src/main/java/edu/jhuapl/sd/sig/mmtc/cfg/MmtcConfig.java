@@ -901,7 +901,7 @@ public abstract class MmtcConfig {
      * time history file
      * @return the integer specified in the config unless key isn't present or can't be parsed, then return safe default
      */
-    public int getOscTempFractionDigits() {
+    public int getOscTempFractionDigits() throws MmtcException {
         final String keyName = "table.timeHistoryFile.oscTempFractionDigits";
         int numDigits = 9;
         
@@ -912,7 +912,7 @@ public abstract class MmtcConfig {
                 logger.debug("Key {} not found in TimeCorrelationConfigProperties: defaulting to value {}", keyName, numDigits);
             }
         } catch (Exception e) {
-            logger.warn("Failed to parse integer provided in key {}, defaulting to {}", keyName, numDigits);
+            throw new MmtcException(String.format("Failed to parse value provided in config key %s, ensure it's a valid integer.", keyName), e);
         }
         return numDigits;
     }
