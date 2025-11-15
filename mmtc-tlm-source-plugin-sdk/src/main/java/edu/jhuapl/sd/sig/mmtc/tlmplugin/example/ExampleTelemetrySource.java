@@ -2,6 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.tlmplugin.example;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
@@ -23,7 +24,7 @@ public class ExampleTelemetrySource implements TelemetrySource {
     // a typical implementation of a telemetry source will not need to know such values, as they should be read directly from the underlying source
     final int MAX_VCFC = 2048;
 
-    private TimeCorrelationAppConfig config;
+    private MmtcConfigWithTlmSource config;
 
     @Override
     public String getName() {
@@ -59,21 +60,13 @@ public class ExampleTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public void applyConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
+    public void checkCorrelationConfiguration(TimeCorrelationAppConfig config) throws MmtcException {
         /*
-         * This is the third call that method is called:
-         * - after the complete MMTC configuration for the run is read into a TimeCorrelationAppConfig object and validated.
-         * - before any other call (besides getAdditionalCliArguments)
-         *
-         * Typically, you'll want to create a reference to the TimeCorrelationAppConfig object for future use in other methods.
-         * This is also where plugins should check for any enabled filters that does not make sense to run with the telemetry that they can produce.
+         * This is where plugins should check for any enabled filters that does not make sense to run with the telemetry that they can produce.
          * See the MMTC User Guide, and/or the source of the filters in edu.jhuapl.sd.sig.mmtc.filter, for more information.
-         */
-        this.config = config;
-
-        /*
+         *
          * Let's imagine that our example mission's telemetry does not have a Master Channel Frame Counter.
-         * This TelemetrySource, thus, will not populate that field, and we should not allow the corresponding filter to be enabled:
+         * This TelemetrySource, thus, will not populate that field,MmtcConfigWithTlmSource and we should not allow the corresponding filter to be enabled:
          */
         Set<String> enabledFilters = config.getFilters().keySet();
         if (enabledFilters.contains(TimeCorrelationCliAppConfig.CONSEC_MC_FRAME_FILTER)) {
@@ -83,6 +76,17 @@ public class ExampleTelemetrySource implements TelemetrySource {
                     "filter.<filter name>.enabled to false.";
             throw new MmtcException(errorString);
         }
+    }
+
+    @Override
+    public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
+        /*
+         * Typically, you'll want to create a reference to the MmtcConfigWithTlmSource object for future use in other methods.
+         * This is method is called:
+         * - after the MMTC configuration for the run is read into a MmtcConfigWithTlmSource object and validated
+         * - before any other call (besides getAdditionalCliArguments)
+         */
+        this.config = config;
     }
 
     @Override

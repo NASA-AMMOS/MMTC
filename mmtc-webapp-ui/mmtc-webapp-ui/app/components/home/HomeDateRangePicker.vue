@@ -17,6 +17,8 @@ const ranges = [
   { label: 'Last year', years: 1 }
 ]
 
+// todo change this to effectively work in UTC
+
 const toCalendarDate = (date: Date) => {
   return new CalendarDate(
     date.getFullYear(),
@@ -125,7 +127,15 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
           class="p-2"
           :number-of-months="2"
           range
-        />
+          variant="outline"
+          >
+          <template #day="{day}">
+            <div class="grid grid-rows-1">
+              <div class="-mb-1 text-sm font-medium"><strong>{{day.day}}</strong></div>
+              <div class="font-extralight text-xs">123</div>
+            </div>
+          </template>
+        </UCalendar>
       </div>
     </template>
   </UPopover>

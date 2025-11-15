@@ -91,6 +91,10 @@ public abstract class MmtcConfig {
         this.allProductDefs = config.allProductDefs;
     }
 
+    public Path getConfigFilepath() {
+        return this.timeCorrelationConfig.getPath();
+    }
+
     public Path getMmtcHome() {
         return mmtcHome;
     }

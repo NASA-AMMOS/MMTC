@@ -64,7 +64,7 @@ val copyBuiltWebappUiIntoSrc = tasks.register<Copy>("copyBuiltWebappUiIntoSrc") 
 }
 
 tasks.processResources {
-    dependsOn(copyBuiltWebappUiIntoSrc)
+    // dependsOn(copyBuiltWebappUiIntoSrc)
 }
 
 tasks.clean {

@@ -43,6 +43,10 @@ public class TableRecord {
         return new ArrayList<>(data.values());
     }
 
+    public Map<String, String> getColsAndVals() {
+        return Collections.unmodifiableMap(data);
+    }
+
     /**
      * Get a particular value.
      *

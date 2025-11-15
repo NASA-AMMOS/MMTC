@@ -52,7 +52,7 @@ public class OutputProductController extends BaseController {
         return String.join("\n", Files.readAllLines(filepathToRead));
     }
 
-    public record OutputProductDef(String name, boolean builtIn, String simpleClassName, String type, List<String> filenames) { }
+    public record OutputProductDef(String name, boolean builtIn, String simpleClassName, String type, boolean singleFile, List<String> filenames) { }
 
     private List<OutputProductDef> getAllOutputProductDefs() {
         return outputProductDefs.stream()
@@ -63,6 +63,7 @@ public class OutputProductController extends BaseController {
                                 def.isBuiltIn(),
                                 def.getClass().getSimpleName(),
                                 getProductTypeAsString(def),
+                                isSingleFileOutputProduct(def),
                                 getExistingFilenamesForDef(def)
                             );
                     } catch (MmtcException e) {
@@ -81,6 +82,7 @@ public class OutputProductController extends BaseController {
                     .findAllMatching()
                     .stream()
                     .map(p -> p.getFileName().toString())
+                    .sorted(Collections.reverseOrder()) // to sort most recent filenames first
                     .toList();
         }
 
@@ -97,13 +99,25 @@ public class OutputProductController extends BaseController {
         throw new MmtcException("Unexpected type for: " + def.getName());
     }
 
-    private String getProductTypeAsString(OutputProductDefinition<?> def) throws MmtcException {
+    private static String getProductTypeAsString(OutputProductDefinition<?> def) throws MmtcException {
         if (def instanceof EntireFileOutputProductDefinition) {
             return "EntireFileOutputProductDefinition";
         }
 
         if (def instanceof AppendedFileOutputProductDefinition) {
             return "AppendedFileOutputProductDefinition";
+        }
+
+        throw new MmtcException("Unexpected type for: " + def.getName());
+    }
+
+    private static boolean isSingleFileOutputProduct(OutputProductDefinition<?> def) throws MmtcException {
+        if (def instanceof EntireFileOutputProductDefinition) {
+            return false;
+        }
+
+        if (def instanceof AppendedFileOutputProductDefinition) {
+            return true;
         }
 
         throw new MmtcException("Unexpected type for: " + def.getName());

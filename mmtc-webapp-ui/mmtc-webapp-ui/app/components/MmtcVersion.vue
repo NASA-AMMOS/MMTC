@@ -18,7 +18,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <p>
-  MMTC Version: {{ mmtcVersion.version }}
+  <p class="text-xs">
+  MMTC {{ mmtcVersion.version }} ({{mmtcVersion.commit}})
   </p>
 </template>

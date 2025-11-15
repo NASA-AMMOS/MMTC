@@ -63,7 +63,8 @@ tasks.jar {
         attributes(
                 "Build-Date" to Instant.now().toString(),
                 "Implementation-Title" to project.name,
-                "Implementation-Version" to project.version
+                "Implementation-Version" to project.version,
+                "Multi-Release" to "true"
         )
     }
 }
