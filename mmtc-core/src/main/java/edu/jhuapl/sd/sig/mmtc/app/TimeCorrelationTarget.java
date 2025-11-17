@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;

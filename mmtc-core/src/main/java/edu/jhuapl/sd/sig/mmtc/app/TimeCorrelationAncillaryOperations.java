@@ -78,6 +78,7 @@ public class TimeCorrelationAncillaryOperations {
             double estimatedEtUsingPriorCorrelation  = CSPICE.sct2e(ctx.config.getNaifSpacecraftId(), actualEncSclk);
             double estimatedTdtUsingPriorCorrelation = CSPICE.unitim(estimatedEtUsingPriorCorrelation, "ET", "TDT");
             return (estimatedTdtUsingPriorCorrelation - actualTdt) * TimeConvert.MSEC_PER_SECOND;
+            // experimental == estimated - actual/accepted
         } catch (SpiceErrorException ex) {
             throw new MmtcException("Unable to compute TDT error: " + ex.getMessage(), ex);
         }

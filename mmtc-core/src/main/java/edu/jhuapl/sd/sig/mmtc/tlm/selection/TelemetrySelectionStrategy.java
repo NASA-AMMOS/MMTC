@@ -101,8 +101,7 @@ public abstract class TelemetrySelectionStrategy {
 
         // compute bitrate-dependent time delay
         for (FrameSample sample : samples) {
-            double td_be = computeTd_be(sample.getTkDataRateBps());
-            sample.setDerivedTdBe(td_be);
+            sample.computeAndSetTdBe(config.getFrameErtBitOffsetError());
         }
 
         // validate that samples have sufficient telemetry for use in time correlation
@@ -136,24 +135,6 @@ public abstract class TelemetrySelectionStrategy {
         } else {
             throw new MmtcException("Telemetry does not have downlink data rate information and samples do not all have a frame size set; cannot estimate downlink data rate.");
         }
-    }
-
-    /**
-     * Computes TD_be, the bitrate-dependent time delay.
-     *
-     * @param downlinkDataRate the downlink bitrate
-     * @return the bitrate-dependent time delay TD_be, or NaN if the downlink
-     *         bitrate is invalid
-     */
-    private Double computeTd_be(BigDecimal downlinkDataRate) {
-        if (downlinkDataRate.doubleValue() <= 0) {
-            return Double.NaN;
-        }
-
-        return BigDecimal.valueOf(config.getFrameErtBitOffsetError())
-                .divide(downlinkDataRate, 24, RoundingMode.HALF_UP)
-                .setScale(24, RoundingMode.HALF_UP)
-                .doubleValue();
     }
 
     /**

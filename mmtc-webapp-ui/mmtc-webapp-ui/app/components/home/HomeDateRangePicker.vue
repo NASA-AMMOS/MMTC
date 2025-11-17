@@ -9,6 +9,7 @@ const df = new DateFormatter('en-US', {
 const selected = defineModel<Range>({ required: true })
 
 const ranges = [
+  { label: 'Since last correlation', days: 60 },
   { label: 'Last 7 days', days: 7 },
   { label: 'Last 14 days', days: 14 },
   { label: 'Last 30 days', days: 30 },
@@ -33,6 +34,7 @@ const calendarRange = computed({
     end: selected.value.end ? toCalendarDate(selected.value.end) : undefined
   }),
   set: (newValue: { start: CalendarDate | null, end: CalendarDate | null }) => {
+    console.log(`calendarRange set: ${start} to ${end}`)
     selected.value = {
       start: newValue.start ? newValue.start.toDate(getLocalTimeZone()) : new Date(),
       end: newValue.end ? newValue.end.toDate(getLocalTimeZone()) : new Date()
@@ -123,7 +125,7 @@ const selectRange = (range: { days?: number, months?: number, years?: number }) 
         </div>
 
         <UCalendar
-          v-model="calendarRange"
+          :v-model="calendarRange"
           class="p-2"
           :number-of-months="2"
           range

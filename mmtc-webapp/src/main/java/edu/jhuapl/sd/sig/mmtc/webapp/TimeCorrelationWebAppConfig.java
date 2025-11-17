@@ -28,7 +28,6 @@ public class TimeCorrelationWebAppConfig extends TimeCorrelationAppConfig {
         super(mmtcWebAppConfig);
         this.correlationConfig = correlationConfig;
         this.telemetrySource.applyConfiguration(this);
-
         this.telemetrySource.checkCorrelationConfiguration(this);
     }
 

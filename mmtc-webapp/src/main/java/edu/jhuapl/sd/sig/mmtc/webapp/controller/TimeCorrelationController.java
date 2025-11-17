@@ -2,10 +2,17 @@ package edu.jhuapl.sd.sig.mmtc.webapp.controller;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
+import edu.jhuapl.sd.sig.mmtc.products.definition.EntireFileOutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.SclkScetProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
+import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
+import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import edu.jhuapl.sd.sig.mmtc.webapp.MmtcWebAppConfig;
 import edu.jhuapl.sd.sig.mmtc.webapp.TimeCorrelationWebAppConfig;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.CorrelationPreviewService;
@@ -13,7 +20,9 @@ import io.javalin.Javalin;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -53,6 +62,61 @@ public class TimeCorrelationController extends BaseController {
         javalinApp.post("/api/v1/correlation/rollback", ctx -> {
             ctx.result(
                     rollback(ctx.queryParam("runId"))
+            );
+        });
+
+        /*
+        javalinApp.get("/api/v1/correlation/lastCorrelationScetUtc", ctx -> {
+            ctx.result(
+                    getLastCorrelationScetUtc()
+            );
+        });
+
+         */
+
+        javalinApp.get("/api/v1/correlation/range", ctx -> {
+            String beginTime = ctx.queryParam("beginTime");
+            String endTime = ctx.queryParam("endTime");
+
+            String sclkKernelName = ctx.queryParam("sclkKernelName");
+            String correlationPreviewId = ctx.queryParam("correlationPreviewId");
+
+            final Path sclkKernelPath;
+
+            if (sclkKernelName != null && !sclkKernelName.isEmpty()) {
+                EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) config.getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
+                sclkKernelPath = sclkKernelDef.resolveLocation(config).findMatchingFilename(sclkKernelName);
+            } else if (correlationPreviewId != null && !correlationPreviewId.isEmpty()) {
+                sclkKernelPath = correlationPreviewService.get(UUID.fromString(correlationPreviewId)).tempSclkKernelOnDisk();
+            } else {
+                throw new IllegalArgumentException("Must provide either sclkKernelName or correlationPreviewId");
+            }
+
+            final Optional<OffsetDateTime> begin = beginTime == null ? Optional.empty() : Optional.of(TimeConvert.parseIsoDoyUtcStr(beginTime));
+            final Optional<OffsetDateTime> end = endTime == null ? Optional.empty() : Optional.of(TimeConvert.parseIsoDoyUtcStr(endTime));
+
+            final List<TimeCorrelationTriplet> allTriplets = getAllTimeCorrelationTriplets(sclkKernelPath.getFileName().toString());
+
+            ctx.json(
+                    allTriplets.stream()
+                            .filter(t -> {
+                                OffsetDateTime scetUtc = TimeConvert.parseIsoDoyUtcStr(t.scetUtc);
+
+                                if (begin.isPresent()) {
+                                    if (scetUtc.isBefore(begin.get())) {
+                                        return false;
+                                    }
+                                }
+
+                                if (end.isPresent()) {
+                                    if (scetUtc.isAfter(end.get())) {
+                                        return false;
+                                    }
+                                }
+
+                                return true;
+                            })
+                            .collect(Collectors.toList())
             );
         });
     }
@@ -100,7 +164,7 @@ public class TimeCorrelationController extends BaseController {
         return "success";
     }
 
-    public List<Map<String, String>> getRunHistoryContentsAsTableRows() throws IOException, MmtcException {
+    public List<Map<String, String>> getRunHistoryContentsAsTableRows() throws MmtcException {
         final RunHistoryFile rhf = new RunHistoryFile(config.getRunHistoryFilePath(), config.getAllOutputProductDefs());
 
         List<Map<String, String>> recs = rhf.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS).stream()
@@ -111,5 +175,53 @@ public class TimeCorrelationController extends BaseController {
         Collections.reverse(recs);
 
         return recs;
+    }
+
+    private record TimeCorrelationTriplet (
+         String encSclk,
+         String tdtG,
+         String clkchgrate,
+         String scetUtc
+    ) { }
+
+    private List<TimeCorrelationTriplet> getAllTimeCorrelationTriplets(String sclkKernelFilename) throws MmtcException {
+        synchronized(config.spiceMutex) {
+            try {
+                TimeConvert.loadSpiceKernels(config.getKernelsToLoad());
+
+                EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) config.getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
+                Path sclkKernelPath = sclkKernelDef.resolveLocation(config).findMatchingFilename(sclkKernelFilename);
+
+                SclkKernel sclkKernel = new SclkKernel(sclkKernelPath.toAbsolutePath().toString());
+                sclkKernel.readSourceProduct();
+
+                // todo check that this is correct
+                List<String[]> parsedRecords = sclkKernel.getParsedRecords();
+
+                List<TimeCorrelationTriplet> results = new ArrayList<>();
+
+                for (String[] rec : parsedRecords) {
+                    results.add(
+                            new TimeCorrelationTriplet(
+                                    rec[SclkKernel.ENCSCLK],
+                                    rec[SclkKernel.TDTG],
+                                    rec[SclkKernel.CLKCHGRATE],
+                                    TimeConvert.tdtStrToUtc(rec[SclkKernel.TDTG], 6)
+                            )
+                    );
+                }
+
+                return results;
+            } catch (TextProductException | IOException | TimeConvertException e) {
+                throw new MmtcException(e);
+            } finally {
+                TimeConvert.unloadSpiceKernels();
+            }
+        }
+    }
+
+    private String getLastCorrelationScetUtc() throws MmtcException {
+        List<TimeCorrelationTriplet> allTimeCorrelationTriplets = getAllTimeCorrelationTriplets(config.getInputSclkKernelPath().getFileName().toString());
+        return allTimeCorrelationTriplets.get(allTimeCorrelationTriplets.size() - 1).scetUtc;
     }
 }

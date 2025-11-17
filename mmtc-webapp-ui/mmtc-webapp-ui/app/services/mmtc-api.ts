@@ -23,6 +23,19 @@ export interface OutputProductDef {
   filenames: string[]
 }
 
+export interface TimekeepingTelemetryPoint {
+  originalFrameSample: object,
+  scetUtc: string,
+  scetErrorMs: number
+}
+
+export interface TimeCorrelationTriplet {
+  encSclk: string,
+  tdtG: string,
+  clkchgrate: string,
+  scetUtc: string
+}
+
 export async function retrieveMmtcVersion() {
   const response = await axios.get<MmtcVersion>(baseUrl+'/v1/info/version')
   return response.data
@@ -45,5 +58,20 @@ export async function retrieveOutputProductFileContents(outputProductDefName: st
 
 export async function retrieveRunHistoryFileRows() {
   const response = await axios.get<[]>(baseUrl + `/v1/correlation/runhistory`)
+  return response.data
+}
+
+export async function retrieveTimekeepingTelemetry(beginTime: string, endTime: string, sclkKernelToUseForErrorCalc: string) {
+  const response = await axios.get<TimekeepingTelemetryPoint[]>(baseUrl + `/v1/telemetry/range?beginTime=${beginTime}&endTime=${endTime}&sclkKernelName=${sclkKernelToUseForErrorCalc}`)
+  return response.data
+}
+
+export async function getTimeCorrelations(beginTime: string, endTime: string, sclkKernel: string) {
+  const response = await axios.get<TimeCorrelationTriplet>(baseUrl + `/v1/correlation/range?beginTime=${beginTime}&endTime=${endTime}&sclkKernelName=${sclkKernel}`)
+  return response.data
+}
+
+export async function getAllTimeCorrelations(sclkKernel: string) {
+  const response = await axios.get<TimeCorrelationTriplet>(baseUrl + `/v1/correlation/range?sclkKernelName=${sclkKernel}`)
   return response.data
 }

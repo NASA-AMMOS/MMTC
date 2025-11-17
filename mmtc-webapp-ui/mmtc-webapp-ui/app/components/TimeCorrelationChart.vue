@@ -1,13 +1,14 @@
 <script setup lang="ts">
+import { sub, parseISO } from 'date-fns'
 import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from 'date-fns'
 // import { VisXYContainer, VisLine, VisAxis, VisArea, VisCrosshair, VisTooltip } from '@unovis/vue'
 import type { Period, Range } from '~/types'
 
 import VChart, { THEME_KEY } from 'vue-echarts';
 import { ref, provide } from 'vue';
-
+import { TimekeepingTelemetryPoint } from '@/services/mmtc-api';
 import * as echarts from 'echarts';
-const formatTime = echarts.time.format;
+// const formatTime = echarts.time.format;
 
 use([
   CanvasRenderer,
@@ -18,11 +19,13 @@ use([
 ]);
 
 import { use } from 'echarts/core'
-import { PieChart } from 'echarts/charts'
+import { PieChart, LineChart, ScatterChart } from 'echarts/charts'
 import {
   TitleComponent,
   TooltipComponent,
-  LegendComponent
+  LegendComponent,
+  GridComponent,
+  DataZoomComponent
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { ComposeOption } from 'echarts/core'
@@ -30,14 +33,19 @@ import type { PieSeriesOption } from 'echarts/charts'
 import type {
   TitleComponentOption,
   TooltipComponentOption,
-  LegendComponentOption
+  LegendComponentOption,
 } from 'echarts/components'
+import {toYyyDddHhMm} from "@/services/utils";
+import {TimeCorrelationTriplet} from "../services/mmtc-api";
 
 use([
   TitleComponent,
   TooltipComponent,
   LegendComponent,
-  PieChart,
+  LineChart,
+  ScatterChart,
+  DataZoomComponent,
+  GridComponent,
   CanvasRenderer
 ])
 
@@ -54,7 +62,9 @@ const cardRef = useTemplateRef<HTMLElement | null>('cardRef')
 
 const props = defineProps<{
   mode: string
+  chartData: object
   correlationConfigCompositionState: string
+  range: object
 }>()
 
 type DataRecord = {
@@ -91,104 +101,144 @@ const template = (d: DataRecord) => `${formatDate(d.date)}: "foobar"`
 // Chart configuration
 // var formatTime = echarts.time.format;
 
-var _data = generateData1();
+// var _data = generateData1();
 
-const option = {
+const option = ref({
   // Choose axis ticks based on UTC time.
   useUTC: true,
+
+  tooltip:
+    {
+      show: true,
+      trigger: 'axis'
+    },
+  /*
+  axisPointer: {
+    link: [{ xAxisIndex: [0, 1]}]
+  },
   title: {
-    text: 'Time Correlation Telemetry SCET - SCET Error',
+    text: 'Time Correlation Telemetry - Reconstructed SCET Error',
     left: 'center'
   },
-  tooltip: {
-    show: true,
-    trigger: 'axis'
-  },
-  grid: {
-    left: 50,
-    top: 75,
-    right: 50,
-    bottom: 80
-  },
+
+   */
+  grid: [
+    { top: 40, left: 70, right: 20, height: '60%' },
+    { top: '80%', left: 70, right: 20, height: '5%' }
+  ],
   xAxis: [
     {
       type: 'time',
       interval: 1000 * 60 * 30, // 30 minutes
+      gridIndex: 0,
+      boundaryGap: false,
       axisLabel: {
         showMinLabel: true,
         showMaxLabel: true,
+        hideOverlap: true,
         formatter: (value, index, extra) => {
-          if (!extra || !extra.break) {
-            // The third parameter is `useUTC: true`.
-            return formatTime(value, '{HH}:{mm}', true);
-          }
-          // Only render the label on break start, but not on break end.
-          if (extra.break.type === 'start') {
-            return (
-              formatTime(extra.break.start, '{HH}:{mm}', true) +
-              '/' +
-              formatTime(extra.break.end, '{HH}:{mm}', true)
-            );
-          }
-          return '';
+          return toYyyDddHhMm(new Date(value));
         }
       },
+    },
+    {
+      type: 'time',
+      interval: 1000 * 60 * 30, // 30 minutes
+      gridIndex: 1,
+      boundaryGap: false,
+      axisLabel: false
+
     }
   ],
-  yAxis: {
-    type: 'value',
-    min: 'dataMin'
-  },
+  yAxis: [
+    {
+      type: 'value',
+      gridIndex: 0,
+      name: 'Recon. SCET Error (ms)',
+      splitLine: {show: true}
+    },
+    {
+      type: 'value',
+      gridIndex: 1,
+      name: 'Correlations',
+      show: false,
+      min: 0,
+      max: 1
+    }
+  ],
   dataZoom: [
     {
       type: 'inside',
-      xAxisIndex: 0
+      xAxisIndex: [0, 1]
     },
     {
       type: 'slider',
-      xAxisIndex: 0
+      xAxisIndex: [0, 1],
+      showDataShadow: false,
+      backgroundColor: '#D9FBE8', // --color-green-200
     }
   ],
-  series: [
-    {
-      type: 'line',
-      symbol: 'circle',
-      symbolSize: 6,
-      data: _data.seriesData
-    }
-  ]
-};
-
-/**
- * Generate random data, not relevant to echarts API.
- */
-function generateData1() {
-  var seriesData = [];
-  var time = new Date('2024-04-09T09:30:00Z');
-  var endTime = new Date('2024-04-09T15:00:00Z').getTime();
-  var breakStart = new Date('2024-04-09T11:30:00Z').getTime();
-  var breakEnd = new Date('2024-04-09T13:00:00Z').getTime();
-
-  for (var val = 1669; time.getTime() <= endTime; ) {
-    if (time.getTime() <= breakStart || time.getTime() >= breakEnd) {
-      val =
-        val +
-        Math.floor((Math.random() - 0.5 * Math.sin(val / 1000)) * 20 * 100) /
-        100;
-      val = +val.toFixed(2);
-      // seriesData.push([time.getTime(), val]);
-      seriesData.push({ value: [time.getTime(), val], itemStyle: { color: 'red'}});
-    }
-    time.setMinutes(time.getMinutes() + 1);
-  }
-  return {
-    seriesData: seriesData,
-    breakStart: breakStart,
-    breakEnd: breakEnd
-  };
+  series: []
+});
+/*
+formatter: params => {
+  const { name, value } = params;
+  return `${name} - ${value}`
 }
 
+ */
+watch(() => props.chartData, async (newChartData, oldChartData) => {
+  const telemetryData: TimekeepingTelemetryPoint[] = newChartData.telemetry;
+  const telemetrySeriesData = []
 
+  telemetryData.forEach(ttp => {
+    let pointDate = parseISO(ttp.scetUtc);
+    telemetrySeriesData.push({ name: toYyyDddHhMm(pointDate), value: [pointDate.getTime(), ttp.scetErrorMs], itemStyle: { color: '#00A155'}}); // this color is --color-green-600 from main.css
+  })
+
+  option.value.series[0] = {
+    name: 'SCET Error (ms)',
+    type: 'line',
+    xAxisIndex: 0,
+    yAxisIndex: 0,
+    symbol: 'circle',
+    symbolSize: 6,
+    lineStyle: {color: '#75EDAE'}, // this is --color-green-300 from main.css
+    data: telemetrySeriesData
+  }
+
+  const correlationData: TimeCorrelationTriplet[] = newChartData.correlations;
+  const correlationSeriesData = []
+
+  correlationData.forEach(corr => {
+    let pointDate = parseISO(corr.scetUtc);
+    // correlationSeriesData.push({ name: toYyyDddHhMm(pointDate), value: [pointDate.getTime(), 0], itemStyle: { color: 'red'}});
+    // correlationSeriesData.push([pointDate.getTime(), 0.5, "foobar"]);
+    correlationSeriesData.push({ value: [pointDate.getTime(), 0.5, "foobar"], itemStyle: { color: '#0A5331'}}); // this is --color-green-900 from main.css
+  })
+
+  option.value.series[1] = {
+    name: 'Time Correlation Records',
+    type: 'scatter',
+    xAxisIndex: 1,
+    yAxisIndex: 1,
+    symbol: 'triangle',
+    symbolSize: 10,
+    data: correlationSeriesData
+  }
+
+  option.value.xAxis[0].min = props.range.start.getTime()
+  option.value.xAxis[1].min = props.range.start.getTime()
+
+  option.value.xAxis[0].max = props.range.end.getTime()
+  option.value.xAxis[1].max = props.range.end.getTime()
+
+  option.value.dataZoom[0].startValue = props.range.start.getTime()
+  option.value.dataZoom[0].startValue = props.range.start.getTime()
+
+  option.value.dataZoom[0].endValue = props.range.end.getTime()
+  option.value.dataZoom[0].endValue = props.range.end.getTime()
+})
 
 /*
 

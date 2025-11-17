@@ -1,7 +1,13 @@
 import type { AvatarProps } from '@nuxt/ui'
+import {TimekeepingTelemetryPoint} from "../services/mmtc-api";
 
 export type UserStatus = 'subscribed' | 'unsubscribed' | 'bounced'
 export type SaleStatus = 'paid' | 'failed' | 'refunded'
+
+export interface ChartData {
+  telemetry: TimekeepingTelemetryPoint[]
+  correlations: []
+}
 
 export interface User {
   id: number

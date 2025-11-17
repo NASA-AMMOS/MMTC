@@ -7,6 +7,8 @@ import org.apache.logging.log4j.Logger;
 public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
     private static final Logger logger = LogManager.getLogger();
 
+    public final Object spiceMutex = new Object();
+
     public MmtcWebAppConfig() throws Exception {
         super();
         logger.debug(toString());

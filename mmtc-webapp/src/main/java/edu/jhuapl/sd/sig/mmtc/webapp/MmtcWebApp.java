@@ -36,6 +36,9 @@ public class MmtcWebApp {
 
         // todo do migration assertion check
 
+        // todo also disconnect on shutdown
+        this.config.getTelemetrySource().connect();
+
         javalinApp = Javalin.create(javalinConfig -> {
             if (config.isPlaintextServerEnabled()) {
                 javalinConfig.jetty.addConnector((server, httpConfiguration) -> {
