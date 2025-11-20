@@ -7,10 +7,12 @@ import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.products.definition.AppendedFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
+import edu.jhuapl.sd.sig.mmtc.products.model.TimeHistoryFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -160,6 +162,9 @@ public class BuiltInOutputProductMigrationManager {
             thf.addColumnAtIndexWithValues("TD BE (sec)", 20, summTable.readValuesForColumn("TD BE (sec)"));
             thf.addColumnAtIndexWithValues("TF Offset", 21, summTable.readValuesForColumn("TF Offset"));
 
+            // Convert 1.5.1 Encoded SCLK values stored in scientific notation to (big) decimals
+            migrateTimeHistEncSclkTo1_6_0(thf);
+
             thf.write();
             logger.info(USER_NOTICE, mmtc160MigrationLogPrefix + "migrated Time History File at " + config.getTimeHistoryFilePath());
         }
@@ -206,5 +211,13 @@ public class BuiltInOutputProductMigrationManager {
         logger.info(USER_NOTICE, mmtc160MigrationLogPrefix + "migrated Run History File at " + config.getRunHistoryFilePath());
 
         return null;
+    }
+
+    private static void migrateTimeHistEncSclkTo1_6_0(GenericCsv thf) throws MmtcException {
+        BigDecimal prevValue;
+        for (int i = 0; i < thf.getNumRows(); i++) {
+            prevValue = BigDecimal.valueOf(Double.parseDouble(thf.getValAt(i, TimeHistoryFile.TARGET_FRAME_ENC_SCLK)));
+            thf.replaceValAt(TimeHistoryFile.TARGET_FRAME_ENC_SCLK, i, prevValue.toPlainString());
+        }
     }
 }
