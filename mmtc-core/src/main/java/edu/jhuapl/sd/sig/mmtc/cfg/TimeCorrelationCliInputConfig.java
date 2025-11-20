@@ -8,10 +8,10 @@ import org.apache.logging.log4j.Logger;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig.ClockChangeRateMode.ASSIGN;
-import static edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig.ClockChangeRateMode.ASSIGN_KEY;
+import static edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig.ClockChangeRateMode.ASSIGN;
+import static edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig.ClockChangeRateMode.ASSIGN_KEY;
 
-public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigInputSupplier{
+public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigInputSupplier {
     private static final Logger logger = LogManager.getLogger();
 
     private final String[] args;
@@ -37,11 +37,14 @@ public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigIn
         final Optional<Double> testModeOwltSec = cmdLineConfig.isTestMode() ? Optional.of(cmdLineConfig.getTestModeOwlt()) : Optional.empty();
         final Optional<Double> assignVal = cmdLineConfig.getClockChangeRateMode().equals(ASSIGN) ? Optional.of(cmdLineConfig.getClockChangeRateAssignedValue()) : Optional.empty();
         final Optional<String> assignValKey = cmdLineConfig.getClockChangeRateMode().equals(ASSIGN_KEY) ? Optional.of(cmdLineConfig.getClockChangeRateAssignedKey()) : Optional.empty();
+
+        final TimeCorrelationRunConfig.DryRunConfig dryRunConfig = cmdLineConfig.isDryRun() ? new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.DRY_RUN_RETAIN_NO_PRODUCTS, null) : new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.NOT_DRY_RUN, null);
+
         return new TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs(
                 Optional.of(cmdLineConfig.getStartTime()),
                 Optional.of(cmdLineConfig.getStopTime()),
                 Optional.empty(), // todo enable this on the cmd line
-                Optional.empty(), // todo enable this on the cmd line
+                Optional.empty(),                  // todo enable this on the cmd line
                 cmdLineConfig.isTestMode(),
                 testModeOwltSec,
                 assignVal,
@@ -50,7 +53,7 @@ public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigIn
                 cmdLineConfig.getAdditionalSmoothingRecordInsertionOverride(),
                 cmdLineConfig.isContactFilterDisabled(),
                 cmdLineConfig.isGenerateCmdFile(),
-                cmdLineConfig.isDryRun()
+                dryRunConfig
         );
     }
 }

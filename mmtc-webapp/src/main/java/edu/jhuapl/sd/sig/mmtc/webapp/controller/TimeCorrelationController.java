@@ -3,11 +3,12 @@ package edu.jhuapl.sd.sig.mmtc.webapp.controller;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfigInputSupplier;
+import edu.jhuapl.sd.sig.mmtc.correlation.AncillaryInfo;
+import edu.jhuapl.sd.sig.mmtc.correlation.CorrelationInfo;
+import edu.jhuapl.sd.sig.mmtc.correlation.GeometryInfo;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.EntireFileOutputProductDefinition;
-import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
-import edu.jhuapl.sd.sig.mmtc.products.definition.SclkScetProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
@@ -15,9 +16,13 @@ import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
-import edu.jhuapl.sd.sig.mmtc.webapp.MmtcWebAppConfig;
-import edu.jhuapl.sd.sig.mmtc.webapp.service.CorrelationPreviewService;
+import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
+import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfig;
+import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfigPreview;
+import edu.jhuapl.sd.sig.mmtc.webapp.service.TelemetryService;
 import io.javalin.Javalin;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,192 +33,214 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class TimeCorrelationController extends BaseController {
-    private final CorrelationPreviewService correlationPreviewService;
+    private static final Logger logger = LogManager.getLogger();
 
-    public TimeCorrelationController(MmtcWebAppConfig config, CorrelationPreviewService correlationPreviewService) {
+    private final TelemetryService telemetryService;
+
+    public TimeCorrelationController(MmtcWebAppConfig config, TelemetryService telemetryService) {
         super(config);
-        this.correlationPreviewService = correlationPreviewService;
+        this.telemetryService = telemetryService;
     }
+
+    record CorrelationResults (
+            CorrelationInfo correlation,
+            GeometryInfo geometry,
+            AncillaryInfo ancillary,
+            OffsetDateTime appRunTime,
+            List<String> warnings
+    ) {
+        public static CorrelationResults from(TimeCorrelationContext ctx) {
+            return new CorrelationResults(
+                    ctx.correlation,
+                    ctx.geometry,
+                    ctx.ancillary,
+                    ctx.appRunTime,
+                    ctx.getWarnings()
+            );
+        }
+    }
+
+    record TimeCorrelationPreviewResults (
+            List<TimeCorrelationTriplet> updatedTriplets,
+            List<TelemetryService.TimekeepingTelemetryPoint> telemetryPoints,
+            CorrelationResults correlationResults
+    ) { }
 
     @Override
     public void registerEndpoints(Javalin javalinApp) {
         javalinApp.post("/api/v1/correlation/preview", ctx -> {
-            // TimeCorrelationWebAppConfig.CorrelationConfig correlationConfig = ctx.bodyAsClass(TimeCorrelationWebAppConfig.CorrelationConfig.class);
-            ctx.result(previewNewCorrelation());
+            NewTimeCorrelationConfigPreview correlationConfigPreview = ctx.bodyAsClass(NewTimeCorrelationConfigPreview.class);
+            ctx.json(previewNewCorrelation(correlationConfigPreview));
         });
 
-        javalinApp.post("/api/v1/correlation/commit", ctx -> {
-            final UUID previewId = UUID.fromString(ctx.queryParam("previewId"));
-            ctx.result(commitNewCorrelationFromPreview(previewId));
-        });
-
-        /*
         javalinApp.post("/api/v1/correlation/create", ctx -> {
-            TimeCorrelationWebAppConfig.CorrelationConfig correlationConfig = ctx.bodyAsClass(TimeCorrelationWebAppConfig.CorrelationConfig.class);
-            ctx.result(runNewCorrelation(correlationConfig));
+            NewTimeCorrelationConfig correlationConfig = ctx.bodyAsClass(NewTimeCorrelationConfig.class);
+            ctx.json(createNewCorrelation(correlationConfig));
         });
-         */
 
         javalinApp.get("/api/v1/correlation/runhistory", ctx -> {
-            ctx.json(
-                    getRunHistoryContentsAsTableRows()
-            );
+            ctx.json(getRunHistoryContentsAsTableRows());
         });
 
         javalinApp.post("/api/v1/correlation/rollback", ctx -> {
-            ctx.result(
-                    rollback(ctx.queryParam("runId"))
-            );
+            ctx.result(rollback(ctx.queryParam("runId")));
         });
-
-        /*
-        javalinApp.get("/api/v1/correlation/lastCorrelationScetUtc", ctx -> {
-            ctx.result(
-                    getLastCorrelationScetUtc()
-            );
-        });
-
 
         javalinApp.get("/api/v1/correlation/defaultConfig", ctx -> {
-                ctx.json(
-                        getDefaultCorrelationConfig()
-                );
+            ctx.json(getDefaultCorrelationConfig());
         });
-
-
-         */
 
         javalinApp.get("/api/v1/correlation/range", ctx -> {
             String beginTime = ctx.queryParam("beginTime");
             String endTime = ctx.queryParam("endTime");
-
             String sclkKernelName = ctx.queryParam("sclkKernelName");
-            String correlationPreviewId = ctx.queryParam("correlationPreviewId");
-
-            final Path sclkKernelPath;
-
-            if (sclkKernelName != null && !sclkKernelName.isEmpty()) {
-                EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) config.getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
-                sclkKernelPath = sclkKernelDef.resolveLocation(config).findMatchingFilename(sclkKernelName);
-            } else if (correlationPreviewId != null && !correlationPreviewId.isEmpty()) {
-                sclkKernelPath = correlationPreviewService.get(UUID.fromString(correlationPreviewId)).tempSclkKernelOnDisk();
-            } else {
-                throw new IllegalArgumentException("Must provide either sclkKernelName or correlationPreviewId");
-            }
-
-            final Optional<OffsetDateTime> begin = beginTime == null ? Optional.empty() : Optional.of(TimeConvert.parseIsoDoyUtcStr(beginTime));
-            final Optional<OffsetDateTime> end = endTime == null ? Optional.empty() : Optional.of(TimeConvert.parseIsoDoyUtcStr(endTime));
-
-            final List<TimeCorrelationTriplet> allTriplets = getAllTimeCorrelationTriplets(sclkKernelPath.getFileName().toString());
-
-            ctx.json(
-                    allTriplets.stream()
-                            .filter(t -> {
-                                OffsetDateTime scetUtc = TimeConvert.parseIsoDoyUtcStr(t.scetUtc);
-
-                                if (begin.isPresent()) {
-                                    if (scetUtc.isBefore(begin.get())) {
-                                        return false;
-                                    }
-                                }
-
-                                if (end.isPresent()) {
-                                    if (scetUtc.isAfter(end.get())) {
-                                        return false;
-                                    }
-                                }
-
-                                return true;
-                            })
-                            .collect(Collectors.toList())
-            );
+            ctx.json(getCorrelationTriplets(beginTime, endTime, sclkKernelName));
         });
     }
 
-    private record DefaultCorrelationConfig (
-        String mode,
-        int samplesPerSet,
-        boolean insertAdditionalSmoothingRecord,
-        boolean createUpdateCommandFile
-        ) { }
+    private List<TimeCorrelationTriplet> getCorrelationTriplets(String beginTime, String endTime, String sclkKernelName) throws MmtcException, IOException {
+        final Path sclkKernelPath;
 
-    /*
-    private DefaultCorrelationConfig getDefaultCorrelationConfig() {
-        return new DefaultCorrelationConfig(
-                config.getDefaultCorrelationMode,
-                config.getSamplesPerSet(),
-                config.getSm
-        )
+        if (sclkKernelName == null || sclkKernelName.isEmpty()) {
+            throw new IllegalArgumentException("Must provide SCLK kernel name");
+        }
+
+        EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) config.getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
+        sclkKernelPath = sclkKernelDef.resolveLocation(config).findMatchingFilename(sclkKernelName);
+
+        final Optional<OffsetDateTime> begin = beginTime == null ? Optional.empty() : Optional.of(TimeConvert.parseIsoDoyUtcStr(beginTime));
+        final Optional<OffsetDateTime> end = endTime == null ? Optional.empty() : Optional.of(TimeConvert.parseIsoDoyUtcStr(endTime));
+
+        final List<TimeCorrelationTriplet> allTriplets = getAllTimeCorrelationTriplets(sclkKernelPath.getFileName().toString());
+
+        return allTriplets.stream()
+                .filter(t -> {
+                    OffsetDateTime scetUtc = TimeConvert.parseIsoDoyUtcStr(t.scetUtc);
+
+                    if (begin.isPresent()) {
+                        if (scetUtc.isBefore(begin.get())) {
+                            return false;
+                        }
+                    }
+
+                    if (end.isPresent()) {
+                        if (scetUtc.isAfter(end.get())) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                })
+                .collect(Collectors.toList());
     }
 
-     */
+    private TimeCorrelationPreviewResults previewNewCorrelation(NewTimeCorrelationConfigPreview correlationConfigPreview) throws Exception {
+        Files.createDirectories(Paths.get("/tmp/mmtc/previews"));
+        Path tmpSclkKernelPath = Paths.get("/tmp/mmtc/previews/", String.format("mmtc_sclk_preview_%s.tsc", UUID.randomUUID().toString()));
+        correlationConfigPreview.setDryRunConfig(new TimeCorrelationRunConfig.DryRunConfig(
+                TimeCorrelationRunConfig.DryRunMode.DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY,
+                tmpSclkKernelPath
+        ));
 
-    private String commitNewCorrelationFromPreview(UUID previewId) throws Exception {
         try {
-            CorrelationPreviewService.CorrelationPreview correlationPreview = correlationPreviewService.get(previewId);
+            // have the preview endpoint calculate and return the graph data, among other stats about the new correlation run
 
-            if (correlationPreview == null) {
-                throw new IllegalStateException("No correlation preview found for ID " + previewId);
+            final TimeCorrelationContext ctxResult = runNewCorrelation(correlationConfigPreview);
+            final List<TelemetryService.TimekeepingTelemetryPoint> tlmPoints = telemetryService.getTelemetryPoints(correlationConfigPreview.beginTime, correlationConfigPreview.endTime, tmpSclkKernelPath);
+
+            final List<TimeCorrelationTriplet> updatedTriplets = new ArrayList<>();
+            synchronized(config.spiceLoadedKernelMutex) {
+                try {
+                    TimeConvert.loadSpiceKernels(config.getKernelsToLoad());
+
+                    if (ctxResult.correlation.updatedInterpolatedTriplet.isSet()) {
+                        updatedTriplets.add(convertTriplet(ctxResult.correlation.updatedInterpolatedTriplet.get()));
+                    }
+
+                    if (ctxResult.correlation.newSmoothingTriplet.isSet()) {
+                        updatedTriplets.add(convertTriplet(ctxResult.correlation.newSmoothingTriplet.get()));
+                    }
+
+                    if (ctxResult.correlation.newPredictedTriplet.isSet()) {
+                        updatedTriplets.add(convertTriplet(ctxResult.correlation.newPredictedTriplet.get()));
+                    }
+                } finally {
+                    TimeConvert.unloadSpiceKernels();
+                }
             }
 
-            runNewCorrelation();
-            correlationPreviewService.removeCorrelationPreview(previewId);
-
-            return "success";
+            return new TimeCorrelationPreviewResults(
+                    updatedTriplets,
+                    tlmPoints,
+                    CorrelationResults.from(ctxResult)
+            );
+        } catch (Exception e) {
+            logger.error(e);
+            throw e;
         } finally {
-            TimeConvert.unloadSpiceKernels();
+            Files.delete(tmpSclkKernelPath);
         }
     }
 
-    private String previewNewCorrelation() {
+    public static class DefaultTimeCorrelationConfig extends NewTimeCorrelationConfig {
+        public final int sampleSize;
+
+        public DefaultTimeCorrelationConfig(NewTimeCorrelationConfig corrConfig, int sampleSize) {
+            super(corrConfig);
+            this.sampleSize = sampleSize;
+        }
+    }
+
+    private NewTimeCorrelationConfig getDefaultCorrelationConfig() throws MmtcException {
+        final DefaultTimeCorrelationConfig defaultCorrConfig = new DefaultTimeCorrelationConfig(
+                new NewTimeCorrelationConfig(),
+                config.getSamplesPerSet()
+        );
+
+        defaultCorrConfig.setTestModeOwltEnabled(false);
+        defaultCorrConfig.setTestModeOwltSec(0.0);
+        defaultCorrConfig.setClockChangeRateAssignedValue(1.0);
+        defaultCorrConfig.setDryRunConfig(new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.NOT_DRY_RUN, null));
+        defaultCorrConfig.setClockChangeRateMode(config.getConfiguredClockChangeRateMode());
+        defaultCorrConfig.setAdditionalSmoothingRecordConfigOverride(
+                new TimeCorrelationRunConfig.AdditionalSmoothingRecordConfig(
+                        config.isAdditionalSmoothingCorrelationRecordInsertionEnabled(),
+                        config.getAdditionalSmoothingCorrelationRecordInsertionCoarseSclkTickDuration()
+                )
+        );
+
+        defaultCorrConfig.setDisableContactFilter(false);
+        defaultCorrConfig.setCreateUplinkCmdFile(false);
+
+        return defaultCorrConfig;
+    }
+
+    private TimeCorrelationContext runNewCorrelation(NewTimeCorrelationConfig newCorrConfig) throws Exception {
         try {
-            // todo implement: run a correlation with a dry run but make an option to keep the resulting SCLK kernel in a temporary place for calculation use
-            // also turn off other product generation except for SCLK kernel
-
-            return correlationPreviewService.registerCorrelationPreview(Paths.get("/tmp/to/be/populated")).toString();
+            return new TimeCorrelationApp(new TimeCorrelationRunConfig(newCorrConfig, config)).run();
         } finally {
             TimeConvert.unloadSpiceKernels();
         }
     }
 
-    public String runNewCorrelation() throws Exception {
+    private CorrelationResults createNewCorrelation(NewTimeCorrelationConfig newCorrConfig) throws Exception {
         try {
-            // todo take actual input from the call and populate this structure
-            TimeCorrelationRunConfig timeCorrelationRunConfig = new TimeCorrelationRunConfig((additionalTlmSrcOptionsByName -> {
-                return new TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs(
-                        null,
-                        null,
-                        null,
-                        null,
-                        false,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        false,
-                        false,
-                        false
-                );
-            }), config);
-
-            new TimeCorrelationApp(timeCorrelationRunConfig).run();
-            return "success";
+            return CorrelationResults.from(runNewCorrelation(newCorrConfig));
         } finally {
             TimeConvert.unloadSpiceKernels();
         }
     }
 
-    public String rollback(String toRunId) throws Exception {
+    private String rollback(String toRunId) throws Exception {
         new TimeCorrelationRollback().rollback(Optional.of(toRunId));
         return "success";
     }
 
-    public List<Map<String, String>> getRunHistoryContentsAsTableRows() throws MmtcException {
+    private List<Map<String, String>> getRunHistoryContentsAsTableRows() throws MmtcException {
         final RunHistoryFile rhf = new RunHistoryFile(config.getRunHistoryFilePath(), config.getAllOutputProductDefs());
 
-        List<Map<String, String>> recs = rhf.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS).stream()
-                .map(tr -> tr.getColsAndVals())
+        List<Map<String, String>> recs = rhf.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).stream()
+                .map(TableRecord::getColsAndVals)
                 .collect(Collectors.toList());
 
         // to sort most recent rows first
@@ -229,8 +256,17 @@ public class TimeCorrelationController extends BaseController {
          String scetUtc
     ) { }
 
+    private TimeCorrelationTriplet convertTriplet(SclkKernel.CorrelationTriplet t) throws TimeConvertException {
+        return new TimeCorrelationTriplet(
+                Double.toString(t.encSclk),
+                t.tdtStr,
+                Double.toString(t.clkChgRate),
+                TimeConvert.tdtCalStrToUtc(t.tdtStr, 6)
+        );
+    }
+
     private List<TimeCorrelationTriplet> getAllTimeCorrelationTriplets(String sclkKernelFilename) throws MmtcException {
-        synchronized(config.spiceMutex) {
+        synchronized(config.spiceLoadedKernelMutex) {
             try {
                 TimeConvert.loadSpiceKernels(config.getKernelsToLoad());
 
@@ -265,8 +301,4 @@ public class TimeCorrelationController extends BaseController {
         }
     }
 
-    private String getLastCorrelationScetUtc() throws MmtcException {
-        List<TimeCorrelationTriplet> allTimeCorrelationTriplets = getAllTimeCorrelationTriplets(config.getInputSclkKernelPath().getFileName().toString());
-        return allTimeCorrelationTriplets.get(allTimeCorrelationTriplets.size() - 1).scetUtc;
-    }
 }

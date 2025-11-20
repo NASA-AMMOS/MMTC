@@ -80,4 +80,8 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         confUpdates.put("spice.kernel.sclk.kerneldir", newProductOutputDir.toAbsolutePath().toString());
         return confUpdates;
     }
+
+    public ProductWriteResult writeToAlternatePath(TimeCorrelationContext ctx, Path sclkKernelOutputPath) throws MmtcException {
+        return SclkKernel.writeNewProduct(ctx, sclkKernelOutputPath);
+    }
 }

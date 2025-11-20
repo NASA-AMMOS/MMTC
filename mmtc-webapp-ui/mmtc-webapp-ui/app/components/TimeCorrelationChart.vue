@@ -6,7 +6,7 @@ import type { Period, Range } from '~/types'
 
 import VChart, { THEME_KEY } from 'vue-echarts';
 import { ref, provide } from 'vue';
-import { TimekeepingTelemetryPoint } from '@/services/mmtc-api';
+import type { TimekeepingTelemetryPoint } from '@/services/mmtc-api';
 import * as echarts from 'echarts';
 // const formatTime = echarts.time.format;
 
@@ -35,7 +35,7 @@ import type {
   TooltipComponentOption,
   LegendComponentOption,
 } from 'echarts/components'
-import {toYyyDddHhMm} from "@/services/utils";
+import {toYyyyDddHhMm, toYyyyDd, toHhMm} from "@/services/utils";
 import {TimeCorrelationTriplet} from "../services/mmtc-api";
 
 use([
@@ -69,7 +69,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits([
-  'chose-ert',
+  'time-selection',
 ])
 
 type DataRecord = {
@@ -108,14 +108,36 @@ const template = (d: DataRecord) => `${formatDate(d.date)}: "foobar"`
 
 // var _data = generateData1();
 
+function buildTooltipContent(param) {
+  switch(param.seriesId) {
+    case 'timeCorrTelemetry':
+      // 'ERT/SCLK/SCET/OWLT/SCET Error'
+      return param.marker + `Actual TLM: ${param.data.originalTtp.originalFrameSample.ertStr}`
+    case 'timeCorrRecords':
+      return `Actual rec: ${param.data.originalTriplet.encSclk}`
+    case 'timeCorrTelemetryPreview':
+      return `Prev TLM: ${param.data.originalTtp.originalFrameSample.ertStr}`
+    case 'timeCorrRecordsPreview':
+      return `Prev rec: ${param.data.originalTriplet.encSclk}`
+  }
+}
+
 const option = ref({
   // Choose axis ticks based on UTC time.
   useUTC: true,
-
   tooltip:
     {
       show: true,
-      trigger: 'axis'
+      trigger: 'axis',
+      formatter: (params) => {
+        let htmlContents = toYyyyDddHhMm(new Date(params[0].axisValue)) + '<hr/>';
+
+        params.forEach(p => {
+          htmlContents += buildTooltipContent(p) + "<br/>";
+        })
+
+        return htmlContents;
+      }
     },
   /*
   axisPointer: {
@@ -127,12 +149,21 @@ const option = ref({
   },
 
    */
+  legend: {
+    show: true,
+    top: '2%',
+    left: 'center',
+    orient: 'horizontal'
+  },
   grid: [
-    { top: 40, left: 70, right: 20, height: '60%' },
+    { top: 80, left: 70, right: 20, height: '60%' },
     { top: '80%', left: 70, right: 20, height: '5%' }
   ],
   xAxis: [
     {
+      name: 'SCET/UTC',
+      nameLocation: 'middle',
+      nameGap: 30,
       type: 'time',
       interval: 1000 * 60 * 30, // 30 minutes
       gridIndex: 0,
@@ -141,8 +172,16 @@ const option = ref({
         showMinLabel: true,
         showMaxLabel: true,
         hideOverlap: true,
+        rich: {
+          bold: {
+            fontWeight: 'bold'
+          }
+        },
         formatter: (value, index, extra) => {
-          return toYyyDddHhMm(new Date(value));
+          // return toYyyyDddHhMm(new Date(value));
+          const d = new Date(value);
+          // return `<strong>${toYyyyDd(d)}</strong> ${toHhMm(d)}`
+          return '{bold|' + toYyyyDd(d) + '} ' + toHhMm(d);
         }
       },
     },
@@ -152,15 +191,15 @@ const option = ref({
       gridIndex: 1,
       boundaryGap: false,
       axisLabel: false
-
     }
   ],
+
   yAxis: [
     {
       type: 'value',
       gridIndex: 0,
       name: 'Recon. SCET Error (ms)',
-      splitLine: {show: true}
+      nameGap: 20
     },
     {
       type: 'value',
@@ -174,62 +213,71 @@ const option = ref({
   dataZoom: [
     {
       type: 'inside',
-      xAxisIndex: [0, 1]
+      xAxisIndex: [0, 1],
     },
     {
       type: 'slider',
       xAxisIndex: [0, 1],
       showDataShadow: false,
-      backgroundColor: '#D9FBE8', // --color-green-200
+      backgroundColor: '#D9FBE8', // --color-green-200,
+      fillerColor: '#B3F5D1', //   --color-green-400
+      moveHandleStyle: {
+        color: '#007F45' // --color-green-700
+      }
     }
   ],
   series: []
 });
-/*
-formatter: params => {
-  const { name, value } = params;
-  return `${name} - ${value}`
-}
 
- */
 watch(() => props.chartData, async (newChartData, oldChartData) => {
   const telemetryData: TimekeepingTelemetryPoint[] = newChartData.telemetry;
   const telemetrySeriesData = []
 
   telemetryData.forEach(ttp => {
     let pointDate = parseISO(ttp.scetUtc);
-    telemetrySeriesData.push({ name: toYyyDddHhMm(pointDate), value: [pointDate.getTime(), ttp.scetErrorMs], itemStyle: { color: '#00A155'}}); // this color is --color-green-600 from main.css
+    telemetrySeriesData.push({ name: toYyyyDddHhMm(pointDate), value: [pointDate.getTime(), ttp.scetErrorMs], originalTtp: ttp, itemStyle: { color: '#00A155'}}); // this color is --color-green-600 from main.css
   })
 
   option.value.series[0] = {
-    name: 'SCET Error (ms)',
+    id: 'timeCorrTelemetry',
+    name: 'Time Correlation Tlm Points',
     type: 'line',
     xAxisIndex: 0,
     yAxisIndex: 0,
     symbol: 'circle',
     symbolSize: 6,
     lineStyle: {color: '#75EDAE'}, // this is --color-green-300 from main.css
-    data: telemetrySeriesData
+    itemStyle: { color: '#0A5331'},  // this is --color-green-900 from main.css
+    data: telemetrySeriesData,
+    cursor: 'default',
+    tooltip: {
+      formatter: (params) => {
+        return `Sales: <b>${params.value}</b> units`;
+      }
+    }
   }
 
   const correlationData: TimeCorrelationTriplet[] = newChartData.correlations;
   const correlationSeriesData = []
 
-  correlationData.forEach(corr => {
-    let pointDate = parseISO(corr.scetUtc);
-    // correlationSeriesData.push({ name: toYyyDddHhMm(pointDate), value: [pointDate.getTime(), 0], itemStyle: { color: 'red'}});
-    // correlationSeriesData.push([pointDate.getTime(), 0.5, "foobar"]);
-    correlationSeriesData.push({ value: [pointDate.getTime(), 0.5, "foobar"], itemStyle: { color: '#0A5331'}}); // this is --color-green-900 from main.css
+  correlationData.forEach(triplet => {
+    const pointDate = parseISO(triplet.scetUtc);
+    const pointName = 'Name: ' + pointDate;
+
+    correlationSeriesData.push({name: pointName, value: [pointDate.getTime(), 0.5, "foobar"], originalTriplet: triplet });
   })
 
   option.value.series[1] = {
+    id: 'timeCorrRecords',
     name: 'Time Correlation Records',
     type: 'scatter',
     xAxisIndex: 1,
     yAxisIndex: 1,
     symbol: 'triangle',
-    symbolSize: 10,
-    data: correlationSeriesData
+    symbolSize: 14,
+    itemStyle: { color: '#0A5331'},  // this is --color-green-900 from main.css
+    data: correlationSeriesData,
+    cursor: 'default'
   }
 
   option.value.xAxis[0].min = props.range.start.getTime()
@@ -243,6 +291,65 @@ watch(() => props.chartData, async (newChartData, oldChartData) => {
 
   option.value.dataZoom[0].endValue = props.range.end.getTime()
   option.value.dataZoom[0].endValue = props.range.end.getTime()
+
+  if (newChartData.previewTelemetry.length > 0) {
+    const previewTelemetryData: TimekeepingTelemetryPoint[] = newChartData.previewTelemetry;
+    const previewTelemetrySeriesData = []
+
+    previewTelemetryData.forEach(ttp => {
+      let pointDate = parseISO(ttp.scetUtc);
+      previewTelemetrySeriesData.push({ name: toYyyyDddHhMm(pointDate), value: [pointDate.getTime(), ttp.scetErrorMs], originalTtp: ttp});
+    })
+
+    option.value.series[2] = {
+      id: 'timeCorrTelemetryPreview',
+      name: 'Preview Time Correlation Tlm Points',
+      type: 'line',
+      xAxisIndex: 0,
+      yAxisIndex: 0,
+      symbol: 'circle',
+      symbolSize: 6,
+      lineStyle: {color: 'purple'},
+      itemStyle: { color: 'indigo'},
+      data: previewTelemetrySeriesData,
+      cursor: 'default'
+    }
+  } else {
+    const indexToRemove = option.value.series.findIndex((elt) => elt['id'] === 'timeCorrTelemetryPreview')
+    if (indexToRemove != -1) {
+      option.value.series.splice(indexToRemove, 1);
+    }
+  }
+
+  if (newChartData.previewCorrelations.length > 0) {
+    const previewCorrelationData: TimeCorrelationTriplet[] = newChartData.previewCorrelations;
+    const previewCorrelationSeriesData = []
+
+    previewCorrelationData.forEach(triplet => {
+      const pointDate = parseISO(triplet.scetUtc);
+      const pointName = 'Name: ' + pointDate;
+
+      previewCorrelationSeriesData.push({name: pointName, value: [pointDate.getTime(), 0.5, "foobar"], originalTriplet: triplet});
+    })
+
+    option.value.series[3] = {
+      id: 'timeCorrRecordsPreview',
+      name: 'Preview Time Correlation Records',
+      type: 'scatter',
+      xAxisIndex: 1,
+      yAxisIndex: 1,
+      symbol: 'triangle',
+      symbolSize: 14,
+      itemStyle: { color: 'indigo'},
+      data: previewCorrelationSeriesData,
+      cursor: 'default'
+    }
+  } else {
+    const indexToRemove = option.value.series.findIndex((elt) => elt['id'] === 'timeCorrRecordsPreview')
+    if (indexToRemove != -1) {
+      option.value.series.splice(indexToRemove, 1);
+    }
+  }
 })
 
 /*
@@ -309,15 +416,76 @@ const option = ref({
  */
 
 async function onClickHandler(event) {
-  console.log('onClickHandler')
-  console.log(event);
-  emit('ert-selection', '2025-001T12:34:56.789')
-  if (props.selectionMode === 'choosing-target-sample-ert') {
-
-  } else if (props.selectionMode === 'choosing-prior-correlation-ert') {
-
+  if (props.selectionMode === 'choosing-target-sample-ert' && event.seriesId === 'timeCorrTelemetry') {
+    emit('time-selection', event.data.originalTtp.originalFrameSample.ertStr);
+  } else if (props.selectionMode === 'choosing-prior-correlation-tdt' && event.seriesId === 'timeCorrRecords') {
+    emit('time-selection', event.data.originalTriplet.tdtG);
   }
 }
+
+function getSeriesIndexForId(seriesId) {
+  const seriesIndex = ['timeCorrTelemetry', 'timeCorrRecords'].indexOf(seriesId);
+
+  if (seriesIndex === -1) {
+    throw new Error('Series not found: ' + seriesId);
+  }
+
+  return seriesIndex;
+}
+
+function setCursorAppearanceOnSeries(seriesId, cursorAppearance) {
+  const currentZoom = option.value.dataZoom?.map(key => ({
+    start: key.start,
+    end: key.end,
+    startValue: key.startValue,
+    endValue: key.endValue,
+  }));
+
+  const seriesIndex = getSeriesIndexForId(seriesId);
+  option.value.series[seriesIndex].cursor = cursorAppearance;
+
+  if (currentZoom) {
+    option.value.dataZoom = currentZoom;
+    //chart.setOption({ dataZoom: currentZoom }, false);
+  }
+
+  /*
+  timeCorrChart.value.setOption({
+    series: [
+      {
+        id: seriesId,
+        cursor: cursorAppearance
+      }
+    ]
+  });
+
+   */
+
+
+}
+
+watch(() => props.selectionMode, (newVal, oldVal) => {
+  if (newVal === oldVal) {
+    return;
+  }
+
+  switch(props.selectionMode) {
+    case 'choosing-target-sample-ert': {
+      setCursorAppearanceOnSeries('timeCorrTelemetry', 'pointer');
+      break;
+    }
+    case 'choosing-prior-correlation-tdt': {
+      setCursorAppearanceOnSeries('timeCorrRecords', 'pointer');
+      break;
+    }
+    case 'none':
+      setCursorAppearanceOnSeries('timeCorrTelemetry', 'default');
+      setCursorAppearanceOnSeries('timeCorrRecords', 'default');
+      break;
+    default:
+      console.warn('unexpected selection mode: ' + props.selectionMode);
+  }
+})
 
 </script>
 

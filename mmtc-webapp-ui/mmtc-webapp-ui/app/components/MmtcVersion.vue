@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { MmtcVersion } from '@/services/mmtc-api.ts';
-import { retrieveMmtcVersion } from '@/services/mmtc-api';
+import { retrieveMmtcInfo } from '@/services/mmtc-api';
 
 defineProps<{
 
@@ -13,7 +13,8 @@ const mmtcVersion = ref<MmtcVersion>({
 })
 
 onMounted(async () => {
-  mmtcVersion.value = await retrieveMmtcVersion();
+  const mmtcInfo = await retrieveMmtcInfo();
+  mmtcVersion.value = mmtcInfo.mmtcVersion;
 })
 </script>
 

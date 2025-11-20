@@ -80,7 +80,7 @@ public class TimeCorrelationRollback {
     }
 
     private void prepareRollback(Optional<String> preselectedRunId) throws MmtcException {
-        final boolean isInteractive = preselectedRunId.isPresent();
+        final boolean isInteractive = ! preselectedRunId.isPresent();
 
         rawRunHistoryRecords = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.INCLUDE_ROLLBACKS); // Will be used to rewrite complete RunHistoryFile
         List<TableRecord> runHistoryRecords = runHistoryFile.readRecords(RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS); // Will be used for rollback and shouldn't include rolled back entries

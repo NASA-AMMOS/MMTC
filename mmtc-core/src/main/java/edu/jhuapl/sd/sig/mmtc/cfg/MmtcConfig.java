@@ -36,6 +36,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
+
 /**
  * A class assisting with loading and providing access to values in file-based configuration. These include the
  * parameters read from the TimeCorrelationConfigProperties.xml file, Ground Station Map associations,
@@ -48,6 +50,9 @@ public abstract class MmtcConfig {
     private static final String BASE_CONFIG_FILENAME = "TimeCorrelationConfigProperties-base.xml";
 
     private static final Set<String> BUILT_IN_TLM_SOURCES = new HashSet<>(Collections.singletonList("rawTlmTable"));
+
+    public static final List<ClockChangeRateMode> CLOCK_CHANGE_RATE_ASSIGN_MODES = Arrays.asList(ClockChangeRateMode.ASSIGN, ClockChangeRateMode.ASSIGN_KEY);
+    public static final ClockChangeRateMode DEFAULT_CLOCK_CHANGE_RATE_MODE = ClockChangeRateMode.COMPUTE_INTERPOLATE;
 
     protected final Path mmtcHome;
     protected final TimeCorrelationConfig timeCorrelationConfig;
@@ -1242,6 +1247,30 @@ public abstract class MmtcConfig {
 
     public int getSamplingSampleSetBuildingStrategySamplingRateMinutes() {
         return timeCorrelationConfig.getConfig().getInt("telemetry.sampleSetBuildingStrategy.sampling.samplingRateMinutes");
+    }
+
+    public enum ClockChangeRateMode {
+        COMPUTE_INTERPOLATE,
+        COMPUTE_PREDICT,
+        ASSIGN,
+        ASSIGN_KEY,
+        NO_DRIFT
+    }
+
+    public ClockChangeRateMode getConfiguredClockChangeRateMode() throws MmtcException {
+        if (timeCorrelationConfig.getConfig().containsKey("compute.clkchgrate.mode")) {
+            final String modeFromConfig = timeCorrelationConfig.getConfig().getString("compute.clkchgrate.mode");
+
+            if (modeFromConfig.equalsIgnoreCase("compute-predict")) {
+                return ClockChangeRateMode.COMPUTE_PREDICT;
+            } else if (modeFromConfig.equalsIgnoreCase("compute-interpolate")) {
+                return ClockChangeRateMode.COMPUTE_INTERPOLATE;
+            } else {
+                throw new MmtcException(String.format("The clock change rate mode in configuration must be either 'compute-predict' or 'compute-interpolate', but it was '%s'", modeFromConfig));
+            }
+        }
+
+        return DEFAULT_CLOCK_CHANGE_RATE_MODE;
     }
 
     /**

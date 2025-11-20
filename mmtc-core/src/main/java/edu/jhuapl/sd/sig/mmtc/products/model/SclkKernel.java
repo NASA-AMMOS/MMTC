@@ -98,6 +98,15 @@ public class SclkKernel extends TextProduct {
         this.newTriplet = Optional.of(new CorrelationTriplet(encSclk, tdtStr, clockChgRate));
     }
 
+    /**
+     * Sets the values of the new time correlation record.
+     *
+     * @param newTriplet   newTriplet
+     */
+    public void setNewTriplet(CorrelationTriplet newTriplet) {
+        this.newTriplet = Optional.of(newTriplet);
+    }
+
     public boolean hasSmoothingRecordSet() {
         return smoothingTriplet.isPresent();
     }
@@ -192,7 +201,6 @@ public class SclkKernel extends TextProduct {
      * @throws TextProductException if the time correlation record is invalid or cannot be updated.
      */
     private String replaceChgRate() throws TextProductException {
-
         String record          = sourceProductLines.get(endDataNum);
         String[] tripletFields = parseRecord(record, NUM_FIELDS_IN_TRIPLET);
 
@@ -204,7 +212,6 @@ public class SclkKernel extends TextProduct {
 
         return record1;
     }
-
 
     /**
      * Formats a clock change rate into a string form of 11 decimal places.
@@ -438,18 +445,23 @@ public class SclkKernel extends TextProduct {
         newSclkKernel.setProductCreationTime(ctx.appRunTime);
         newSclkKernel.setDir(ctx.config.getSclkKernelOutputDir().toString());
         newSclkKernel.setName(ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc");
-        newSclkKernel.setNewTriplet(
+
+        final CorrelationTriplet newPredictedTriplet = new CorrelationTriplet(
                 ctx.correlation.target.get().getTargetSampleEncSclk(),
                 TimeConvert.tdtToTdtCalStr(ctx.correlation.target.get().getTargetSampleTdtG()),
                 ctx.correlation.predicted_clock_change_rate.get()
         );
+        newSclkKernel.setNewTriplet(newPredictedTriplet);
+
+        ctx.correlation.newPredictedTriplet.set(newPredictedTriplet);
 
         if (ctx.correlation.interpolated_clock_change_rate.isSet()) {
             newSclkKernel.setReplacementClockChgRate(ctx.correlation.interpolated_clock_change_rate.get());
+            // ctx.correlation.updatedInterpolatedTriplet.set(newSclkKernel.getUpdatedPriorCorrelationRecord());
         }
 
-        if (ctx.correlation.smoothingTriplet.isSet()) {
-            newSclkKernel.setSmoothingTriplet(ctx.correlation.smoothingTriplet.get());
+        if (ctx.correlation.newSmoothingTriplet.isSet()) {
+            newSclkKernel.setSmoothingTriplet(ctx.correlation.newSmoothingTriplet.get());
         }
 
         ctx.newSclkKernel.set(newSclkKernel);
@@ -463,18 +475,44 @@ public class SclkKernel extends TextProduct {
      * @return the ProductWriteResult describing the newly-written product
      */
     public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+        return writeNewProduct(ctx, null);
+    }
+
+    /**
+     * Writes a new SCLK Kernel
+     * @param ctx the current time correlation context from which to pull information for the output product
+     *
+     * @throws MmtcException if the SCLK Kernel cannot be written
+     * @return the ProductWriteResult describing the newly-written product
+     */
+    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx, Path overridingPath) throws MmtcException {
         try {
             calculateNewProduct(ctx);
 
-            // If this is a dry run, write the new kernel to the temp output path for subsequent deletion. If not,
-            // write it to the usual location.
-            if(ctx.config.isDryRun()) {
-                ctx.newSclkKernel.get().createFile("/tmp");
+            final Path path;
+            if (overridingPath == null) {
+                path = Paths.get(ctx.newSclkKernel.get().getPath());
             } else {
-                ctx.newSclkKernel.get().createFile();
+                path = overridingPath;
             }
 
-            final Path path = Paths.get(ctx.newSclkKernel.get().getPath());
+            // If this is a dry run, write the new kernel to the temp output path for subsequent deletion. If not,
+            // write it to the usual location.
+            switch(ctx.config.getDryRunConfig().mode) {
+                case NOT_DRY_RUN: {
+                    ctx.newSclkKernel.get().createFile();
+                    break;
+                }
+                case DRY_RUN_RETAIN_NO_PRODUCTS: {
+                    ctx.newSclkKernel.get().createFile("/tmp");
+                    break;
+                }
+                case DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY: {
+                    ctx.newSclkKernel.get().createFile(path);
+                    break;
+                }
+            }
+
             ctx.newSclkKernelPath.set(path);
 
             return new ProductWriteResult(

@@ -20,7 +20,9 @@ public class CorrelationInfo {
     public final Settable<Double> predicted_clock_change_rate = new Settable<>();
     public final Settable<Double> interpolated_clock_change_rate = new Settable<>();
 
-    public Settable<SclkKernel.CorrelationTriplet> smoothingTriplet = new Settable<>();
+    public Settable<SclkKernel.CorrelationTriplet> newPredictedTriplet = new Settable<>();
+    public Settable<SclkKernel.CorrelationTriplet> updatedInterpolatedTriplet = new Settable<>();
+    public Settable<SclkKernel.CorrelationTriplet> newSmoothingTriplet = new Settable<>();
 
     // other computed information
     public final Settable<Double> sclk_drift_ms_per_day = new Settable<>();

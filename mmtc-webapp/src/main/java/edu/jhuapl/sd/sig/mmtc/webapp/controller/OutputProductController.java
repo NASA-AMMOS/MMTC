@@ -1,11 +1,10 @@
 package edu.jhuapl.sd.sig.mmtc.webapp.controller;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.products.definition.AppendedFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.EntireFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
-import edu.jhuapl.sd.sig.mmtc.webapp.MmtcWebAppConfig;
+import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
 import io.javalin.Javalin;
 
 import java.io.IOException;

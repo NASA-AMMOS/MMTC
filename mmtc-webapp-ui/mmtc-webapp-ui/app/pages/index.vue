@@ -6,6 +6,7 @@ import { retrieveOutputProductDefs, retrieveTimekeepingTelemetry } from '@/servi
 import { floorToMidnight } from '@/services/utils';
 import {toIso8601WithDiscardedTimezone} from "../services/utils";
 import {getTimeCorrelations, getAllTimeCorrelations} from "../services/mmtc-api";
+import {TimeCorrelationPreviewResults} from "../services/mmtc-api";
 
 // TELEMETRY QUERY OPTIONS
 const rangeIsInitialized = ref(false);
@@ -27,7 +28,9 @@ const chartData: ChartData = ref({})
 const correlationConfigPaneOpen = ref(false)
 const chartClass = ref('col-span-4')
 
+// template component refs
 const newTimeCorrelationConfig = ref(null)
+const runHistory = ref(null)
 
 function newCorrelation() {
   mode.value = 'correlate'
@@ -36,14 +39,7 @@ function newCorrelation() {
   correlationConfigCompositionState.value = 'choose-target'
 }
 
-function commitCorrelation() {
-  mode.value = 'view'
-  correlationConfigPaneOpen.value = false
-  chartClass.value = 'col-span-4'
-  correlationConfigCompositionState.value = 'none'
-}
-
-function cancelCorrelation() {
+function closeCorrelation() {
   mode.value = 'view'
   correlationConfigPaneOpen.value = false
   chartClass.value = 'col-span-4'
@@ -81,6 +77,10 @@ async function setDefaultChartRange() {
 }
 
 onMounted(async () => {
+  refreshAll();
+})
+
+async function refreshAll() {
   const allDefs = await retrieveOutputProductDefs();
   allDefs.forEach((def) => {
     if (def.name === 'SCLK Kernel') {
@@ -89,9 +89,10 @@ onMounted(async () => {
     }
   })
 
+  await runHistory.value.refresh();
   await setDefaultChartRange();
   await updateChartData();
-})
+}
 
 async function updateChartData() {
   if (! rangeIsInitialized.value) {
@@ -101,11 +102,14 @@ async function updateChartData() {
   let tmpChartData = {}
   tmpChartData.telemetry = await retrieveTimekeepingTelemetry(toIso8601WithDiscardedTimezone(range.value.start), toIso8601WithDiscardedTimezone(range.value.end), sclkKernelSelectionChoice.value);
   tmpChartData.correlations = await getTimeCorrelations(toIso8601WithDiscardedTimezone(range.value.start), toIso8601WithDiscardedTimezone(range.value.end), sclkKernelSelectionChoice.value);
+  tmpChartData.previewTelemetry = []
+  tmpChartData.previewCorrelations = []
   chartData.value = tmpChartData;
 }
 
-function handleIncomingErtSelection(selectedErt) {
-  newTimeCorrelationConfig.value.acceptSelectedErt(selectedErt);
+function handleIncomingTimeSelection(selectedErt) {
+  chartSelectionMode.value = 'none'
+  newTimeCorrelationConfig.value.acceptSelectedTime(selectedErt);
 }
 
 watch([sclkKernelSelectionChoice, range], async (newSclkKernelSelectionChoice, oldSclkKernelSelectionChoice) => {
@@ -116,8 +120,32 @@ function startChoosingTargetSampleErt() {
   chartSelectionMode.value = 'choosing-target-sample-ert';
 }
 
-function startChoosingPriorCorrelationErt() {
-  chartSelectionMode.value = 'choosing-prior-correlation-ert';
+function startChoosingPriorCorrelationTdt() {
+  chartSelectionMode.value = 'choosing-prior-correlation-tdt';
+}
+
+function cancelChoosing() {
+  chartSelectionMode.value = 'none';
+}
+
+function chartShowPreviewCorrelationTelemetry(timeCorrPreviewResults: TimeCorrelationPreviewResults) {
+  // because watched properties only trigger on updating the actual watched reference, not any mutation
+  let tmpChartData = {};
+  tmpChartData.telemetry = chartData.value.telemetry;
+  tmpChartData.correlations = chartData.value.correlations;
+  tmpChartData.previewTelemetry = timeCorrPreviewResults.telemetryPoints;
+  tmpChartData.previewCorrelations = timeCorrPreviewResults.updatedTriplets;
+  chartData.value = tmpChartData;
+}
+
+function chartClearPreviewCorrelationTelemetry(previewTimeCorrTlm: TimekeepingTelemetryPoint[]) {
+  // because watched properties only trigger on updating the actual watched reference, not any mutation
+  let tmpChartData = {};
+  tmpChartData.telemetry = chartData.value.telemetry;
+  tmpChartData.correlations = chartData.value.correlations;
+  tmpChartData.previewTelemetry = [];
+  tmpChartData.previewCorrelations = [];
+  chartData.value = tmpChartData;
 }
 
 </script>
@@ -141,14 +169,10 @@ function startChoosingPriorCorrelationErt() {
 
         <template #right>
           <span v-if="mode === 'view'">
-            <UButton @click="newCorrelation">New correlation</UButton>
+            <UTooltip text="Start configuring a new correlation">
+              <UButton @click="newCorrelation">New correlation</UButton>
+            </UTooltip>
           </span>
-          <!--span v-if="mode === 'correlate'">
-
-            <UButton @click="cancelCorrelation">Cancel</UButton>
-
-            <UButton @click="commitCorrelation">Commit</UButton>
-          </span-->
         </template>
       </UDashboardToolbar>
     </template>
@@ -162,21 +186,26 @@ function startChoosingPriorCorrelationErt() {
             :correlationConfigCompositionState="correlationConfigCompositionState"
             :chartData="chartData"
             :range="range"
-            @ert-selection="handleIncomingErtSelection"
+            @time-selection="handleIncomingTimeSelection"
           />
         </div>
         <div class="col-span-1" v-if="mode === 'correlate'">
           <UCard ref="cardRef" :ui="{ root: 'overflow-visible', body: 'ml-5 !px-0 !pt-0 !pb-3' }">
             <NewTimeCorrelationConfig
               ref="newTimeCorrelationConfig"
+              :chartRange="range"
               @start-choosing-target-sample-ert="startChoosingTargetSampleErt"
-              @start-choosing-prior-correlation-ert="startChoosingPriorCorrelationErt"
-              @cancel-correlation="cancelCorrelation"
+              @start-choosing-prior-correlation-tdt="startChoosingPriorCorrelationTdt"
+              @close-correlation="closeCorrelation"
+              @cancel-choosing="cancelChoosing"
+              @chart-show-preview-correlation-telemetry="chartShowPreviewCorrelationTelemetry"
+              @chart-clear-preview-correlation-telemetry="chartClearPreviewCorrelationTelemetry"
+              @refresh-dashboard="refreshAll"
               />
           </UCard>
         </div>
       </div>
-      <RunHistory :range="range"  />
+      <RunHistory ref="runHistory"/>
     </template>
   </UDashboardPanel>
 </template>

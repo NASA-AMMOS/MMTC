@@ -6,13 +6,14 @@ import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.OffsetDateTimeRange;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.*;
 
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 // integrates the aspects of configuration that are inputs liable to change per-run, atop file-based configuration
-public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
+public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements TimeCorrelationMetricsConfig {
     private static final Logger logger = LogManager.getLogger();
 
     public static final String CONTACT_FILTER = "contact";
@@ -26,9 +27,6 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
     public static final String VCID_FILTER = "vcid";
     public static final String CONSEC_MC_FRAME_FILTER = "consecutiveMasterChannelFrames";
 
-    private static final List<ClockChangeRateMode> CLOCK_CHANGE_RATE_ASSIGN_MODES = Arrays.asList(ClockChangeRateMode.ASSIGN, ClockChangeRateMode.ASSIGN_KEY);
-    private static final ClockChangeRateMode DEFAULT_CLOCK_CHANGE_RATE_MODE = ClockChangeRateMode.COMPUTE_INTERPOLATE;
-
     private final TimeCorrelationRunConfigInputs runConfigInputs;
 
     // resolved attributes
@@ -38,50 +36,74 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
     private Optional<OffsetDateTimeRange> resolvedTargetSampleRange;
     private Optional<OffsetDateTime> resolvedTargetSampleExactErt;
 
-    public enum ClockChangeRateMode {
-        COMPUTE_INTERPOLATE,
-        COMPUTE_PREDICT,
-        ASSIGN,
-        ASSIGN_KEY,
-        NO_DRIFT
-    }
-
     public enum TargetSampleInputErtMode {
         RANGE,
         EXACT
     }
 
     public static class AdditionalSmoothingRecordConfig {
-        public final boolean enabled;
-        public final int coarseSclkTickDuration;
+        public boolean enabled;
+        public int coarseSclkTickDuration;
+
+        public AdditionalSmoothingRecordConfig( ) { }
 
         public AdditionalSmoothingRecordConfig(boolean enabled, int coarseSclkTickDuration) {
             this.enabled = enabled;
             this.coarseSclkTickDuration = coarseSclkTickDuration;
         }
+
+        public String toLogString() {
+            if (this.enabled) {
+                return "Additional smoothing record insertion = enabled at " + this.coarseSclkTickDuration;
+            } else {
+                return "Additional smoothing record insertion = disabled";
+            }
+        }
     }
+
+    public enum DryRunMode {
+        NOT_DRY_RUN,
+        DRY_RUN_RETAIN_NO_PRODUCTS,
+        DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY
+    }
+
+    public static class DryRunConfig {
+        public DryRunMode mode;
+        public Path sclkKernelOutputPath;
+
+        public DryRunConfig() { }
+
+        public DryRunConfig(DryRunMode mode, Path sclkKernelOutputPath) {
+            this.mode = mode;
+            this.sclkKernelOutputPath = sclkKernelOutputPath;
+        }
+    }
+
+    // ideas for encoding this into the run history file
+    // - still encode this into a 'run args' column, implying a means to convert the data in an instance of this class into its CLI equivalent
+    // - maybe consider a separate column for the start & stop / exact ert input time this was run with
 
     public static class TimeCorrelationRunConfigInputs {
         // inputs that must be provided with each run, which are not contained in configuration files at all
-        final Optional<OffsetDateTime> targetSampleWindowStartTime;
-        final Optional<OffsetDateTime> targetSampleWindowStopTime;
+        final Optional<OffsetDateTime> targetSampleRangeStartErt;
+        final Optional<OffsetDateTime> targetSampleRangeStopErt;
         final Optional<OffsetDateTime> targetSampleExactErt;
         final Optional<OffsetDateTime> priorCorrelationExactErt;
         final boolean testModeOwltEnabled;
         final Optional<Double> testModeOwltSec;
         final Optional<Double> clockChangeRateAssignedValue;
         final Optional<String> clockChangeRateAssignedKey;
+        private final DryRunConfig dryRunConfig;
 
         // inputs that can override those specified in configuration files
         final Optional<ClockChangeRateMode> clockChangeRateModeOverride;
         final Optional<AdditionalSmoothingRecordConfig> additionalSmoothingRecordConfigOverride;
         final boolean isDisableContactFilter;
         final boolean isCreateUplinkCmdFile;
-        private final boolean isDryRun;
 
         public TimeCorrelationRunConfigInputs(
-                Optional<OffsetDateTime> targetSampleWindowStartTime,
-                Optional<OffsetDateTime> targetSampleWindowStopTime,
+                Optional<OffsetDateTime> targetSampleRangeStartErt,
+                Optional<OffsetDateTime> targetSampleRangeStopErt,
                 Optional<OffsetDateTime> targetSampleExactErt,
                 Optional<OffsetDateTime> priorCorrelationExactErt,
                 boolean testModeOwltEnabled,
@@ -92,10 +114,10 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
                 Optional<AdditionalSmoothingRecordConfig> additionalSmoothingRecordConfigOverride,
                 boolean isDisableContactFilter,
                 boolean isCreateUplinkCmdFile,
-                boolean isDryRun
+                DryRunConfig dryRunConfig
         ) {
-            this.targetSampleWindowStartTime = targetSampleWindowStartTime;
-            this.targetSampleWindowStopTime = targetSampleWindowStopTime;
+            this.targetSampleRangeStartErt = targetSampleRangeStartErt;
+            this.targetSampleRangeStopErt = targetSampleRangeStopErt;
             this.targetSampleExactErt = targetSampleExactErt;
             this.priorCorrelationExactErt = priorCorrelationExactErt;
             this.testModeOwltEnabled = testModeOwltEnabled;
@@ -106,11 +128,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
             this.additionalSmoothingRecordConfigOverride = additionalSmoothingRecordConfigOverride;
             this.isDisableContactFilter = isDisableContactFilter;
             this.isCreateUplinkCmdFile = isCreateUplinkCmdFile;
-            this.isDryRun = isDryRun;
-        }
-
-        public String toLoggableString() {
-            return "to do"; // todo capture runtime correlation args in some sane way here
+            this.dryRunConfig = dryRunConfig;
         }
     }
 
@@ -131,6 +149,14 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
         setClockChangeRateConfiguration();
         setInsertAdditionalSmoothingRecordConfiguration();
 
+        // ensure the given path for a dry run SCLK kernel file is NOT the same directory as the configured output directory
+        if (getDryRunConfig().mode.equals(DryRunMode.DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY)) {
+            Path sclkKernelDryRunOutputPath = getDryRunConfig().sclkKernelOutputPath;
+            if (getSclkKernelOutputDir().toAbsolutePath().startsWith(sclkKernelDryRunOutputPath)) {
+                throw new IllegalStateException("The output SCLK kernel directory must be distinct from the configured SCLK kernel output directory: " + getSclkKernelOutputDir().toAbsolutePath());
+            }
+        }
+
         if (resolvedAdditionalSmoothingRecordConfig.enabled && resolvedClockChangeRateMode == ClockChangeRateMode.COMPUTE_INTERPOLATE) {
             throw new MmtcException("Cannot insert 'smoothing' correlation records into products with --clkchgrate-compute i");
         }
@@ -139,8 +165,8 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
     }
 
     private void setTargetAndBasisSampleInputs() {
-        if (this.runConfigInputs.targetSampleWindowStartTime.isPresent() && this.runConfigInputs.targetSampleWindowStopTime.isPresent()) {
-            this.resolvedTargetSampleRange = Optional.of(new OffsetDateTimeRange(this.runConfigInputs.targetSampleWindowStartTime.get(), this.runConfigInputs.targetSampleWindowStopTime.get()));
+        if (this.runConfigInputs.targetSampleRangeStartErt.isPresent() && this.runConfigInputs.targetSampleRangeStopErt.isPresent()) {
+            this.resolvedTargetSampleRange = Optional.of(new OffsetDateTimeRange(this.runConfigInputs.targetSampleRangeStartErt.get(), this.runConfigInputs.targetSampleRangeStopErt.get()));
         } else if (this.runConfigInputs.targetSampleExactErt.isPresent()) {
             this.resolvedTargetSampleExactErt = this.runConfigInputs.targetSampleExactErt;
         } else {
@@ -173,23 +199,8 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
             return;
         }
 
-        if (timeCorrelationConfig.getConfig().containsKey("compute.clkchgrate.mode")) {
-            final String modeFromConfig = timeCorrelationConfig.getConfig().getString("compute.clkchgrate.mode");
-
-            if (modeFromConfig.equalsIgnoreCase("compute-predict")) {
-                resolvedClockChangeRateMode = ClockChangeRateMode.COMPUTE_PREDICT;
-            } else if (modeFromConfig.equalsIgnoreCase("compute-interpolate")) {
-                resolvedClockChangeRateMode = ClockChangeRateMode.COMPUTE_INTERPOLATE;
-            } else {
-                throw new MmtcException(String.format("The clock change rate mode in configuration must be either 'compute-predict' or 'compute-interpolate', but it was '%s'", modeFromConfig));
-            }
-
-            logger.info(USER_NOTICE, String.format("Clock change rate mode specified in configuration: %s", resolvedClockChangeRateMode));
-            return;
-        }
-
-        resolvedClockChangeRateMode = DEFAULT_CLOCK_CHANGE_RATE_MODE;
-        logger.info(USER_NOTICE, String.format("Clock change rate mode is set to default: %s", DEFAULT_CLOCK_CHANGE_RATE_MODE));
+        resolvedClockChangeRateMode = getConfiguredClockChangeRateMode();
+        logger.info(USER_NOTICE, String.format("Clock change rate mode: %s", resolvedClockChangeRateMode));
     }
 
     /**
@@ -274,6 +285,10 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
      * @return the OWLT to be used for time correlation
      */
     public double getTestModeOwlt() { return runConfigInputs.testModeOwltSec.get(); }
+
+    public Optional<OffsetDateTime> getPriorCorrelationErt() {
+        return runConfigInputs.priorCorrelationExactErt;
+    }
 
     /**
      * As is the case with the other filters, the contact filter can be enabled or
@@ -374,7 +389,11 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
     }
 
     public boolean isDryRun() {
-        return this.runConfigInputs.isDryRun;
+        return ! this.runConfigInputs.dryRunConfig.mode.equals(DryRunMode.NOT_DRY_RUN);
+    }
+
+    public DryRunConfig getDryRunConfig() {
+        return this.runConfigInputs.dryRunConfig;
     }
 
     public ClockChangeRateMode getClockChangeRateMode() {
@@ -384,18 +403,6 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
     @Override
     public String getAdditionalOptionValue(String optionName) {
         return this.additionalTlmSrcOptionsByName.get(optionName).cliOption.getValue();
-    }
-
-    public ClockChangeRateMode getResolvedClockChangeRateMode() {
-        return resolvedClockChangeRateMode;
-    }
-
-    public double getResolvedClockChangeRateAssignedValue() {
-        return resolvedClockChangeRateAssignedValue;
-    }
-
-    public AdditionalSmoothingRecordConfig getResolvedAdditionalSmoothingRecordConfig() {
-        return resolvedAdditionalSmoothingRecordConfig;
     }
 
     public Optional<OffsetDateTimeRange> getResolvedTargetSampleRange() {
@@ -414,7 +421,73 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource {
         return TargetSampleInputErtMode.EXACT;
     }
 
-    public String getInvocationArgs() {
-        return runConfigInputs.toLoggableString();
+
+    /*
+        final Optional<OffsetDateTime> targetSampleRangeStartErt;
+        final Optional<OffsetDateTime> targetSampleRangeStopErt;
+        final Optional<OffsetDateTime> targetSampleExactErt;
+        final Optional<OffsetDateTime> priorCorrelationExactErt;
+        final boolean testModeOwltEnabled;
+        final Optional<Double> testModeOwltSec;
+        final Optional<Double> clockChangeRateAssignedValue;
+        final Optional<String> clockChangeRateAssignedKey;
+        private final boolean isDryRun;
+
+        // inputs that can override those specified in configuration files
+        final Optional<ClockChangeRateMode> clockChangeRateModeOverride;
+        final Optional<AdditionalSmoothingRecordConfig> additionalSmoothingRecordConfigOverride;
+        final boolean isDisableContactFilter;
+        final boolean isCreateUplinkCmdFile;
+     */
+    public String getInvocationStringRepresentation() throws MmtcException {
+        // return runConfigInputs.toLoggableString();
+        List<String> elts = new ArrayList<>();
+
+        if (getTargetSampleInputErtMode().equals(TargetSampleInputErtMode.RANGE)) {
+            OffsetDateTimeRange resolvedRange = getResolvedTargetSampleRange().get();
+            elts.add(String.format("Input ERT range = %s to %s", resolvedRange.getStart(), resolvedRange.getStop()));
+        } else if (getTargetSampleInputErtMode().equals(TargetSampleInputErtMode.EXACT)) {
+            elts.add(String.format("Input ERT = %s", getResolvedTargetSampleExactErt().get()));
+        } else {
+            throw new IllegalStateException("Unknown mode: " + getTargetSampleInputErtMode());
+        }
+
+        if (getPriorCorrelationErt().isPresent()) {
+            elts.add(String.format("Prior corr ERT = %s", getPriorCorrelationErt().get()));
+        }
+
+        if (isTestMode()) {
+            elts.add(String.format("Test Mode OWLT = %f", getTestModeOwlt()));
+        }
+
+        if (isDryRun()) {
+            elts.add("Dry run = true");
+        }
+
+        if (runConfigInputs.clockChangeRateModeOverride.isPresent()) {
+            elts.add(String.format("Clock change rate mode = %s", runConfigInputs.clockChangeRateModeOverride.get()));
+
+            ClockChangeRateMode overrideMode = runConfigInputs.clockChangeRateModeOverride.get();
+            if (overrideMode.equals(ClockChangeRateMode.ASSIGN_KEY)) {
+                elts.add(String.format("Clock change rate assign key = %s", runConfigInputs.clockChangeRateAssignedKey.get()));
+            } else if (overrideMode.equals(ClockChangeRateMode.ASSIGN)) {
+                elts.add(String.format("Clock change rate assign = %s", runConfigInputs.clockChangeRateAssignedValue.get()));
+            }
+        }
+
+        if (runConfigInputs.additionalSmoothingRecordConfigOverride.isPresent()) {
+            elts.add(runConfigInputs.additionalSmoothingRecordConfigOverride.get().toLogString());
+        }
+
+        // todo add additional CLI options here?
+        if (runConfigInputs.isDisableContactFilter) {
+            elts.add("Contact filter = disabled");
+        }
+
+        if (runConfigInputs.isCreateUplinkCmdFile) {
+            elts.add("Uplink cmd file creation = enabled");
+        }
+
+        return String.join(" | ", elts);
     }
 }

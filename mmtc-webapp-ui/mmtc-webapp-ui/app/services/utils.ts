@@ -13,6 +13,14 @@ export function toIso8601WithDiscardedTimezone(date: Date) {
   return format(date, "yyyy-DDD'T'HH:mm:ss.SSSSSS", { useAdditionalDayOfYearTokens: true });
 }
 
-export function toYyyDddHhMm(date: Date) {
+export function toYyyyDddHhMm(date: Date) {
   return format(date, "yyyy-DDD HH:mm", { useAdditionalDayOfYearTokens: true });
+}
+
+export function toYyyyDd(date: Date) {
+  return format(date, "yyyy-DDD", { useAdditionalDayOfYearTokens: true });
+}
+
+export function toHhMm(date: Date) {
+  return format(date, "HH:mm", { useAdditionalDayOfYearTokens: true });
 }

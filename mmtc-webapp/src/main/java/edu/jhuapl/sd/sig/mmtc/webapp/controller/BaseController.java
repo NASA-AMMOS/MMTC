@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.webapp.controller;
 
-import edu.jhuapl.sd.sig.mmtc.webapp.MmtcWebAppConfig;
+import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
 import io.javalin.Javalin;
 
 public abstract class BaseController {

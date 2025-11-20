@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { MmtcVersion } from '@/services/mmtc-api.ts';
+import { retrieveMmtcInfo } from '@/services/mmtc-api';
+
 const colorMode = useColorMode()
 
 const color = computed(() => colorMode.value === 'dark' ? '#1b1718' : 'white')
@@ -17,11 +20,11 @@ useHead({
   }
 })
 
-const title = 'MMTC - TODO Spacecraft Name'
-const description = 'Multi-mission Time Correlation'
+const title = ref('MMTC')
+const description = 'Multi-Mission Time Correlation'
 
 useSeoMeta({
-  title,
+  title: () => title,
   description,
   ogTitle: title,
   ogDescription: description,
@@ -29,6 +32,12 @@ useSeoMeta({
   twitterImage: 'https://ui.nuxt.com/assets/templates/nuxt/dashboard-light.png',
   twitterCard: 'summary_large_image'
 })
+
+onMounted(async () => {
+  const mmtcInfo = await retrieveMmtcInfo();
+  title.value = `MMTC - ${mmtcInfo.missionName}`;
+})
+
 </script>
 
 <template>

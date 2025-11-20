@@ -1,13 +1,24 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import type { DefaultTimeCorrelationConfig, AdditionalSmoothingRecordConfig } from '@/services/mmtc-api';
+import { getDefaultCorrelationConfig, runCorrelationPreview, createCorrelation } from '@/services/mmtc-api';
+import {toIso8601WithDiscardedTimezone} from "../services/utils";
+import {TimeCorrelationPreviewResults} from "../services/mmtc-api";
 
 const emit = defineEmits([
-  'cancel-correlation',
+  'close-correlation',
   'start-choosing-target-sample-ert',
-  'start-choosing-prior-correlation-ert',
-  'cancel-choosing-ert'
+  'start-choosing-prior-correlation-tdt',
+  'cancel-choosing',
+  'chart-show-preview-correlation-telemetry',
+  'chart-clear-preview-correlation-telemetry',
+  'refresh-dashboard'
 ])
+
+const props = defineProps<{
+  chartRange: object
+}>()
 
 // todo update schema
 const schema = z.object({
@@ -17,29 +28,50 @@ const schema = z.object({
 
 type Schema = z.output<typeof schema>
 
+// 'range' or 'exact'
+const targetSampleSelectionType = ref('range')
+
 const state = reactive<Partial<Schema>>({
-  targetSampleErt: undefined,
-  targetSampleErtRangeStart: undefined,
-  targetSampleErtRangeEnd: undefined,
-  priorCorrelationErt: undefined,
-  clockChangeRateMode: undefined,
-  specifiedClockChangeRateToAssign: undefined,
+  targetSampleRangeStartErt: undefined,
+  targetSampleRangeStopErt: undefined,
+  targetSampleExactErt: undefined,
+  priorCorrelationExactTdt: undefined,
+  testModeOwltEnabled: undefined,
   testModeOwltSec: undefined,
+  clockChangeRateAssignedValue: undefined,
+  clockChangeRateModeOverride: undefined,
+  additionalSmoothingRecordConfigOverride: { enabled: false, coarseSclkTickDuration: 0 },
+  isDisableContactFilter: undefined,
+  isCreateUplinkCmdFile: undefined,
+  dryRunConfig: { mode: 'NOT_DRY_RUN', sclkKernelOutputPath: null }
 })
 
-const defaultErtPlaceholder = 'YYYY-DDDTHH:MM:SS.ssssss'
-const targetSampleErtPlaceholder = ref(defaultErtPlaceholder)
-const priorCorrelationErtPlaceholder = ref(defaultErtPlaceholder)
+const defaultTargetSampleErtPlaceholder = 'YYYY-DDDTHH:MM:SS[.ssssss]'
+const defaultPriorCorrelationTdtPlaceholder = 'Automatic'
+
+const targetSampleExactErtPlaceholder = ref(defaultTargetSampleErtPlaceholder)
+const targetSampleRangeStartErtPlaceholder = ref(defaultTargetSampleErtPlaceholder)
+const targetSampleRangeStopErtPlaceholder = ref(defaultTargetSampleErtPlaceholder)
+const priorCorrelationTdtPlaceholder = ref(defaultPriorCorrelationTdtPlaceholder)
+
+const defaultCorrelationConfig = ref({})
+
+const correlationPreviewResults = ref({})
 
 const toast = useToast()
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  toast.add({ title: 'Success', description: 'The form has been submitted.', color: 'success' })
-  console.log(event.data)
+  // incorporate checkbox information
+  state.testModeOwltEnabled                             = additionalCorrelationOptionsModel.includes('testModeOwltEnabled');
+  state.additionalSmoothingRecordConfigOverride.enabled = additionalCorrelationOptionsModel.includes('insertAdditionalSmoothingRecord');
+  state.isDisableContactFilter                          = additionalCorrelationOptionsModel.includes('disableContactFilter');
+  state.isCreateUplinkCmdFile                          = additionalCorrelationOptionsModel.includes('createUplinkCommandFile');
+  console.log("would submit")
+  console.log(state.data)
 }
 
-defineExpose({ acceptSelectedErt });
+defineExpose({ acceptSelectedTime });
 
-const clockChangeRateModeChoices = ['predict-compute', 'predict-interpolate', 'assign', 'nodrift']
+const clockChangeRateModeChoices = ['COMPUTE_PREDICT', 'COMPUTE_INTERPOLATE', 'ASSIGN', 'NO_DRIFT']
 
 const additionalCorrelationOptionItems = ref<CheckboxGroupItem[]>([
   {
@@ -66,114 +98,232 @@ const additionalCorrelationOptionItems = ref<CheckboxGroupItem[]>([
 
 const additionalCorrelationOptionsModel = ref([])
 
-const ertSelectionMode = ref('none')
+// target-sample-exact-ert, target-sample-range-start-ert, target-sample-range-stop-ert, prior-correlation-exact-tdt
+const timeSelectionMode = ref('none')
+
+// composing / previewing
+const timeCorrelationConfigState = ref('composing')
 
 function cancelCorrelation() {
-  emit('cancel-correlation');
+  emit('close-correlation');
 }
 
-function startChoosingTargetSampleErt() {
-  if (ertSelectionMode.value === 'none') {
-    ertSelectionMode.value = 'target-sample';
-    targetSampleErtPlaceholder.value = 'Click a point on the chart';
+async function previewCorrelation() {
+  timeCorrelationConfigState.value = 'previewing'
+  state['beginTime'] = toIso8601WithDiscardedTimezone(props.chartRange.start)
+  state['endTime'] = toIso8601WithDiscardedTimezone(props.chartRange.end)
+  const previewResults: TimeCorrelationPreviewResults = await runCorrelationPreview(state);
+  delete state['beginTime']
+  delete state['endTime']
+
+  correlationPreviewResults.value = previewResults.correlationResults;
+  emit('chart-show-preview-correlation-telemetry', previewResults);
+}
+
+function goBackToComposing() {
+  timeCorrelationConfigState.value = 'composing'
+  emit('chart-clear-preview-correlation-telemetry')
+}
+
+async function commitCorrelation() {
+  const results: TimeCorrelationResults = await createCorrelation(state);
+  emit('close-correlation');
+  emit('chart-clear-preview-correlation-telemetry')
+  emit('refresh-dashboard')
+}
+
+function toggleChoosingTargetSampleExactErt() {
+  if (timeSelectionMode.value === 'none') {
+    timeSelectionMode.value = 'target-sample-exact-ert';
+    targetSampleExactErtPlaceholder.value = 'Click a point on the chart';
     emit('start-choosing-target-sample-ert');
-  } else if (ertSelectionMode.value == 'target-sample') {
-    ertSelectionMode.value = 'none';
-    targetSampleErtPlaceholder.value = defaultErtPlaceholder;
-    emit('cancel-choosing-ert');
+  } else if (timeSelectionMode.value == 'target-sample-exact-ert') {
+    timeSelectionMode.value = 'none';
+    targetSampleExactErtPlaceholder.value = defaultTargetSampleErtPlaceholder;
+    emit('cancel-choosing');
   }
 }
 
-function startChoosingPriorCorrelationErt() {
-  if (ertSelectionMode.value === 'none') {
-    ertSelectionMode.value = 'prior-correlation'
-    priorCorrelationErtPlaceholder.value = 'Click a correlation on the chart';
-    emit('start-choosing-prior-correlation-ert');
-  } else if (ertSelectionMode.value === 'prior-correlation') {
-    ertSelectionMode.value = 'none';
-    priorCorrelationErtPlaceholder.value = defaultErtPlaceholder;
-    emit('cancel-choosing-ert');
+function toggleChoosingTargetSampleRangeStartErt() {
+  if (timeSelectionMode.value === 'none') {
+    timeSelectionMode.value = 'target-sample-range-start-ert';
+    targetSampleRangeStartErtPlaceholder.value = 'Click a point on the chart';
+    emit('start-choosing-target-sample-ert');
+  } else if (timeSelectionMode.value == 'target-sample-range-start-ert') {
+    timeSelectionMode.value = 'none';
+    targetSampleRangeStartErtPlaceholder.value = defaultTargetSampleErtPlaceholder;
+    emit('cancel-choosing');
   }
 }
 
-function acceptSelectedErt(ertStr) {
-  if (ertSelectionMode.value === 'target-sample') {
-    state.targetSampleErt = ertStr;
-    targetSampleErtPlaceholder.value = defaultErtPlaceholder;
-    ertSelectionMode.value = 'none';
-  } else if (ertSelectionMode.value === 'prior-correlation') {
-    state.priorCorrelationErt = ertStr;
-    priorCorrelationErtPlaceholder.value = defaultErtPlaceholder;
-    ertSelectionMode.value = 'none';
-  } else {
-    console.warn('unexpected ert str: ' + ertStr);
+function toggleChoosingTargetSampleRangeStopErt() {
+  if (timeSelectionMode.value === 'none') {
+    timeSelectionMode.value = 'target-sample-range-stop-ert';
+    targetSampleRangeStopErtPlaceholder.value = 'Click a point on the chart';
+    emit('start-choosing-target-sample-ert');
+  } else if (timeSelectionMode.value == 'target-sample-range-stop-ert') {
+    timeSelectionMode.value = 'none';
+    targetSampleRangeStopErtPlaceholder.value = defaultTargetSampleErtPlaceholder;
+    emit('cancel-choosing');
   }
 }
 
-function cancelErtSelection() {
-  emit('cancel-choosing-ert');
+function toggleChoosingPriorCorrelationTdt() {
+  if (timeSelectionMode.value === 'none') {
+    timeSelectionMode.value = 'prior-correlation-exact-tdt'
+    priorCorrelationTdtPlaceholder.value = 'Click a correlation on the chart';
+    emit('start-choosing-prior-correlation-tdt');
+  } else if (timeSelectionMode.value === 'prior-correlation-exact-tdt') {
+    timeSelectionMode.value = 'none';
+    priorCorrelationTdtPlaceholder.value = defaultPriorCorrelationTdtPlaceholder;
+    emit('cancel-choosing');
+  }
+}
+
+function acceptSelectedTime(timeStr) {
+  switch(timeSelectionMode.value) {
+    case 'target-sample-exact-ert':
+      state.targetSampleExactErt = timeStr;
+      break;
+    case 'target-sample-range-start-ert':
+      state.targetSampleRangeStartErt = timeStr;
+      break;
+    case 'target-sample-range-stop-ert':
+      state.targetSampleRangeStopErt = timeStr;
+      break;
+    case 'prior-correlation-exact-tdt':
+      state.priorCorrelationExactTdt = timeStr;
+      break;
+    default:
+      console.warn('unexpected time str: ' + timeStr);
+  }
+
+  timeSelectionMode.value = 'none'
 }
 
 watch(additionalCorrelationOptionsModel, (newVal, oldVal) => {
   // console.log(additionalCorrelationOptionsModel.value);
 })
 
+onMounted(async () => {
+  defaultCorrelationConfig.value = await getDefaultCorrelationConfig();
+
+  if (defaultCorrelationConfig.value.samplesPerSet === 1) {
+    targetSampleSelectionType.value = 'exact'
+  } else {
+    targetSampleSelectionType.value = 'range'
+  }
+
+  state.clockChangeRateModeOverride = defaultCorrelationConfig.value.clockChangeRateModeOverride;
+  state.additionalSmoothingRecordConfigOverride = defaultCorrelationConfig.value.additionalSmoothingRecordConfigOverride;
+
+})
+
 </script>
 
 <template>
-  <UForm :schema="schema" :state="state" class="space-y-4 pr-5 pt-5" @submit="onSubmit" style="min-height: 600px;">
-    <UFormField label="Target sample (ERT)" name="targetSampleErt" size="sm">
-      <div class="grid grid-cols-4 gap-x-2">
-        <div class="col-span-3">
-        <UInput v-model="state.targetSampleErt" :placeholder="targetSampleErtPlaceholder" class="w-full" :disabled="ertSelectionMode != 'none'"/>
+  <!-- @submit="onSubmit" -->
+  <span v-if="timeCorrelationConfigState === 'composing'">
+    <UForm :schema="schema" :state="state" class="space-y-4 pr-5 pt-5" style="min-height: 600px;">
+      <UFormField label="Target sample (ERT)" name="targetSampleExactErt" size="sm" v-if="targetSampleSelectionType === 'exact'">
+        <div class="grid grid-cols-4 gap-x-2">
+          <div class="col-span-3">
+          <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionMode != 'none'"/>
+          </div>
+          <div class="col-span-1">
+            <UButton @click="toggleChoosingTargetSampleExactErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionMode === 'target-sample-exact-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-exact-ert'].includes(timeSelectionMode))"/>
+          </div>
         </div>
-        <div class="col-span-1">
-          <UButton @click="startChoosingTargetSampleErt" color="neutral" variant="outline" size="sm" :icon="ertSelectionMode === 'target-sample' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample'].includes(ertSelectionMode))"/>
+      </UFormField>
+
+      <UFormField label="Target sample range begin (ERT)" name="targetSampleRangeStartErt" size="sm" v-if="targetSampleSelectionType === 'range'">
+        <div class="grid grid-cols-4 gap-x-2">
+          <div class="col-span-3">
+            <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionMode != 'none'"/>
+          </div>
+          <div class="col-span-1">
+            <UTooltip text="Click to select a point from the chart">
+              <UButton @click="toggleChoosingTargetSampleRangeStartErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionMode === 'target-sample-range-start-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-start-ert'].includes(timeSelectionMode))"/>
+            </UTooltip>
+          </div>
         </div>
+      </UFormField>
+
+      <UFormField label="Target sample range end (ERT)" name="targetSampleRangeStopErt" size="sm" v-if="targetSampleSelectionType === 'range'">
+        <div class="grid grid-cols-4 gap-x-2">
+          <div class="col-span-3">
+            <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionMode != 'none'"/>
+          </div>
+          <div class="col-span-1">
+            <UTooltip text="Click to select a point from the chart">
+              <UButton @click="toggleChoosingTargetSampleRangeStopErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionMode === 'target-sample-range-stop-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-stop-ert'].includes(timeSelectionMode))"/>
+            </UTooltip>
+          </div>
+        </div>
+      </UFormField>
+
+      <UFormField label="Prior correlation for basis (TDT)" name="priorCorrelationExactTdt"  size="sm">
+        <div class="grid grid-cols-4 gap-x-2">
+          <div class="col-span-3">
+            <UInput v-model="state.priorCorrelationExactTdt" :placeholder="priorCorrelationTdtPlaceholder" class="w-full"  :disabled="timeSelectionMode != 'none'"/>
+          </div>
+          <div class="col-span-1">
+            <UTooltip text="Click to select a point from the chart">
+              <UButton @click="toggleChoosingPriorCorrelationTdt" color="neutral" variant="outline" size="sm" :icon="timeSelectionMode === 'prior-correlation-exact-tdt' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'prior-correlation-exact-tdt'].includes(timeSelectionMode))"/>
+            </UTooltip>
+          </div>
+        </div>
+      </UFormField>
+
+      <UFormField label="Clock change rate mode" name="clockChangeRateMode" size="sm">
+        <div class="grid grid-cols-4 gap-x-2">
+          <div class="col-span-3">
+            <USelect v-model="state.clockChangeRateModeOverride" :items="clockChangeRateModeChoices" class="w-full"/>
+          </div>
+          <div class="col-span-1" v-if="state.clockChangeRateModeOverride === 'assign'">
+            <UInput v-model="state.specifiedClockChangeRateToAssign" class="w-full"/>
+          </div>
+        </div>
+      </UFormField>
+
+
+      <UCheckboxGroup v-model="additionalCorrelationOptionsModel" :items="additionalCorrelationOptionItems" size="sm" />
+
+      <UFormField label="Smoothing record duration (SCLK ticks)" name="testModeOwltSec" :style="{visibility: additionalCorrelationOptionsModel.includes('insertAdditionalSmoothingRecord') ? 'visible' : 'hidden'}" size="sm">
+        <UInput v-model="state.additionalSmoothingRecordConfigOverride.coarseSclkTickDuration" class="w-full"/>
+      </UFormField>
+
+      <UFormField label="Test OWLT (sec)" name="testModeOwltSec" :style="{visibility: additionalCorrelationOptionsModel.includes('testModeOwltEnabled') ? 'visible' : 'hidden'}" size="sm">
+        <UInput v-model="state.testModeOwltSec" class="w-full"/>
+      </UFormField>
+
+      <div class="pt-5">
+        <UTooltip text="Cancel correlation configuration">
+          <UButton @click="cancelCorrelation" color="neutral" variant="outline">
+            Cancel
+          </UButton>
+        </UTooltip>
+
+        <UTooltip text="View the results of the new correlation run without committing the changes to output products">
+          <UButton @click="previewCorrelation" class="float-right">
+            Preview
+          </UButton>
+        </UTooltip>
       </div>
+    </UForm>
+  </span>
 
-    </UFormField>
+  <span v-if="timeCorrelationConfigState === 'previewing'">
+      <div class="pt-5" v-if="timeCorrelationConfigState === 'previewing'">
+        <UButton @click="goBackToComposing" color="neutral" variant="outline">
+          Back
+        </UButton>
 
-    <UFormField label="Prior correlation for basis (ERT)" name="priorCorrelationErt"  size="sm">
-      <div class="grid grid-cols-4 gap-x-2">
-        <div class="col-span-3">
-          <UInput v-model="state.priorCorrelationErt" :placeholder="priorCorrelationErtPlaceholder" class="w-full"  :disabled="ertSelectionMode != 'none'"/>
-        </div>
-        <div class="col-span-1">
-          <UButton @click="startChoosingPriorCorrelationErt" color="neutral" variant="outline" size="sm" :icon="ertSelectionMode === 'prior-correlation' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'prior-correlation'].includes(ertSelectionMode))"/>
-        </div>
+        <UButton @click="commitCorrelation" class="float-right">
+          Commit
+        </UButton>
       </div>
-    </UFormField>
-
-    <UFormField label="Clock change rate mode" name="clockChangeRateMode" size="sm">
-      <div class="grid grid-cols-4 gap-x-2">
-        <div class="col-span-3">
-          <USelect v-model="state.clockChangeRateMode" :items="clockChangeRateModeChoices" class="w-full"/>
-        </div>
-        <div class="col-span-1" v-if="state.clockChangeRateMode === 'assign'">
-          <UInput v-model="state.specifiedClockChangeRateToAssign" class="w-full"/>
-        </div>
-      </div>
-    </UFormField>
-
-
-    <UCheckboxGroup v-model="additionalCorrelationOptionsModel" :items="additionalCorrelationOptionItems" size="sm" />
-
-    <!-- v-show="additionalCorrelationOptionsModel.includes('testModeOwltEnabled')"  -->
-    <UFormField label="Test Mode OWLT (sec)" name="testModeOwltSec" :style="{visibility: additionalCorrelationOptionsModel.includes('testModeOwltEnabled') ? 'visible' : 'hidden'}" size="sm">
-      <UInput v-model="state.testModeOwltSec" class="w-full"/>
-    </UFormField>
-
-    <div class="pt-5">
-    <UButton @click="cancelCorrelation" color="neutral" variant="outline">
-      Cancel
-    </UButton>
-
-    <UButton type="submit" class="float-right">
-      Submit
-    </UButton>
-    </div>
-  </UForm>
+  </span>
 </template>
 
 <!--

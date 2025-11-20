@@ -1,6 +1,5 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig.ClockChangeRateMode;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.commons.cli.*;
 import org.apache.commons.lang3.StringUtils;
@@ -239,27 +238,27 @@ public class CorrelationCommandLineConfig implements IConfiguration {
 
             switch (method) {
                 case "i":
-                    clockChangeRateMode = ClockChangeRateMode.COMPUTE_INTERPOLATE;
+                    clockChangeRateMode = MmtcConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE;
                     break;
                 case "p":
-                    clockChangeRateMode = ClockChangeRateMode.COMPUTE_PREDICT;
+                    clockChangeRateMode = MmtcConfig.ClockChangeRateMode.COMPUTE_PREDICT;
                     break;
                 default:
                     throw new ParseException("Invalid clock change rate compute method: " + method);
             }
         }
         else if (cmdLine.hasOption(ClockChangeRateOptionNoDrift)) {
-            clockChangeRateMode = ClockChangeRateMode.NO_DRIFT;
+            clockChangeRateMode = MmtcConfig.ClockChangeRateMode.NO_DRIFT;
         }
         else if (cmdLine.hasOption(ClockChangeRateOptionAssign)) {
             String assignValue = cmdLine.getOptionValue(ClockChangeRateOptionAssign);
-            clockChangeRateMode = ClockChangeRateMode.ASSIGN;
+            clockChangeRateMode = MmtcConfig.ClockChangeRateMode.ASSIGN;
 
             try {
                 clockChangeRateAssignedValue = Double.parseDouble(assignValue);
             } catch (NumberFormatException ex) {
                 logger.debug(String.format("Assigned clock change rate %s appears to reference a named preset.", assignValue));
-                clockChangeRateMode = ClockChangeRateMode.ASSIGN_KEY;
+                clockChangeRateMode = MmtcConfig.ClockChangeRateMode.ASSIGN_KEY;
                 clockChangeRateAssignedKey = assignValue;
             }
         }

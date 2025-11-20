@@ -1,14 +1,17 @@
 package edu.jhuapl.sd.sig.mmtc.webapp;
 
-import edu.jhuapl.sd.sig.mmtc.app.BuildInfo;
+import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.AuthorizationService;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.AutoGenBasicHttpAuthorizationService;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.NoopAuthorizationService;
+import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
 import edu.jhuapl.sd.sig.mmtc.webapp.controller.*;
-import edu.jhuapl.sd.sig.mmtc.webapp.service.CorrelationPreviewService;
+import edu.jhuapl.sd.sig.mmtc.webapp.service.TelemetryService;
+import edu.jhuapl.sd.sig.mmtc.webapp.util.MmtcObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.UnauthorizedResponse;
+import io.javalin.json.JavalinJackson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.server.ServerConnector;
@@ -23,7 +26,7 @@ public class MmtcWebApp {
     private final Javalin javalinApp;
     private final MmtcWebAppConfig config;
 
-    private final CorrelationPreviewService correlationPreviewService;
+    private final TelemetryService telemetryService;
 
     public static void main(String[] args) throws Exception {
         new MmtcWebApp().start();
@@ -32,11 +35,11 @@ public class MmtcWebApp {
     public MmtcWebApp() throws Exception {
         this.config = new MmtcWebAppConfig();
 
+        new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
+
         TimeConvert.loadSpiceLib();
 
-        // todo do migration assertion check
-
-        // todo also disconnect on shutdown
+        // todo disconnect tlm source on shutdown
         this.config.getTelemetrySource().connect();
 
         javalinApp = Javalin.create(javalinConfig -> {
@@ -61,6 +64,8 @@ public class MmtcWebApp {
             }
 
             javalinConfig.staticFiles.add("/static");
+
+            javalinConfig.jsonMapper(new JavalinJackson(MmtcObjectMapper.get(), false));
         });
 
         // set up auth
@@ -76,12 +81,12 @@ public class MmtcWebApp {
         });
         logger.info("Auth service: " + authService.getClass().getSimpleName());
 
-        this.correlationPreviewService = new CorrelationPreviewService();
+        this.telemetryService = new TelemetryService(config);
 
         // instantiate controllers and set up routes
         Collection<BaseController> controllers = new HashSet<>();
-        controllers.add(new TimeCorrelationController(config, this.correlationPreviewService));
-        controllers.add(new TelemetryController(config, this.correlationPreviewService));
+        controllers.add(new TimeCorrelationController(config, this.telemetryService));
+        controllers.add(new TelemetryController(config, this.telemetryService));
         controllers.add(new OutputProductController(config));
         controllers.add(new InfoController(config));
         controllers.forEach(c -> c.registerEndpoints(javalinApp));

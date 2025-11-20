@@ -231,7 +231,7 @@ public class TimeCorrelationApp {
         newRunHistoryFileRecord.setValue(RunHistoryFile.MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION,   mmtcVersion);
         newRunHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,                             "false");
         newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,                               System.getProperty("user.name"));
-        newRunHistoryFileRecord.setValue(RunHistoryFile.INVOC_ARGS,                             String.join(" ", config.getInvocationArgs()));
+        newRunHistoryFileRecord.setValue(RunHistoryFile.INVOC_ARGS,                             config.getInvocationStringRepresentation()); // todo pick up here with restoring invoc args and rerunning NH test to ensure
 
         // Output products
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
@@ -402,7 +402,7 @@ public class TimeCorrelationApp {
      *
      * @throws Exception if time correlation cannot be successfully completed
      */
-    public void run() throws Exception {
+    public TimeCorrelationContext run() throws Exception {
         if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
             logger.info(USER_NOTICE, String.format("Running time correlation between %s and %s",
                     config.getResolvedTargetSampleRange().get().getStart().toString(),
@@ -417,10 +417,19 @@ public class TimeCorrelationApp {
         if (config.isTestMode()) {
             logger.warn(String.format("Test mode is enabled! One-way light time will be set to the provided value %f and ancillary positional and velocity calculations will be skipped.", config.getTestModeOwlt()));
         }
-        if (config.isDryRun()) {
-            logger.warn("Dry run mode is enabled! No data products from this run will be kept and will instead be printed to the console and recorded in the log file according to log4j2.xml");
-        }
 
+        switch(config.getDryRunConfig().mode) {
+            case NOT_DRY_RUN: break;
+            case DRY_RUN_RETAIN_NO_PRODUCTS: {
+                logger.warn("Dry run mode is enabled! No data products from this run will be kept and will instead be printed to the console and recorded in the log file");
+                break;
+            }
+            case DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY: {
+                logger.warn("Dry run mode is enabled! Only the SCLK kernel will be retained at a separate location; no data products from this run will be kept and will instead be printed to the console and recorded in the log file");
+                break;
+            }
+            default: throw new IllegalStateException("Unexpected dry run config: " + config.getDryRunConfig().mode);
+        }
 
         // Select telemetry for this new time correlation run
         final TimeCorrelationTarget tcTarget = selectSampleSetAndTimeCorrelationTarget();
@@ -524,7 +533,7 @@ public class TimeCorrelationApp {
         // Compute 'smoothing' record, if enabled
         if (config.getAdditionalSmoothingRecordConfig().enabled) {
             computeAdditionalSmoothingRecord(ctx);
-            newRunHistoryFileRecord.setValue(RunHistoryFile.SMOOTHING_TRIPLET_TDT, ctx.correlation.smoothingTriplet.get().tdtStr);
+            newRunHistoryFileRecord.setValue(RunHistoryFile.SMOOTHING_TRIPLET_TDT, ctx.correlation.newSmoothingTriplet.get().tdtStr);
         }
 
         // Perform all ancillary post-correlation operations
@@ -535,14 +544,28 @@ public class TimeCorrelationApp {
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
             final String postRunColProdColName = RunHistoryFile.getPostRunProductColNameFor(prodDef);
 
-            if (prodDef.shouldBeWritten(ctx) && !ctx.config.isDryRun()) {
-                final ProductWriteResult res = prodDef.write(ctx);
-                newRunHistoryFileRecord.setValue(postRunColProdColName, res.newVersion);
-
-            } else if (prodDef.shouldBeWritten(ctx) && ctx.config.isDryRun()) {
-                // Log/print output products instead of writing them to files
-                final String productPrintout = prodDef.getDryRunPrintout(ctx);
-                logger.info(USER_NOTICE, productPrintout);
+            if (prodDef.shouldBeWritten(ctx)) {
+                switch(ctx.config.getDryRunConfig().mode) {
+                    case NOT_DRY_RUN: {
+                        final ProductWriteResult res = prodDef.write(ctx);
+                        newRunHistoryFileRecord.setValue(postRunColProdColName, res.newVersion);
+                        break;
+                    }
+                    case DRY_RUN_RETAIN_NO_PRODUCTS: {
+                        // Log/print output products instead of writing them to files
+                        final String productPrintout = prodDef.getDryRunPrintout(ctx);
+                        logger.info(USER_NOTICE, productPrintout);
+                        break;
+                    }
+                    case DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY: {
+                        // Intentionally skip all processing for other output products, and only write the SCLK kernel to a special path
+                        if (prodDef.getName().equals(SclkKernelProductDefinition.PRODUCT_NAME)) {
+                            SclkKernelProductDefinition sclkKernelProdDef = (SclkKernelProductDefinition) prodDef;
+                            sclkKernelProdDef.writeToAlternatePath(ctx, ctx.config.getDryRunConfig().sclkKernelOutputPath);
+                        }
+                        break;
+                    }
+                }
             } else {
                 newRunHistoryFileRecord.setValue(postRunColProdColName,  runHistoryFile.getLatestNonEmptyValueOfCol(postRunColProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
             }
@@ -556,6 +579,8 @@ public class TimeCorrelationApp {
         }
 
         logger.info(USER_NOTICE, "MMTC completed successfully.");
+
+        return ctx;
     }
 
     private static void computeAdditionalSmoothingRecord(TimeCorrelationContext ctx) throws MmtcException {
@@ -633,7 +658,7 @@ public class TimeCorrelationApp {
                     smoothingRecordClkChgRate
             );
 
-            ctx.correlation.smoothingTriplet.set(newSmoothingTriplet);
+            ctx.correlation.newSmoothingTriplet.set(newSmoothingTriplet);
         } catch (TextProductException | TimeConvertException e) {
             throw new MmtcException("Could not calculate additional smoothing record", e);
         }

@@ -9,6 +9,11 @@ export interface MmtcVersion {
   commit: string
 }
 
+export interface MmtcInformation {
+  missionName: string
+  mmtcVersion: MmtcVersion
+}
+
 export interface ConfigFile {
   filename: string,
   contents: string
@@ -36,8 +41,42 @@ export interface TimeCorrelationTriplet {
   scetUtc: string
 }
 
-export async function retrieveMmtcVersion() {
-  const response = await axios.get<MmtcVersion>(baseUrl+'/v1/info/version')
+export interface AdditionalSmoothingRecordConfig {
+  enabled: boolean,
+  coarseSclkTickDuration: number
+}
+
+export interface DefaultTimeCorrelationConfig {
+  samplesPerSet: number,
+  targetSampleRangeStartErt: string,
+  targetSampleRangeStopErt: string,
+  targetSampleExactErt: string,
+  priorCorrelationExactErt: string,
+  testModeOwltEnabled: boolean,
+  testModeOwltSec: number,
+  clockChangeRateAssignedValue: number,
+  clockChangeRateModeOverride: string,
+  additionalSmoothingRecordConfigOverride: AdditionalSmoothingRecordConfig,
+  isDisableContactFilter: boolean,
+  isCreateUplinkCmdFile: boolean
+}
+
+export interface CorrelationResults {
+  correlation : object,
+  geometry : object,
+  ancillary : object,
+  appRunTime : object,
+  warnings: string[]
+}
+
+export interface TimeCorrelationPreviewResults {
+  updatedTriplets: TimeCorrelationTriplet[],
+  telemetryPoints: TimekeepingTelemetryPoint[],
+  correlationResults: CorrelationResults
+}
+
+export async function retrieveMmtcInfo() {
+  const response = await axios.get<MmtcInfo>(baseUrl+'/v1/info/info')
   return response.data
 }
 
@@ -73,5 +112,25 @@ export async function getTimeCorrelations(beginTime: string, endTime: string, sc
 
 export async function getAllTimeCorrelations(sclkKernel: string) {
   const response = await axios.get<TimeCorrelationTriplet>(baseUrl + `/v1/correlation/range?sclkKernelName=${sclkKernel}`)
+  return response.data
+}
+
+export async function getDefaultCorrelationConfig() {
+  const response = await axios.get<DefaultTimeCorrelationConfig>(baseUrl + `/v1/correlation/defaultConfig`)
+  return response.data
+}
+
+export async function rollback(runId: string) {
+  const response = await axios.post<TimeCorrelationTriplet>(baseUrl + `/v1/correlation/rollback?runId=${runId}`)
+  return response.data
+}
+
+export async function runCorrelationPreview(correlationPreviewInput) {
+  const response = await axios.post<TimeCorrelationPreviewResults>(baseUrl + `/v1/correlation/preview`, correlationPreviewInput)
+  return response.data
+}
+
+export async function createCorrelation(correlationInput) {
+  const response = await axios.post<TimeCorrelationResults>(baseUrl + `/v1/correlation/create`, correlationInput)
   return response.data
 }

@@ -16,6 +16,7 @@ import java.time.Year;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationMetricsConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.apache.commons.lang3.StringUtils;
@@ -1276,7 +1277,7 @@ import spice.basic.*;
      * @throws TimeConvertException
      * @throws MmtcException
      */
-    public static ScetMetrics calculateScetErrorNanos(TimeCorrelationRunConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
+    public static ScetMetrics calculateScetErrorNanos(TimeCorrelationMetricsConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
         final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(
                 Arrays.asList(fs),
                 config,
