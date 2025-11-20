@@ -125,6 +125,14 @@ public class GenericCsv {
         }
     }
 
+    public void replaceValAt(String colName, int rowNum, String newVal) throws MmtcException {
+        try {
+            rows.get(rowNum).replace(colName, newVal);
+        } catch (Exception e) {
+            throw new MmtcException(String.format("Failed to replace the value at row %d, column %s. Check that the value exists.", rowNum, colName));
+        }
+    }
+
     public int getNumRows() {
         return rows.size();
     }
@@ -143,5 +151,9 @@ public class GenericCsv {
         for (Map<String, String> row : rows) {
             row.remove(colName);
         }
+    }
+
+    public String getValAt(int rowNum, String colName) {
+        return String.valueOf(rows.get(rowNum).get(colName));
     }
 }

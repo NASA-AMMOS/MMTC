@@ -7,6 +7,7 @@ import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
@@ -236,13 +237,14 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         {
             newThfRec.setValue(TimeHistoryFile.TARGET_FRAME_SCLK_COARSE, String.valueOf(ctx.correlation.target.get().getTargetSample().getTkSclkCoarse()));
             newThfRec.setValue(TimeHistoryFile.TARGET_FRAME_ENC_SCLK,
-                    String.valueOf(TimeConvert.sclkToEncSclk(
+                    BigDecimal.valueOf(
+                            TimeConvert.sclkToEncSclk(
                                     ctx.config.getNaifSpacecraftId(),
                                     sclkPartition,
                                     ctx.correlation.target.get().getTargetSample().getTkSclkCoarse(),
                                     0
                             )
-                    )
+                    ).toPlainString()
             );
         }
 
