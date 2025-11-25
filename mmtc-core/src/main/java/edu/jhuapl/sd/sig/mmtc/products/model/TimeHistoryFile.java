@@ -191,7 +191,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
             newThfRec.setValue(TimeHistoryFile.RF_ENCODING, targetSample.getTkRfEncoding());
             newThfRec.setValue(TimeHistoryFile.STATION_ID, ctx.config.getStationId(targetSample.getPathId()));
             newThfRec.setValue(TimeHistoryFile.DATA_RATE_BPS, targetSample.getTkDataRateBpsAsRoundedString());
-            newThfRec.setValue(TimeHistoryFile.CLK_CHANGE_RATE_INTERVAL_DAYS, String.format("%.2f", ctx.config.getPredictedClkRateLookBackDays()));
+            newThfRec.setValue(TimeHistoryFile.CLK_CHANGE_RATE_INTERVAL_DAYS, String.format("%.2f", ctx.config.getPredictedClkRateLookBackHours() / 24.0));
             newThfRec.setValue(TimeHistoryFile.SPACECRAFT_TIME_DELAY, String.valueOf(ctx.config.getSpacecraftTimeDelaySec()));
             newThfRec.setValue(TimeHistoryFile.BITRATE_TIME_ERROR, String.valueOf(targetSample.getDerivedTdBe()));
             newThfRec.setValue(TimeHistoryFile.TF_OFFSET, String.valueOf(ctx.correlation.target.get().getTargetSampleTfOffset()));

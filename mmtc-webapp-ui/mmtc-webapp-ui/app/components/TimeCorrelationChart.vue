@@ -3,6 +3,7 @@ import { sub, parseISO } from 'date-fns'
 import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from 'date-fns'
 // import { VisXYContainer, VisLine, VisAxis, VisArea, VisCrosshair, VisTooltip } from '@unovis/vue'
 import type { Period, Range } from '~/types'
+import {parseIso8601Utc} from "../services/utils";
 
 import VChart, { THEME_KEY } from 'vue-echarts';
 import { ref, provide } from 'vue';
@@ -37,6 +38,7 @@ import type {
 } from 'echarts/components'
 import {toYyyyDddHhMm, toYyyyDd, toHhMm} from "@/services/utils";
 import {TimeCorrelationTriplet} from "../services/mmtc-api";
+import {UnifiedCalendarDateRange} from "../services/utils";
 
 use([
   TitleComponent,
@@ -61,11 +63,9 @@ const timeCorrChart = useTemplateRef<HTMLElement | null>('timeCorrChart')
 const cardRef = useTemplateRef<HTMLElement | null>('cardRef')
 
 const props = defineProps<{
-  mode: string
-  selectionMode: string
+  chartTimeSelectionCfg: object
   chartData: object
-  correlationConfigCompositionState: string
-  range: object
+  range: UnifiedCalendarDateRange
 }>()
 
 const emit = defineEmits([
@@ -124,7 +124,7 @@ function buildTooltipContent(param) {
 
 const option = ref({
   // Choose axis ticks based on UTC time.
-  useUTC: true,
+  // useUTC: true,
   tooltip:
     {
       show: true,
@@ -229,12 +229,30 @@ const option = ref({
   series: []
 });
 
-watch(() => props.chartData, async (newChartData, oldChartData) => {
+function updateChartTimeRange() {
+  option.value.xAxis[0].min = props.range.beginDate.getTime()
+  option.value.xAxis[1].min = props.range.beginDate.getTime()
+
+  option.value.xAxis[0].max = props.range.endDate.getTime()
+  option.value.xAxis[1].max = props.range.endDate.getTime()
+
+  option.value.dataZoom[0].startValue = props.range.beginDate.getTime()
+  option.value.dataZoom[0].startValue = props.range.beginDate.getTime()
+
+  option.value.dataZoom[0].endValue = props.range.endDate.getTime()
+  option.value.dataZoom[0].endValue = props.range.endDate.getTime()
+}
+
+watch(() => props.range, (newRange, oldRange) => {
+  updateChartTimeRange();
+})
+
+watch(() => props.chartData, (newChartData, oldChartData) => {
   const telemetryData: TimekeepingTelemetryPoint[] = newChartData.telemetry;
   const telemetrySeriesData = []
 
   telemetryData.forEach(ttp => {
-    let pointDate = parseISO(ttp.scetUtc);
+    let pointDate = parseIso8601Utc(ttp.scetUtc);
     telemetrySeriesData.push({ name: toYyyyDddHhMm(pointDate), value: [pointDate.getTime(), ttp.scetErrorMs], originalTtp: ttp, itemStyle: { color: '#00A155'}}); // this color is --color-green-600 from main.css
   })
 
@@ -261,7 +279,7 @@ watch(() => props.chartData, async (newChartData, oldChartData) => {
   const correlationSeriesData = []
 
   correlationData.forEach(triplet => {
-    const pointDate = parseISO(triplet.scetUtc);
+    const pointDate = parseIso8601Utc(triplet.scetUtc);
     const pointName = 'Name: ' + pointDate;
 
     correlationSeriesData.push({name: pointName, value: [pointDate.getTime(), 0.5, "foobar"], originalTriplet: triplet });
@@ -280,24 +298,14 @@ watch(() => props.chartData, async (newChartData, oldChartData) => {
     cursor: 'default'
   }
 
-  option.value.xAxis[0].min = props.range.start.getTime()
-  option.value.xAxis[1].min = props.range.start.getTime()
-
-  option.value.xAxis[0].max = props.range.end.getTime()
-  option.value.xAxis[1].max = props.range.end.getTime()
-
-  option.value.dataZoom[0].startValue = props.range.start.getTime()
-  option.value.dataZoom[0].startValue = props.range.start.getTime()
-
-  option.value.dataZoom[0].endValue = props.range.end.getTime()
-  option.value.dataZoom[0].endValue = props.range.end.getTime()
+  updateChartTimeRange();
 
   if (newChartData.previewTelemetry.length > 0) {
     const previewTelemetryData: TimekeepingTelemetryPoint[] = newChartData.previewTelemetry;
     const previewTelemetrySeriesData = []
 
     previewTelemetryData.forEach(ttp => {
-      let pointDate = parseISO(ttp.scetUtc);
+      let pointDate = parseIso8601Utc(ttp.scetUtc);
       previewTelemetrySeriesData.push({ name: toYyyyDddHhMm(pointDate), value: [pointDate.getTime(), ttp.scetErrorMs], originalTtp: ttp});
     })
 
@@ -326,7 +334,7 @@ watch(() => props.chartData, async (newChartData, oldChartData) => {
     const previewCorrelationSeriesData = []
 
     previewCorrelationData.forEach(triplet => {
-      const pointDate = parseISO(triplet.scetUtc);
+      const pointDate = parseIso8601Utc(triplet.scetUtc);
       const pointName = 'Name: ' + pointDate;
 
       previewCorrelationSeriesData.push({name: pointName, value: [pointDate.getTime(), 0.5, "foobar"], originalTriplet: triplet});
@@ -352,74 +360,20 @@ watch(() => props.chartData, async (newChartData, oldChartData) => {
   }
 })
 
-/*
-
-import { use } from "echarts/core";
-import { CanvasRenderer } from "echarts/renderers";
-import { PieChart } from "echarts/charts";
-import {
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-} from "echarts/components";
-import VChart, { THEME_KEY } from "vue-echarts";
-import { ref, provide } from "vue";
-
-use([
-  CanvasRenderer,
-  PieChart,
-  TitleComponent,
-  TooltipComponent,
-  LegendComponent,
-]);
-
-provide(THEME_KEY, "dark");
-
-const option = ref({
-  title: {
-    text: "Traffic Sources",
-    left: "center",
-  },
-  tooltip: {
-    trigger: "item",
-    formatter: "{a} <br/>{b} : {c} ({d}%)",
-  },
-  legend: {
-    orient: "vertical",
-    left: "left",
-    data: ["Direct", "Email", "Ad Networks", "Video Ads", "Search Engines"],
-  },
-  series: [
-    {
-      name: "Traffic Sources",
-      type: "pie",
-      radius: "55%",
-      center: ["50%", "60%"],
-      data: [
-        { value: 335, name: "Direct" },
-        { value: 310, name: "Email" },
-        { value: 234, name: "Ad Networks" },
-        { value: 135, name: "Video Ads" },
-        { value: 1548, name: "Search Engines" },
-      ],
-      emphasis: {
-        itemStyle: {
-          shadowBlur: 10,
-          shadowOffsetX: 0,
-          shadowColor: "rgba(0, 0, 0, 0.5)",
-        },
-      },
-    },
-  ],
-});
-
- */
-
 async function onClickHandler(event) {
-  if (props.selectionMode === 'choosing-target-sample-ert' && event.seriesId === 'timeCorrTelemetry') {
-    emit('time-selection', event.data.originalTtp.originalFrameSample.ertStr);
-  } else if (props.selectionMode === 'choosing-prior-correlation-tdt' && event.seriesId === 'timeCorrRecords') {
-    emit('time-selection', event.data.originalTriplet.tdtG);
+  console.log(event);
+  if (props.chartTimeSelectionCfg.selectFrom === 'timeCorrTlm' && event.seriesId === 'timeCorrTelemetry') {
+    if (event.data.originalTtp.tdtG > props.chartTimeSelectionCfg.minTdt && event.data.originalTtp.tdtG < props.chartTimeSelectionCfg.maxTdt) {
+      emit('time-selection', {tdt: event.data.originalTtp.tdtG, ertStr: event.data.originalTtp.originalFrameSample.ertStr});
+    } else {
+      console.log('time corr point not within bounds!')
+    }
+  } else if (props.chartTimeSelectionCfg.selectFrom === 'priorCorrelations' && event.seriesId === 'timeCorrRecords') {
+    if (event.data.originalTriplet.tdtG > props.chartTimeSelectionCfg.minTdt && event.data.originalTriplet.tdtG < props.chartTimeSelectionCfg.maxTdt) {
+      emit('time-selection', {tdt: event.data.originalTriplet.tdtG, ertStr: undefined});
+    } else {
+      console.log('triplet not within bounds!')
+    }
   }
 }
 
@@ -433,7 +387,7 @@ function getSeriesIndexForId(seriesId) {
   return seriesIndex;
 }
 
-function setCursorAppearanceOnSeries(seriesId, cursorAppearance) {
+function configSeriesForSelection(seriesId, originalDataObjKey, isSelecting) {
   const currentZoom = option.value.dataZoom?.map(key => ({
     start: key.start,
     end: key.end,
@@ -442,7 +396,29 @@ function setCursorAppearanceOnSeries(seriesId, cursorAppearance) {
   }));
 
   const seriesIndex = getSeriesIndexForId(seriesId);
-  option.value.series[seriesIndex].cursor = cursorAppearance;
+  option.value.series[seriesIndex].cursor = isSelecting ? 'pointer' : 'default';
+
+  option.value.series[seriesIndex].data.forEach(d => {
+    if (isSelecting) {
+      if ((d[originalDataObjKey].tdtG > props.chartTimeSelectionCfg.minTdt) && (d[originalDataObjKey].tdtG < props.chartTimeSelectionCfg.maxTdt)){
+        if ('itemStyle' in d && 'originalColor' in d['itemStyle']) {
+          d['itemStyle']['color'] = d['itemStyle']['originalColor'];
+          delete d['itemStyle']['originalColor']
+        }
+      } else {
+        if (! ('itemStyle' in d)) {
+          d['itemStyle'] = {}
+        }
+        d['itemStyle']['originalColor'] = d['itemStyle']['color'];
+        d['itemStyle']['color'] = 'gray';
+      }
+    } else {
+      if ('itemStyle' in d && 'originalColor' in d['itemStyle']) {
+        d['itemStyle']['color'] = d['itemStyle']['originalColor'];
+        delete d['itemStyle']['originalColor']
+      }
+    }
+  })
 
   if (currentZoom) {
     option.value.dataZoom = currentZoom;
@@ -460,30 +436,28 @@ function setCursorAppearanceOnSeries(seriesId, cursorAppearance) {
   });
 
    */
-
-
 }
 
-watch(() => props.selectionMode, (newVal, oldVal) => {
+watch(() => props.chartTimeSelectionCfg, (newVal, oldVal) => {
   if (newVal === oldVal) {
     return;
   }
 
-  switch(props.selectionMode) {
-    case 'choosing-target-sample-ert': {
-      setCursorAppearanceOnSeries('timeCorrTelemetry', 'pointer');
+  switch(props.chartTimeSelectionCfg.selectFrom) {
+    case 'timeCorrTlm': {
+      configSeriesForSelection('timeCorrTelemetry', 'originalTtp', true);
       break;
     }
-    case 'choosing-prior-correlation-tdt': {
-      setCursorAppearanceOnSeries('timeCorrRecords', 'pointer');
+    case 'priorCorrelations': {
+      configSeriesForSelection('timeCorrRecords', 'originalTriplet', true);
       break;
     }
     case 'none':
-      setCursorAppearanceOnSeries('timeCorrTelemetry', 'default');
-      setCursorAppearanceOnSeries('timeCorrRecords', 'default');
+      configSeriesForSelection('timeCorrTelemetry', 'originalTtp', false);
+      configSeriesForSelection('timeCorrRecords', 'originalTriplet', false);
       break;
     default:
-      console.warn('unexpected selection mode: ' + props.selectionMode);
+      console.warn('unexpected selection config: ' + props.chartTimeSelectionCfg);
   }
 })
 

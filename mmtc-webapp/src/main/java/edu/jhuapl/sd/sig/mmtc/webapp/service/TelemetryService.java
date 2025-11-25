@@ -25,6 +25,7 @@ public class TelemetryService {
 
     public record TimekeepingTelemetryPoint(
             FrameSample originalFrameSample,
+            double tdtG,
             String scetUtc,
             double scetErrorMs
     ) { }
@@ -36,16 +37,11 @@ public class TelemetryService {
         final Map<String, String> sclkKernelToLoad = new HashMap<>();
         sclkKernelToLoad.put(sclkKernelPath.toAbsolutePath().toString(), "sclk");
 
-        synchronized(config.spiceLoadedKernelMutex) {
-            try {
-                TimeConvert.loadSpiceKernels(config.getKernelsToLoad());
-                // load specified sclkKernel
-                TimeConvert.loadSpiceKernels(sclkKernelToLoad);
-                return enrichFrameSamples(frameSamples);
-            } finally {
-                TimeConvert.unloadSpiceKernels();
-            }
-        }
+        return config.withSpiceMutexAndDefaultKernels(() -> {
+            // load specified sclkKernel atop already-specified SCLK kernel
+            TimeConvert.loadSpiceKernels(sclkKernelToLoad);
+            return enrichFrameSamples(frameSamples);
+        });
     }
 
     private List<TimekeepingTelemetryPoint> enrichFrameSamples(List<FrameSample> frameSamples) throws Exception {
@@ -97,13 +93,14 @@ public class TelemetryService {
         for (FrameSample fs : frameSamples) {
             fs.computeAndSetTdBe(metricsConfig.getFrameErtBitOffsetError());
 
-            final TimeConvert.ScetMetrics fsScetMetrics = TimeConvert.calculateScetErrorNanos(metricsConfig, fs);
+            final TimeConvert.FrameSampleMetrics fsMetrics = TimeConvert.calculateScetErrorNanos(metricsConfig, fs);
 
             list.add(
                     new TimekeepingTelemetryPoint(
                             fs,
-                            TimeConvert.timeToIsoUtcString(fsScetMetrics.scetUtc),
-                            new BigDecimal(fsScetMetrics.scetErrorNanos).divide(new BigDecimal(1_000_000.0)).doubleValue()
+                            fsMetrics.tdtG,
+                            TimeConvert.timeToIsoUtcString(fsMetrics.scetUtc),
+                            new BigDecimal(fsMetrics.scetErrorNanos).divide(new BigDecimal(1_000_000.0)).doubleValue()
                     )
             );
         }

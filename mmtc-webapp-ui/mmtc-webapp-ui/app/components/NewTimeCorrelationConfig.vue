@@ -3,21 +3,19 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { DefaultTimeCorrelationConfig, AdditionalSmoothingRecordConfig } from '@/services/mmtc-api';
 import { getDefaultCorrelationConfig, runCorrelationPreview, createCorrelation } from '@/services/mmtc-api';
-import {toIso8601WithDiscardedTimezone} from "../services/utils";
+import {toUtcIso8601WithDiscardedTimezone, UnifiedCalendarDateRange} from "../services/utils";
 import {TimeCorrelationPreviewResults} from "../services/mmtc-api";
 
 const emit = defineEmits([
   'close-correlation',
-  'start-choosing-target-sample-ert',
-  'start-choosing-prior-correlation-tdt',
-  'cancel-choosing',
-  'chart-show-preview-correlation-telemetry',
-  'chart-clear-preview-correlation-telemetry',
+  'change-choosing-state',
+  'chart-show-correlation-preview',
+  'chart-clear-correlation-preview',
   'refresh-dashboard'
 ])
 
 const props = defineProps<{
-  chartRange: object
+  range: UnifiedCalendarDateRange
 }>()
 
 // todo update schema
@@ -29,7 +27,18 @@ const schema = z.object({
 type Schema = z.output<typeof schema>
 
 // 'range' or 'exact'
-const targetSampleSelectionType = ref('range')
+const targetSampleSelectionType = ref('range');
+
+const newCorrelationMinTdt = ref(0.0);
+const newCorrelationMinLookbackHours = ref(0.0);
+const newCorrelationMaxLookbackHours = ref(0.0);
+
+const targetSampleExactTdt = ref(0.0);
+const targetSampleRangeStartTdt = ref(0.0);
+const targetSampleRangeStopTdt = ref(Infinity);
+
+const priorLookbackMinTdt = ref(0.0);
+const priorLookbackMaxTdt = ref(Infinity);
 
 const state = reactive<Partial<Schema>>({
   targetSampleRangeStartErt: undefined,
@@ -58,16 +67,41 @@ const defaultCorrelationConfig = ref({})
 
 const correlationPreviewResults = ref({})
 
+// keep prior lookback range up to date
+watch(targetSampleExactTdt, () => {
+  priorLookbackMinTdt.value = targetSampleExactTdt.value - newCorrelationMaxLookbackHours.value;
+  priorLookbackMaxTdt.value = targetSampleExactTdt.value - newCorrelationMinLookbackHours.value;
+})
+
+watch(targetSampleRangeStartTdt, () => {
+  // nothing?
+})
+
+watch(targetSampleRangeStopTdt, () => {
+  priorLookbackMinTdt.value = targetSampleRangeStartTdt.value - newCorrelationMaxLookbackHours.value;
+  priorLookbackMaxTdt.value = targetSampleRangeStopTdt.value - newCorrelationMinLookbackHours.value;
+})
+
+// preview information
+const previewTabItems = [
+  {
+    label: ' ',
+    icon: 'i-lucide-info',
+    slot: 'overview'
+  },
+  {
+    label: ' ',
+    icon: 'i-lucide-target',
+    slot: 'target'
+  },
+  {
+    label: ' ',
+    icon: 'i-lucide-list',
+    slot: 'triplets'
+  }
+]
+
 const toast = useToast()
-async function onSubmit(event: FormSubmitEvent<Schema>) {
-  // incorporate checkbox information
-  state.testModeOwltEnabled                             = additionalCorrelationOptionsModel.includes('testModeOwltEnabled');
-  state.additionalSmoothingRecordConfigOverride.enabled = additionalCorrelationOptionsModel.includes('insertAdditionalSmoothingRecord');
-  state.isDisableContactFilter                          = additionalCorrelationOptionsModel.includes('disableContactFilter');
-  state.isCreateUplinkCmdFile                          = additionalCorrelationOptionsModel.includes('createUplinkCommandFile');
-  console.log("would submit")
-  console.log(state.data)
-}
 
 defineExpose({ acceptSelectedTime });
 
@@ -80,11 +114,6 @@ const additionalCorrelationOptionItems = ref<CheckboxGroupItem[]>([
     value: 'insertAdditionalSmoothingRecord'
   },
   {
-    label: 'Test Mode OWLT',
-    description: 'Set a specific one-way light time for analysis or testing purposes, including when ephemerides are not available',
-    value: 'testModeOwltEnabled'
-  },
-  {
     label: 'Disable Contact Filter',
     description: "Disables the Contact Filter, even if it's enabled in the configuration file",
     value: 'disableContactFilter'
@@ -93,13 +122,22 @@ const additionalCorrelationOptionItems = ref<CheckboxGroupItem[]>([
     label: 'Create Uplink Command File',
     description: 'Create an Uplink Command File',
     value: 'createUplinkCommandFile'
+  },
+  {
+    label: 'Test Mode OWLT',
+    description: 'Set a specific one-way light time for analysis or testing purposes, including when ephemerides are not available',
+    value: 'testModeOwltEnabled'
   }
 ])
 
 const additionalCorrelationOptionsModel = ref([])
 
-// target-sample-exact-ert, target-sample-range-start-ert, target-sample-range-stop-ert, prior-correlation-exact-tdt
-const timeSelectionMode = ref('none')
+const timeSelectionCfg = ref({
+  selectFrom: 'none',            // timeCorrTlm, priorCorrelations
+  selectionDestination: 'none',  // none, target-sample-exact-ert, target-sample-range-start-ert, target-sample-range-stop-ert, prior-correlation-exact-tdt
+  minTdt: 0.0,
+  maxTdt: Infinity
+})
 
 // composing / previewing
 const timeCorrelationConfigState = ref('composing')
@@ -110,95 +148,132 @@ function cancelCorrelation() {
 
 async function previewCorrelation() {
   timeCorrelationConfigState.value = 'previewing'
-  state['beginTime'] = toIso8601WithDiscardedTimezone(props.chartRange.start)
-  state['endTime'] = toIso8601WithDiscardedTimezone(props.chartRange.end)
+  state['beginTime'] = toUtcIso8601WithDiscardedTimezone(props.range.beginDate)
+  state['endTime'] = toUtcIso8601WithDiscardedTimezone(props.range.endDate)
   const previewResults: TimeCorrelationPreviewResults = await runCorrelationPreview(state);
   delete state['beginTime']
   delete state['endTime']
 
   correlationPreviewResults.value = previewResults.correlationResults;
-  emit('chart-show-preview-correlation-telemetry', previewResults);
+  emit('chart-show-correlation-preview', previewResults);
 }
 
 function goBackToComposing() {
   timeCorrelationConfigState.value = 'composing'
-  emit('chart-clear-preview-correlation-telemetry')
+  emit('chart-clear-correlation-preview')
 }
 
 async function commitCorrelation() {
+  state.testModeOwltEnabled                             = additionalCorrelationOptionsModel.includes('testModeOwltEnabled');
+  state.additionalSmoothingRecordConfigOverride.enabled = additionalCorrelationOptionsModel.includes('insertAdditionalSmoothingRecord');
+  state.isDisableContactFilter                          = additionalCorrelationOptionsModel.includes('disableContactFilter');
+  state.isCreateUplinkCmdFile                          = additionalCorrelationOptionsModel.includes('createUplinkCommandFile');
+
   const results: TimeCorrelationResults = await createCorrelation(state);
   emit('close-correlation');
-  emit('chart-clear-preview-correlation-telemetry')
+  emit('chart-clear-correlation-preview')
   emit('refresh-dashboard')
 }
 
+function resetTimeSelectionCfg () {
+  timeSelectionCfg.value = {
+    selectFrom: 'none',
+    selectionDestination: 'none',
+    minTdt: 0.0,
+    maxTdt: Infinity
+  }
+}
+
 function toggleChoosingTargetSampleExactErt() {
-  if (timeSelectionMode.value === 'none') {
-    timeSelectionMode.value = 'target-sample-exact-ert';
+  if (timeSelectionCfg.value.selectionDestination === 'none') {
+    timeSelectionCfg.value = {
+      selectFrom: 'timeCorrTlm',
+      selectionDestination: 'target-sample-exact-ert',
+      minTdt: newCorrelationMinTdt.value,
+      maxTdt: Infinity
+    }
+
     targetSampleExactErtPlaceholder.value = 'Click a point on the chart';
-    emit('start-choosing-target-sample-ert');
-  } else if (timeSelectionMode.value == 'target-sample-exact-ert') {
-    timeSelectionMode.value = 'none';
+  } else if (timeSelectionCfg.value.selectionDestination == 'target-sample-exact-ert') {
+    resetTimeSelectionCfg();
     targetSampleExactErtPlaceholder.value = defaultTargetSampleErtPlaceholder;
-    emit('cancel-choosing');
   }
 }
 
 function toggleChoosingTargetSampleRangeStartErt() {
-  if (timeSelectionMode.value === 'none') {
-    timeSelectionMode.value = 'target-sample-range-start-ert';
+  if (timeSelectionCfg.value.selectionDestination === 'none') {
+    timeSelectionCfg.value = {
+      selectFrom: 'timeCorrTlm',
+      selectionDestination: 'target-sample-range-start-ert',
+      minTdt: newCorrelationMinTdt.value,
+      maxTdt: Infinity
+    }
+
     targetSampleRangeStartErtPlaceholder.value = 'Click a point on the chart';
-    emit('start-choosing-target-sample-ert');
-  } else if (timeSelectionMode.value == 'target-sample-range-start-ert') {
-    timeSelectionMode.value = 'none';
+  } else if (timeSelectionCfg.value.selectionDestination == 'target-sample-range-start-ert') {
+    resetTimeSelectionCfg();
     targetSampleRangeStartErtPlaceholder.value = defaultTargetSampleErtPlaceholder;
-    emit('cancel-choosing');
   }
 }
 
 function toggleChoosingTargetSampleRangeStopErt() {
-  if (timeSelectionMode.value === 'none') {
-    timeSelectionMode.value = 'target-sample-range-stop-ert';
+  if (timeSelectionCfg.value.selectionDestination === 'none') {
+    timeSelectionCfg.value = {
+      selectFrom: 'timeCorrTlm',
+      selectionDestination: 'target-sample-range-stop-ert',
+      minTdt: targetSampleRangeStartTdt.value,
+      maxTdt: Infinity
+    }
+
     targetSampleRangeStopErtPlaceholder.value = 'Click a point on the chart';
-    emit('start-choosing-target-sample-ert');
-  } else if (timeSelectionMode.value == 'target-sample-range-stop-ert') {
-    timeSelectionMode.value = 'none';
+  } else if (timeSelectionCfg.value.selectionDestination == 'target-sample-range-stop-ert') {
+    resetTimeSelectionCfg();
     targetSampleRangeStopErtPlaceholder.value = defaultTargetSampleErtPlaceholder;
-    emit('cancel-choosing');
   }
 }
 
 function toggleChoosingPriorCorrelationTdt() {
-  if (timeSelectionMode.value === 'none') {
-    timeSelectionMode.value = 'prior-correlation-exact-tdt'
+  if (timeSelectionCfg.value.selectionDestination === 'none') {
+    timeSelectionCfg.value = {
+      selectFrom: 'priorCorrelations',
+      selectionDestination: 'prior-correlation-exact-tdt',
+      minTdt: priorLookbackMinTdt.value,
+      maxTdt: priorLookbackMaxTdt.value
+    }
+
     priorCorrelationTdtPlaceholder.value = 'Click a correlation on the chart';
-    emit('start-choosing-prior-correlation-tdt');
-  } else if (timeSelectionMode.value === 'prior-correlation-exact-tdt') {
-    timeSelectionMode.value = 'none';
+  } else if (timeSelectionCfg.value.selectionDestination === 'prior-correlation-exact-tdt') {
+    resetTimeSelectionCfg();
     priorCorrelationTdtPlaceholder.value = defaultPriorCorrelationTdtPlaceholder;
-    emit('cancel-choosing');
   }
 }
 
-function acceptSelectedTime(timeStr) {
-  switch(timeSelectionMode.value) {
+watch(timeSelectionCfg, () => {
+  emit('change-choosing-state', timeSelectionCfg.value);
+})
+
+function acceptSelectedTime(selection) {
+  switch(timeSelectionCfg.value.selectionDestination) {
     case 'target-sample-exact-ert':
-      state.targetSampleExactErt = timeStr;
+      state.targetSampleExactErt = selection.ertStr;
+      targetSampleExactTdt.value = selection.tdt;
       break;
     case 'target-sample-range-start-ert':
-      state.targetSampleRangeStartErt = timeStr;
+      state.targetSampleRangeStartErt = selection.ertStr;
+      targetSampleRangeStartTdt.value = selection.tdt;
       break;
     case 'target-sample-range-stop-ert':
-      state.targetSampleRangeStopErt = timeStr;
+      state.targetSampleRangeStopErt = selection.ertStr;
+      targetSampleRangeStopTdt.value = selection.tdt;
       break;
     case 'prior-correlation-exact-tdt':
-      state.priorCorrelationExactTdt = timeStr;
+      state.priorCorrelationExactTdt = selection.tdt;
       break;
     default:
-      console.warn('unexpected time str: ' + timeStr);
+      console.warn('unexpected time str: ' + selection);
   }
 
-  timeSelectionMode.value = 'none'
+  resetTimeSelectionCfg();
 }
 
 watch(additionalCorrelationOptionsModel, (newVal, oldVal) => {
@@ -217,6 +292,9 @@ onMounted(async () => {
   state.clockChangeRateModeOverride = defaultCorrelationConfig.value.clockChangeRateModeOverride;
   state.additionalSmoothingRecordConfigOverride = defaultCorrelationConfig.value.additionalSmoothingRecordConfigOverride;
 
+  newCorrelationMinTdt.value = defaultCorrelationConfig.value.newCorrelationMinTdt;
+  newCorrelationMinLookbackHours.value = defaultCorrelationConfig.value.predictedClkRateMinLookbackHours;
+  newCorrelationMaxLookbackHours.value = defaultCorrelationConfig.value.predictedClkRateMaxLookbackHours;
 })
 
 </script>
@@ -228,10 +306,10 @@ onMounted(async () => {
       <UFormField label="Target sample (ERT)" name="targetSampleExactErt" size="sm" v-if="targetSampleSelectionType === 'exact'">
         <div class="grid grid-cols-4 gap-x-2">
           <div class="col-span-3">
-          <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionMode != 'none'"/>
+          <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
           </div>
           <div class="col-span-1">
-            <UButton @click="toggleChoosingTargetSampleExactErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionMode === 'target-sample-exact-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-exact-ert'].includes(timeSelectionMode))"/>
+            <UButton @click="toggleChoosingTargetSampleExactErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-exact-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-exact-ert'].includes(timeSelectionCfg.selectionDestination))"/>
           </div>
         </div>
       </UFormField>
@@ -239,11 +317,11 @@ onMounted(async () => {
       <UFormField label="Target sample range begin (ERT)" name="targetSampleRangeStartErt" size="sm" v-if="targetSampleSelectionType === 'range'">
         <div class="grid grid-cols-4 gap-x-2">
           <div class="col-span-3">
-            <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionMode != 'none'"/>
+            <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
           </div>
           <div class="col-span-1">
             <UTooltip text="Click to select a point from the chart">
-              <UButton @click="toggleChoosingTargetSampleRangeStartErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionMode === 'target-sample-range-start-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-start-ert'].includes(timeSelectionMode))"/>
+              <UButton @click="toggleChoosingTargetSampleRangeStartErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-range-start-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-start-ert'].includes(timeSelectionCfg.selectionDestination))"/>
             </UTooltip>
           </div>
         </div>
@@ -252,11 +330,11 @@ onMounted(async () => {
       <UFormField label="Target sample range end (ERT)" name="targetSampleRangeStopErt" size="sm" v-if="targetSampleSelectionType === 'range'">
         <div class="grid grid-cols-4 gap-x-2">
           <div class="col-span-3">
-            <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionMode != 'none'"/>
+            <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
           </div>
           <div class="col-span-1">
             <UTooltip text="Click to select a point from the chart">
-              <UButton @click="toggleChoosingTargetSampleRangeStopErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionMode === 'target-sample-range-stop-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-stop-ert'].includes(timeSelectionMode))"/>
+              <UButton @click="toggleChoosingTargetSampleRangeStopErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-range-stop-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-stop-ert'].includes(timeSelectionCfg.selectionDestination))"/>
             </UTooltip>
           </div>
         </div>
@@ -265,11 +343,11 @@ onMounted(async () => {
       <UFormField label="Prior correlation for basis (TDT)" name="priorCorrelationExactTdt"  size="sm">
         <div class="grid grid-cols-4 gap-x-2">
           <div class="col-span-3">
-            <UInput v-model="state.priorCorrelationExactTdt" :placeholder="priorCorrelationTdtPlaceholder" class="w-full"  :disabled="timeSelectionMode != 'none'"/>
+            <UInput v-model="state.priorCorrelationExactTdt" :placeholder="priorCorrelationTdtPlaceholder" class="w-full"  :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
           </div>
           <div class="col-span-1">
             <UTooltip text="Click to select a point from the chart">
-              <UButton @click="toggleChoosingPriorCorrelationTdt" color="neutral" variant="outline" size="sm" :icon="timeSelectionMode === 'prior-correlation-exact-tdt' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'prior-correlation-exact-tdt'].includes(timeSelectionMode))"/>
+              <UButton @click="toggleChoosingPriorCorrelationTdt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'prior-correlation-exact-tdt' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'prior-correlation-exact-tdt'].includes(timeSelectionCfg.selectionDestination))"/>
             </UTooltip>
           </div>
         </div>
@@ -313,17 +391,37 @@ onMounted(async () => {
     </UForm>
   </span>
 
-  <span v-if="timeCorrelationConfigState === 'previewing'">
+  <div v-if="timeCorrelationConfigState === 'previewing'" class="pr-5 pt-5">
+    <div>
+      <UTabs
+        :items="previewTabItems"
+        size="sm"
+      >
+        <template #overview>
+          Overview content
+        </template>
+        <template #target>
+          Target content
+        </template>
+        <template #triplets>
+          Triplet content
+        </template>
+      </UTabs>
+    </div>
       <div class="pt-5" v-if="timeCorrelationConfigState === 'previewing'">
-        <UButton @click="goBackToComposing" color="neutral" variant="outline">
-          Back
-        </UButton>
+        <UTooltip text="Return to correlation configuration">
+          <UButton @click="goBackToComposing" color="neutral" variant="outline">
+            Back
+          </UButton>
+        </UTooltip>
 
-        <UButton @click="commitCorrelation" class="float-right">
-          Commit
-        </UButton>
+        <UTooltip text="Commit the correlation, producing all related output products">
+          <UButton @click="commitCorrelation" class="float-right">
+            Commit
+          </UButton>
+        </UTooltip>
       </div>
-  </span>
+  </div>
 </template>
 
 <!--

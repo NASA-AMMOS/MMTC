@@ -1257,11 +1257,13 @@ import spice.basic.*;
         return !eq(first, second, epsilon);
     }
 
-    public static class ScetMetrics {
+    public static class FrameSampleMetrics {
+        public final double tdtG;
         public final OffsetDateTime scetUtc;
         public final double scetErrorNanos;
 
-        public ScetMetrics(OffsetDateTime scetUtc, double scetErrorNanos) {
+        public FrameSampleMetrics(double tdtG, OffsetDateTime scetUtc, double scetErrorNanos) {
+            this.tdtG = tdtG;
             this.scetUtc = scetUtc;
             this.scetErrorNanos = scetErrorNanos;
         }
@@ -1277,7 +1279,7 @@ import spice.basic.*;
      * @throws TimeConvertException
      * @throws MmtcException
      */
-    public static ScetMetrics calculateScetErrorNanos(TimeCorrelationMetricsConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
+    public static FrameSampleMetrics calculateScetErrorNanos(TimeCorrelationMetricsConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
         final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(
                 Arrays.asList(fs),
                 config,
@@ -1293,8 +1295,10 @@ import spice.basic.*;
         final OffsetDateTime actualScet = tdtToUtc(tcTarget.getTargetSampleTdtG(), 9);
 
         // for our estimated - actual calculation, we want the error term to be negative if the estimated value is larger (later) than the actual value, which would correspond to a 'negative' result from ChronoUnit.between, so invert the sign
-        return new ScetMetrics(
-                actualScet, -1 * ChronoUnit.NANOS.between(estimatedScet, actualScet)
+        return new FrameSampleMetrics(
+                tcTarget.getTargetSampleTdtG(),
+                actualScet,
+                -1 * ChronoUnit.NANOS.between(estimatedScet, actualScet)
         );
     }
 

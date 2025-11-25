@@ -894,8 +894,8 @@ public abstract class MmtcConfig {
      *
      * @return the number of days to look back
      */
-    public Double getPredictedClkRateLookBackDays() {
-        return timeCorrelationConfig.getConfig().getDouble("compute.tdtG.rate.predicted.lookBackDays");
+    public Double getPredictedClkRateLookBackHours() {
+        return timeCorrelationConfig.getConfig().getDouble("compute.tdtG.rate.predicted.lookBackDays") * 24.0;
     }
 
     /**

@@ -1,13 +1,19 @@
 package edu.jhuapl.sd.sig.mmtc.webapp.config;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.lang.reflect.Executable;
+import java.util.concurrent.Callable;
 
 public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
     private static final Logger logger = LogManager.getLogger();
 
-    public final Object spiceLoadedKernelMutex = new Object();
+    private final Object spiceLoadedKernelMutex = new Object();
 
     public MmtcWebAppConfig() throws Exception {
         super();
@@ -43,5 +49,32 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
 
     public int getTlsServerPort() {
         return getInt("webapp.serve.tls.port");
+    }
+
+    public <T> T withSpiceMutex(Callable<T> callable) throws MmtcException {
+        synchronized (spiceLoadedKernelMutex) {
+            try {
+                TimeConvert.loadSpiceLib();
+                return callable.call();
+            } catch (Exception e) {
+                throw new MmtcException(e);
+            } finally {
+                TimeConvert.unloadSpiceKernels();
+            }
+        }
+    }
+
+    public <T> T withSpiceMutexAndDefaultKernels(Callable<T> callable) throws MmtcException {
+        synchronized (spiceLoadedKernelMutex) {
+            try {
+                TimeConvert.loadSpiceLib();
+                TimeConvert.loadSpiceKernels(getKernelsToLoad());
+                return callable.call();
+            } catch (Exception e) {
+                throw new MmtcException(e);
+            } finally {
+                TimeConvert.unloadSpiceKernels();
+            }
+        }
     }
 }

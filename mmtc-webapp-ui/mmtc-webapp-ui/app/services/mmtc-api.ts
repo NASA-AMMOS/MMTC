@@ -3,6 +3,11 @@ import axios from 'axios';
 // const baseUrl = 'http://localhost:8080/backend-api'
 const baseUrl = 'http://localhost:3000/backend-api'
 
+export interface TdtRange{
+  minTdt: number,
+  maxTdt: number
+}
+
 export interface MmtcVersion {
   version: string
   buildDate: string
@@ -25,11 +30,11 @@ export interface OutputProductDef {
   simpleClassName: string,
   type: string,
   singleFile: boolean,
-  filenames: string[]
 }
 
 export interface TimekeepingTelemetryPoint {
   originalFrameSample: object,
+  tdtG: number,
   scetUtc: string,
   scetErrorMs: number
 }
@@ -48,6 +53,9 @@ export interface AdditionalSmoothingRecordConfig {
 
 export interface DefaultTimeCorrelationConfig {
   samplesPerSet: number,
+  newCorrelationMinTdt: number,
+  predictedClkRateMinLookbackHours: number,
+  predictedClkRateMaxLookbackHours: number,
   targetSampleRangeStartErt: string,
   targetSampleRangeStopErt: string,
   targetSampleExactErt: string,
@@ -131,6 +139,6 @@ export async function runCorrelationPreview(correlationPreviewInput) {
 }
 
 export async function createCorrelation(correlationInput) {
-  const response = await axios.post<TimeCorrelationResults>(baseUrl + `/v1/correlation/create`, correlationInput)
+  const response = await axios.post<object>(baseUrl + `/v1/correlation/create`, correlationInput)
   return response.data
 }

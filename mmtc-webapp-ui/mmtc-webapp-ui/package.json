@@ -20,6 +20,7 @@
     "@vueuse/nuxt": "^13.9.0",
     "axios": "^1.12.2",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "echarts": "^6.0.0",
     "nuxt": "^4.1.2",
     "vue-echarts": "^8.0.1",

@@ -315,7 +315,7 @@ public class TimeCorrelationApp {
      * @throws MmtcException if the new SCLK or TDT values overlap a previous time correlation
      */
     private Double computePredictedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException, MmtcException {
-        String[] lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tdt_g, config.getPredictedClkRateLookBackDays()*24., runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
+        String[] lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tdt_g, config.getPredictedClkRateLookBackHours(), runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
 
         logger.debug("computePredictedClkChgRate(): lookBackRec from SCLK = " +
                 lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX] + " " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX] + " "

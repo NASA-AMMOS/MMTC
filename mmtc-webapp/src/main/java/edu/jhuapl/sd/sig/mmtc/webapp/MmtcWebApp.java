@@ -7,6 +7,7 @@ import edu.jhuapl.sd.sig.mmtc.webapp.auth.AutoGenBasicHttpAuthorizationService;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.NoopAuthorizationService;
 import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
 import edu.jhuapl.sd.sig.mmtc.webapp.controller.*;
+import edu.jhuapl.sd.sig.mmtc.webapp.service.OutputProductService;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.TelemetryService;
 import edu.jhuapl.sd.sig.mmtc.webapp.util.MmtcObjectMapper;
 import io.javalin.Javalin;
@@ -27,6 +28,7 @@ public class MmtcWebApp {
     private final MmtcWebAppConfig config;
 
     private final TelemetryService telemetryService;
+    private final OutputProductService outputProductService;
 
     public static void main(String[] args) throws Exception {
         new MmtcWebApp().start();
@@ -82,12 +84,13 @@ public class MmtcWebApp {
         logger.info("Auth service: " + authService.getClass().getSimpleName());
 
         this.telemetryService = new TelemetryService(config);
+        this.outputProductService = new OutputProductService(config);
 
         // instantiate controllers and set up routes
         Collection<BaseController> controllers = new HashSet<>();
-        controllers.add(new TimeCorrelationController(config, this.telemetryService));
+        controllers.add(new TimeCorrelationController(config, this.telemetryService, this.outputProductService));
         controllers.add(new TelemetryController(config, this.telemetryService));
-        controllers.add(new OutputProductController(config));
+        controllers.add(new OutputProductController(config, this.outputProductService));
         controllers.add(new InfoController(config));
         controllers.forEach(c -> c.registerEndpoints(javalinApp));
     }
