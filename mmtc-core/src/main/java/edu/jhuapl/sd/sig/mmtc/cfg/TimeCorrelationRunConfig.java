@@ -79,12 +79,15 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         }
     }
 
+
+
     // ideas for encoding this into the run history file
     // - still encode this into a 'run args' column, implying a means to convert the data in an instance of this class into its CLI equivalent
     // - maybe consider a separate column for the start & stop / exact ert input time this was run with
 
     public static class TimeCorrelationRunConfigInputs {
         // inputs that must be provided with each run, which are not contained in configuration files at all
+        final TargetSampleInputErtMode targetSampleInputErtMode;
         final Optional<OffsetDateTime> targetSampleRangeStartErt;
         final Optional<OffsetDateTime> targetSampleRangeStopErt;
         final Optional<OffsetDateTime> targetSampleExactErt;
@@ -93,7 +96,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         final Optional<Double> testModeOwltSec;
         final Optional<Double> clockChangeRateAssignedValue;
         final Optional<String> clockChangeRateAssignedKey;
-        private final DryRunConfig dryRunConfig;
+        final DryRunConfig dryRunConfig;
 
         // inputs that can override those specified in configuration files
         final Optional<ClockChangeRateMode> clockChangeRateModeOverride;
@@ -102,6 +105,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         final boolean isCreateUplinkCmdFile;
 
         public TimeCorrelationRunConfigInputs(
+                TargetSampleInputErtMode targetSampleInputErtMode,
                 Optional<OffsetDateTime> targetSampleRangeStartErt,
                 Optional<OffsetDateTime> targetSampleRangeStopErt,
                 Optional<OffsetDateTime> targetSampleExactErt,
@@ -116,6 +120,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
                 boolean isCreateUplinkCmdFile,
                 DryRunConfig dryRunConfig
         ) {
+            this.targetSampleInputErtMode = targetSampleInputErtMode;
             this.targetSampleRangeStartErt = targetSampleRangeStartErt;
             this.targetSampleRangeStopErt = targetSampleRangeStopErt;
             this.targetSampleExactErt = targetSampleExactErt;
@@ -165,12 +170,10 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
     }
 
     private void setTargetAndBasisSampleInputs() {
-        if (this.runConfigInputs.targetSampleRangeStartErt.isPresent() && this.runConfigInputs.targetSampleRangeStopErt.isPresent()) {
+        if (this.runConfigInputs.targetSampleInputErtMode.equals(TargetSampleInputErtMode.RANGE)) {
             this.resolvedTargetSampleRange = Optional.of(new OffsetDateTimeRange(this.runConfigInputs.targetSampleRangeStartErt.get(), this.runConfigInputs.targetSampleRangeStopErt.get()));
-        } else if (this.runConfigInputs.targetSampleExactErt.isPresent()) {
-            this.resolvedTargetSampleExactErt = this.runConfigInputs.targetSampleExactErt;
         } else {
-            throw new IllegalStateException("Must set either a target sample ERT range or single value");
+            this.resolvedTargetSampleExactErt = this.runConfigInputs.targetSampleExactErt;
         }
     }
 
@@ -489,5 +492,17 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         }
 
         return String.join(" | ", elts);
+    }
+
+    public static class ClockChangeRateConfig {
+        public TimeCorrelationRunConfig.ClockChangeRateMode clockChangeRateModeOverride;
+        public double specifiedClockChangeRateToAssign;
+
+        public ClockChangeRateConfig() { }
+
+        public ClockChangeRateConfig(ClockChangeRateMode clockChangeRateModeOverride, double specifiedClockChangeRateToAssign) {
+            this.clockChangeRateModeOverride = clockChangeRateModeOverride;
+            this.specifiedClockChangeRateToAssign = specifiedClockChangeRateToAssign;
+        }
     }
 }

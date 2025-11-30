@@ -41,6 +41,7 @@ public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigIn
         final TimeCorrelationRunConfig.DryRunConfig dryRunConfig = cmdLineConfig.isDryRun() ? new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.DRY_RUN_RETAIN_NO_PRODUCTS, null) : new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.NOT_DRY_RUN, null);
 
         return new TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs(
+                TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE,
                 Optional.of(cmdLineConfig.getStartTime()),
                 Optional.of(cmdLineConfig.getStopTime()),
                 Optional.empty(), // todo enable this on the cmd line

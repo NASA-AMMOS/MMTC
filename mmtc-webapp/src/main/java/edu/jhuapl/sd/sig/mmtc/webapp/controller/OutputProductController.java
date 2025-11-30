@@ -4,6 +4,7 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.products.definition.AppendedFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.EntireFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.util.GenericCsv;
 import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.OutputProductService;
 import io.javalin.Javalin;
@@ -11,6 +12,8 @@ import io.javalin.Javalin;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 
 public class OutputProductController extends BaseController {
     private final OutputProductService outputputProductService;
@@ -29,9 +32,33 @@ public class OutputProductController extends BaseController {
         javalinApp.get("/api/v1/products/{name}/{filename}", ctx -> {
             ctx.result(getOutputProductContents(ctx.pathParam("name"),  ctx.pathParam("filename")));
         });
+
+        // get the contents of a product as table rows
+        javalinApp.get("/api/v1/productsAsTable/{name}/{filename}", ctx -> {
+            ctx.json(getOutputProductContentsAsTable(ctx.pathParam("name"),  ctx.pathParam("filename")));
+        });
+    }
+
+    record TableResult (
+            List<String> columns,
+            List<Map<String, String>> rows
+    ) { }
+
+    private TableResult getOutputProductContentsAsTable(String outputProductName, String filename) throws MmtcException, IOException {
+        Path filePathForOutputProduct = getFilePathForOutputProduct(outputProductName, filename);
+        GenericCsv csv = new GenericCsv(filePathForOutputProduct);
+        return new TableResult(
+                csv.getHeaders(),
+                csv.getRows()
+        );
     }
 
     private String getOutputProductContents(String outputProductName, String filename) throws MmtcException, IOException {
+        Path filePathForOutputProduct = getFilePathForOutputProduct(outputProductName, filename);
+        return String.join("\n", Files.readAllLines(filePathForOutputProduct));
+    }
+
+    private Path getFilePathForOutputProduct(String outputProductName, String filename) throws MmtcException, IOException {
         OutputProductDefinition<?> productDef = config.getOutputProductDefByName(outputProductName);
         final Path filepathToRead;
         if (productDef instanceof EntireFileOutputProductDefinition) {
@@ -47,9 +74,6 @@ public class OutputProductController extends BaseController {
             throw new MmtcException("Unexpected type for: " + outputProductName);
         }
 
-        return String.join("\n", Files.readAllLines(filepathToRead));
+        return filepathToRead;
     }
-
-
-
 }

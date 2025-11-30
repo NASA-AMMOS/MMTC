@@ -132,4 +132,9 @@ public abstract class OutputProductDefinition<T extends ResolvedProductLocation>
             throw new IllegalStateException("Unrecognized resolved location: " + resolvedLocation);
         }
     }
+
+    /**
+     * @return the display name of the instance of the output product definition; must be unique at MMTC runtime
+     */
+    public abstract String getDisplayName();
 }

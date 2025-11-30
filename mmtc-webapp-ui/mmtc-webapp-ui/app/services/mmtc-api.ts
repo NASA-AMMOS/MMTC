@@ -36,7 +36,8 @@ export interface TimekeepingTelemetryPoint {
   originalFrameSample: object,
   tdtG: number,
   scetUtc: string,
-  scetErrorMs: number
+  scetErrorMs: number,
+  owltSec: number
 }
 
 export interface TimeCorrelationTriplet {
@@ -51,6 +52,11 @@ export interface AdditionalSmoothingRecordConfig {
   coarseSclkTickDuration: number
 }
 
+export interface ClockChangeRateConfig {
+  clockChangeRateAssignedValue: number,
+  clockChangeRateModeOverride: string
+}
+
 export interface DefaultTimeCorrelationConfig {
   samplesPerSet: number,
   newCorrelationMinTdt: number,
@@ -59,11 +65,10 @@ export interface DefaultTimeCorrelationConfig {
   targetSampleRangeStartErt: string,
   targetSampleRangeStopErt: string,
   targetSampleExactErt: string,
-  priorCorrelationExactErt: string,
+  priorCorrelationExactTdt: string,
   testModeOwltEnabled: boolean,
   testModeOwltSec: number,
-  clockChangeRateAssignedValue: number,
-  clockChangeRateModeOverride: string,
+  clockChangeRateConfig: ClockChangeRateConfig,
   additionalSmoothingRecordConfigOverride: AdditionalSmoothingRecordConfig,
   isDisableContactFilter: boolean,
   isCreateUplinkCmdFile: boolean
@@ -103,13 +108,18 @@ export async function retrieveOutputProductFileContents(outputProductDefName: st
   return response.data
 }
 
+export async function retrieveOutputProductFileContentsAsTable(outputProductDefName: string, filename: string) {
+  const response = await axios.get<string>(baseUrl + `/v1/productsAsTable/${outputProductDefName}/${filename}`)
+  return response.data
+}
+
 export async function retrieveRunHistoryFileRows() {
   const response = await axios.get<[]>(baseUrl + `/v1/correlation/runhistory`)
   return response.data
 }
 
-export async function retrieveTimekeepingTelemetry(beginTime: string, endTime: string, sclkKernelToUseForErrorCalc: string) {
-  const response = await axios.get<TimekeepingTelemetryPoint[]>(baseUrl + `/v1/telemetry/range?beginTime=${beginTime}&endTime=${endTime}&sclkKernelName=${sclkKernelToUseForErrorCalc}`)
+export async function retrieveTimekeepingTelemetry(beginTimeErt: string, endTimeErt: string, sclkKernelToUseForErrorCalc: string) {
+  const response = await axios.get<TimekeepingTelemetryPoint[]>(baseUrl + `/v1/telemetry/range?beginTimeErt=${beginTimeErt}&endTimeErt=${endTimeErt}&sclkKernelName=${sclkKernelToUseForErrorCalc}`)
   return response.data
 }
 

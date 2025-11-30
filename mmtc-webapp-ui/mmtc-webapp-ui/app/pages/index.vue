@@ -41,6 +41,14 @@ const chartClass = ref('col-span-4')
 const newTimeCorrelationConfig = ref(null)
 const runHistory = ref(null)
 
+const dateRangeChangeLoading = ref(false);
+const sclkKernelChangeLoading = ref(false);
+const loading = computed(() => {
+  // if we're reacting to any change in the chart input params, then we're in a loading state
+  // or if we haven't yet initialized the telemetry date range, we're also in a loading state
+  return (dateRangeChangeLoading.value || sclkKernelChangeLoading.value ) || (! rangeIsInitialized.value ); // todo this is the cause of the 'hydration completed but contains mismatches' warning when running in dev mode
+});
+
 async function newCorrelation() {
   mode.value = 'correlate'
   correlationConfigPaneOpen.value = true
@@ -74,17 +82,81 @@ async function setDefaultDateRange() {
   const rangeStartScetUtc = parseISO(rangeStartScetUtcStr + 'Z');
   const rangeStartScetDateUtcCldDate = new CalendarDate(rangeStartScetUtc.getUTCFullYear(), rangeStartScetUtc.getUTCMonth() + 1, rangeStartScetUtc.getUTCDate()).subtract({days: 1});
 
-  // default end time is latest time corr + 7 days, or now, whichever is sooner
-  const rangeEndUtcBasedOnStartCldDate = rangeStartScetDateUtcCldDate.add({ days: 14 })
-  const rangeEndUtcBasedOnNowCldDate = today('UTC');
-  let calculatedRangeEndUtcCldDate;
-  if (isBefore(rangeEndUtcBasedOnStartCldDate, rangeEndUtcBasedOnNowCldDate)) {
-    calculatedRangeEndUtcCldDate = rangeEndUtcBasedOnStartCldDate;
-  } else {
-    calculatedRangeEndUtcCldDate = rangeEndUtcBasedOnNowCldDate
-  }
+  doyDateRangePicker.value.setInitialCalendarDates(rangeStartScetDateUtcCldDate, addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 14}));
 
-  doyDateRangePicker.value.setInitialCalendarDates(rangeStartScetDateUtcCldDate, calculatedRangeEndUtcCldDate);
+  const quickSelectOptions = [];
+
+  quickSelectOptions.push({
+    startCalDate: rangeStartScetDateUtcCldDate,
+    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 7}),
+    displayText: "Last corrs +7d"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: rangeStartScetDateUtcCldDate,
+    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 14}),
+    displayText: "Last corrs +14d"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: rangeStartScetDateUtcCldDate,
+    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 30}),
+    displayText: "Last corrs +30d"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: rangeStartScetDateUtcCldDate,
+    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
+    displayText: "Last corrs til now"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: (new UnifiedCalendarDateRange()).endCalendarDate.subtract({days: 1}),
+    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
+    displayText: "Past day"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: (new UnifiedCalendarDateRange()).endCalendarDate.subtract({days: 7}),
+    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
+    displayText: "Past 7 days"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: (new UnifiedCalendarDateRange()).endCalendarDate.subtract({days: 14}),
+    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
+    displayText: "Past 14 days"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: (new UnifiedCalendarDateRange()).endCalendarDate.subtract({days: 30}),
+    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
+    displayText: "Past 30 days"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: (new UnifiedCalendarDateRange()).endCalendarDate.subtract({days: 90}),
+    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
+    displayText: "Past 90 days"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: (new UnifiedCalendarDateRange()).endCalendarDate.subtract({days: 365}),
+    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
+    displayText: "Past year"
+  });
+
+  doyDateRangePicker.value.setQuickSelectOptions(quickSelectOptions);
+}
+
+function addToCalDateUpTilToday(origCalDate, addOpt) {
+  const todayCalDate: CalendarDate = today('UTC');
+  const newCalDate: CalendarDate = origCalDate.add(addOpt);
+  if (newCalDate.compare(todayCalDate) < 0) {
+    return newCalDate;
+  } else {
+    return todayCalDate;
+  }
 }
 
 onMounted(async () => {
@@ -113,12 +185,16 @@ async function updateChartData() {
     return;
   }
 
+  dateRangeChangeLoading.value = true;
+
   let tmpChartData = {}
   tmpChartData.telemetry = await retrieveTimekeepingTelemetry(toUtcIso8601WithDiscardedTimezone(dateRange.value.beginDate), toUtcIso8601WithDiscardedTimezone(dateRange.value.endDate), sclkKernelSelectionChoice.value);
   tmpChartData.correlations = await getTimeCorrelations(toUtcIso8601WithDiscardedTimezone(dateRange.value.beginDate), toUtcIso8601WithDiscardedTimezone(dateRange.value.endDate), sclkKernelSelectionChoice.value);
   tmpChartData.previewTelemetry = []
   tmpChartData.previewCorrelations = []
   chartData.value = tmpChartData;
+
+  dateRangeChangeLoading.value = false;
 }
 
 function handleIncomingTimeSelection(selectionVal) {
@@ -160,29 +236,55 @@ function chartClearCorrelationPreview() {
     <template #header>
       <UDashboardToolbar class="align-middle" style="height: 72px;">
         <template #left>
-          <h2>
-            <strong>Time Correlation Telemetry</strong>
-          </h2>
-          <div>
+          <div class="grid grid-cols-3 gap-x-2">
             <!--HomeDateRangePicker v-model="range"/-->
-            <DoyDateRangePicker
-              ref="doyDateRangePicker"
-              :disabled="mode === 'correlate'"
-              @update-date-range="updateDateRange"
-            />
+            <div>
+              <DoyDateRangePicker
+                ref="doyDateRangePicker"
+                :disabled="loading || (mode === 'correlate')"
+                @update-date-range="updateDateRange"
+              />
+            </div>
             <!--
             Viewing last <USelect v-model="tlmQueryDuration" :items="tlmQueryDurationOptions"/> ending yyyy-doy | TLM loaded through timestamp
             -->
-            <USelect v-model="sclkKernelSelectionChoice" :items="sclkKernelSelectionOptions" :disabled="mode === 'correlate'"/>
+            <div>
+              <USelect v-model="sclkKernelSelectionChoice" :items="sclkKernelSelectionOptions" :disabled="loading || (mode === 'correlate')"/>
+            </div>
+
+            <div v-if="!loading" />
+            <div v-if="loading">
+              <UProgress animation="elastic" class="pt-6" color="secondary"/>
+            </div>
+
+            <div>
+              <p class="text-xs text-gray-500 text-center">
+                Telemetry range (ERT)
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-500 text-center">
+                SCLK kernel
+              </p>
+            </div>
+
+            <div v-if="!loading" />
+            <div v-if="loading">
+              <p class="text-xs text-gray-500 text-center">
+                Loading...
+              </p>
+            </div>
           </div>
         </template>
 
         <template #right>
-          <span v-if="mode === 'view'">
+          <div class="grid grid-cols-1">
+          <div v-if="mode === 'view'">
             <UTooltip text="Start configuring a new correlation">
-              <UButton @click="newCorrelation">New correlation</UButton>
+              <UButton @click="newCorrelation" :disabled="loading">New correlation</UButton>
             </UTooltip>
-          </span>
+          </div>
+          </div>
         </template>
       </UDashboardToolbar>
     </template>
@@ -211,7 +313,10 @@ function chartClearCorrelationPreview() {
           </UCard>
         </div>
       </div>
-      <RunHistory ref="runHistory"/>
+      <RunHistory
+        ref="runHistory"
+        @refresh-dashboard="refreshAll"
+      />
     </template>
   </UDashboardPanel>
 </template>

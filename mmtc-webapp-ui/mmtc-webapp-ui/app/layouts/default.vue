@@ -49,14 +49,14 @@ watch(outputProductDefs, async (newOutputProductDefs, oldOutputProductDefs) => {
 
   newOutputProductDefs.forEach((def) => {
     outputProductMenuItems.push({
-      label: def.name,
+      label: def.displayName,
       to: '/outputs/' + def.name
     })
   });
 
   leftSidebarMainLinks.value.push({
     label: 'Outputs',
-    to: '/Outputs',
+    // to: '/Outputs',
     icon: 'i-lucide-file-text',
     defaultOpen: true,
     type: 'trigger',

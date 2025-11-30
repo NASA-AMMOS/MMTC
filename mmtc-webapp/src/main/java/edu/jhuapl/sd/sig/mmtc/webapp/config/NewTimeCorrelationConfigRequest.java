@@ -8,38 +8,36 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Optional;
 
-public class NewTimeCorrelationConfig implements TimeCorrelationRunConfigInputSupplier {
+public class NewTimeCorrelationConfigRequest implements TimeCorrelationRunConfigInputSupplier {
+    public TimeCorrelationRunConfig.TargetSampleInputErtMode targetSampleInputErtMode;
     public OffsetDateTime targetSampleRangeStartErt;
     public OffsetDateTime targetSampleRangeStopErt;
     public OffsetDateTime targetSampleExactErt;
     public OffsetDateTime priorCorrelationExactTdt;
     public boolean testModeOwltEnabled;
     public double testModeOwltSec;
-    public double clockChangeRateAssignedValue;
 
     public TimeCorrelationRunConfig.DryRunConfig dryRunConfig;
 
-    public TimeCorrelationRunConfig.ClockChangeRateMode clockChangeRateModeOverride;
+    public TimeCorrelationRunConfig.ClockChangeRateConfig clockChangeRateConfig;
     public TimeCorrelationRunConfig.AdditionalSmoothingRecordConfig additionalSmoothingRecordConfigOverride;
     public boolean isDisableContactFilter;
     public boolean isCreateUplinkCmdFile;
 
-    public NewTimeCorrelationConfig() {
+    public NewTimeCorrelationConfigRequest() {
 
     }
 
-    public NewTimeCorrelationConfig(NewTimeCorrelationConfig other) {
+    public NewTimeCorrelationConfigRequest(NewTimeCorrelationConfigRequest other) {
+        this.targetSampleInputErtMode = other.targetSampleInputErtMode;
         this.targetSampleRangeStartErt = other.targetSampleRangeStartErt;
         this.targetSampleRangeStopErt = other.targetSampleRangeStopErt;
         this.targetSampleExactErt = other.targetSampleExactErt;
         this.priorCorrelationExactTdt = other.priorCorrelationExactTdt;
         this.testModeOwltEnabled = other.testModeOwltEnabled;
         this.testModeOwltSec = other.testModeOwltSec;
-        this.clockChangeRateAssignedValue = other.clockChangeRateAssignedValue;
-
+        this.clockChangeRateConfig = other.clockChangeRateConfig;
         this.dryRunConfig = other.dryRunConfig;
-
-        this.clockChangeRateModeOverride = other.clockChangeRateModeOverride;
         this.additionalSmoothingRecordConfigOverride = other.additionalSmoothingRecordConfigOverride;
         this.isDisableContactFilter = other.isDisableContactFilter;
         this.isCreateUplinkCmdFile = other.isCreateUplinkCmdFile;
@@ -49,15 +47,16 @@ public class NewTimeCorrelationConfig implements TimeCorrelationRunConfigInputSu
     @Override
     public TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs getRunConfigInputs(Map<String, TelemetrySource.AdditionalOption> additionalTlmSrcOptionsByName) throws Exception {
         return new TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs(
+                targetSampleInputErtMode,
                 Optional.ofNullable(targetSampleRangeStartErt),
                 Optional.ofNullable(targetSampleRangeStopErt),
                 Optional.ofNullable(targetSampleExactErt),
                 Optional.ofNullable(priorCorrelationExactTdt),
                 testModeOwltEnabled,
                 Optional.of(testModeOwltSec),
-                Optional.of(clockChangeRateAssignedValue),
+                Optional.of(clockChangeRateConfig.specifiedClockChangeRateToAssign),
                 Optional.empty(),
-                Optional.of(clockChangeRateModeOverride),
+                Optional.of(clockChangeRateConfig.clockChangeRateModeOverride),
                 Optional.of(additionalSmoothingRecordConfigOverride),
                 isDisableContactFilter,
                 isCreateUplinkCmdFile,
@@ -65,11 +64,11 @@ public class NewTimeCorrelationConfig implements TimeCorrelationRunConfigInputSu
         );
     }
 
-    public void settargetSampleRangeStartErt(OffsetDateTime targetSampleRangeStartErt) {
+    public void setTargetSampleRangeStartErt(OffsetDateTime targetSampleRangeStartErt) {
         this.targetSampleRangeStartErt = targetSampleRangeStartErt;
     }
 
-    public void settargetSampleRangeStopErt(OffsetDateTime targetSampleRangeStopErt) {
+    public void setTargetSampleRangeStopErt(OffsetDateTime targetSampleRangeStopErt) {
         this.targetSampleRangeStopErt = targetSampleRangeStopErt;
     }
 
@@ -89,16 +88,12 @@ public class NewTimeCorrelationConfig implements TimeCorrelationRunConfigInputSu
         this.testModeOwltSec = testModeOwltSec;
     }
 
-    public void setClockChangeRateAssignedValue(double clockChangeRateAssignedValue) {
-        this.clockChangeRateAssignedValue = clockChangeRateAssignedValue;
-    }
-
     public void setDryRunConfig(TimeCorrelationRunConfig.DryRunConfig dryRunConfig) {
         this.dryRunConfig = dryRunConfig;
     }
 
-    public void setClockChangeRateMode(TimeCorrelationRunConfig.ClockChangeRateMode clockChangeRateMode) {
-        this.clockChangeRateModeOverride = clockChangeRateMode;
+    public void setClockChangeRateConfig(TimeCorrelationRunConfig.ClockChangeRateConfig clockChangeRateConfig) {
+        this.clockChangeRateConfig = clockChangeRateConfig;
     }
 
     public void setAdditionalSmoothingRecordConfigOverride(TimeCorrelationRunConfig.AdditionalSmoothingRecordConfig additionalSmoothingRecordConfigOverride) {
@@ -111,5 +106,9 @@ public class NewTimeCorrelationConfig implements TimeCorrelationRunConfigInputSu
 
     public void setCreateUplinkCmdFile(boolean createUplinkCmdFile) {
         isCreateUplinkCmdFile = createUplinkCmdFile;
+    }
+
+    public void setTargetSampleInputErtMode(TimeCorrelationRunConfig.TargetSampleInputErtMode targetSampleInputErtMode) {
+        this.targetSampleInputErtMode = targetSampleInputErtMode;
     }
 }

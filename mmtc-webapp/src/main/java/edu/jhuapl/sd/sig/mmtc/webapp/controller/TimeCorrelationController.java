@@ -12,13 +12,12 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
-import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
-import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfig;
-import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfigPreview;
+import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfigRequest;
+import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfigRequestPreview;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.OutputProductService;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.TelemetryService;
 import io.javalin.Javalin;
@@ -72,12 +71,12 @@ public class TimeCorrelationController extends BaseController {
     @Override
     public void registerEndpoints(Javalin javalinApp) {
         javalinApp.post("/api/v1/correlation/preview", ctx -> {
-            NewTimeCorrelationConfigPreview correlationConfigPreview = ctx.bodyAsClass(NewTimeCorrelationConfigPreview.class);
+            NewTimeCorrelationConfigRequestPreview correlationConfigPreview = ctx.bodyAsClass(NewTimeCorrelationConfigRequestPreview.class);
             ctx.json(previewNewCorrelation(correlationConfigPreview));
         });
 
         javalinApp.post("/api/v1/correlation/create", ctx -> {
-            NewTimeCorrelationConfig correlationConfig = ctx.bodyAsClass(NewTimeCorrelationConfig.class);
+            NewTimeCorrelationConfigRequest correlationConfig = ctx.bodyAsClass(NewTimeCorrelationConfigRequest.class);
             ctx.json(createNewCorrelation(correlationConfig));
         });
 
@@ -137,7 +136,7 @@ public class TimeCorrelationController extends BaseController {
                 .collect(Collectors.toList());
     }
 
-    private TimeCorrelationPreviewResults previewNewCorrelation(NewTimeCorrelationConfigPreview correlationConfigPreview) throws Exception {
+    private TimeCorrelationPreviewResults previewNewCorrelation(NewTimeCorrelationConfigRequestPreview correlationConfigPreview) throws Exception {
         Files.createDirectories(Paths.get("/tmp/mmtc/previews"));
         Path tmpSclkKernelPath = Paths.get("/tmp/mmtc/previews/", String.format("mmtc_sclk_preview_%s.tsc", UUID.randomUUID().toString()));
         correlationConfigPreview.setDryRunConfig(new TimeCorrelationRunConfig.DryRunConfig(
@@ -149,7 +148,7 @@ public class TimeCorrelationController extends BaseController {
             // have the preview endpoint calculate and return the graph data, among other stats about the new correlation run
 
             final TimeCorrelationContext ctxResult = runNewCorrelation(correlationConfigPreview);
-            final List<TelemetryService.TimekeepingTelemetryPoint> tlmPoints = telemetryService.getTelemetryPoints(correlationConfigPreview.beginTime, correlationConfigPreview.endTime, tmpSclkKernelPath);
+            final List<TelemetryService.TimekeepingTelemetryPoint> tlmPoints = telemetryService.getTelemetryPoints(correlationConfigPreview.beginTimeErt, correlationConfigPreview.endTimeErt, tmpSclkKernelPath);
 
             final List<TimeCorrelationTriplet> updatedTriplets = new ArrayList<>();
             config.withSpiceMutexAndDefaultKernels(() -> {
@@ -183,22 +182,22 @@ public class TimeCorrelationController extends BaseController {
         }
     }
 
-    public static class DefaultTimeCorrelationConfig extends NewTimeCorrelationConfig {
-        public final int sampleSize;
+    public static class DefaultTimeCorrelationConfigRequest extends NewTimeCorrelationConfigRequest {
+        public final int samplesPerSet;
         public final Double newCorrelationMinTdt;
         public final Double predictedClkRateMinLookbackHours;
         public final Double predictedClkRateMaxLookbackHours;
 
-        public DefaultTimeCorrelationConfig(NewTimeCorrelationConfig corrConfig, int sampleSize, Double newCorrelationMinTdt, Double predictedClkRateMinLookbackHours, Double predictedClkRateMaxLookbackHours) {
+        public DefaultTimeCorrelationConfigRequest(NewTimeCorrelationConfigRequest corrConfig, int samplesPerSet, Double newCorrelationMinTdt, Double predictedClkRateMinLookbackHours, Double predictedClkRateMaxLookbackHours) {
             super(corrConfig);
-            this.sampleSize = sampleSize;
+            this.samplesPerSet = samplesPerSet;
             this.newCorrelationMinTdt = newCorrelationMinTdt;
             this.predictedClkRateMinLookbackHours = predictedClkRateMinLookbackHours;
             this.predictedClkRateMaxLookbackHours = predictedClkRateMaxLookbackHours;
         }
     }
 
-    private NewTimeCorrelationConfig getDefaultCorrelationConfig() throws MmtcException, IOException, TimeConvertException {
+    private NewTimeCorrelationConfigRequest getDefaultCorrelationConfig() throws MmtcException, IOException, TimeConvertException {
         final List<TimeCorrelationTriplet> allTimeCorrelationTriplets = getAllTimeCorrelationTriplets(outputProductService.getLatestFilenameForDef(outputProductService.getSclkKernelOutputProductDef()).get());
         final TimeCorrelationTriplet latestTimeCorrelationTriplet = allTimeCorrelationTriplets.get(allTimeCorrelationTriplets.size() - 1);
 
@@ -208,8 +207,8 @@ public class TimeCorrelationController extends BaseController {
                 () -> TimeConvert.tdtCalStrToTdt(latestTimeCorrelationTriplet.tdtG.replace("@", "")) + .001
         );
 
-        final DefaultTimeCorrelationConfig defaultCorrConfig = new DefaultTimeCorrelationConfig(
-                new NewTimeCorrelationConfig(),
+        final DefaultTimeCorrelationConfigRequest defaultCorrConfig = new DefaultTimeCorrelationConfigRequest(
+                new NewTimeCorrelationConfigRequest(),
                 config.getSamplesPerSet(),
                 newCorrelationMinTdt,
                 config.getPredictedClkRateLookBackHours(),
@@ -218,9 +217,8 @@ public class TimeCorrelationController extends BaseController {
 
         defaultCorrConfig.setTestModeOwltEnabled(false);
         defaultCorrConfig.setTestModeOwltSec(0.0);
-        defaultCorrConfig.setClockChangeRateAssignedValue(1.0);
+        defaultCorrConfig.setClockChangeRateConfig(new TimeCorrelationRunConfig.ClockChangeRateConfig(config.getConfiguredClockChangeRateMode(), 1.0));
         defaultCorrConfig.setDryRunConfig(new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.NOT_DRY_RUN, null));
-        defaultCorrConfig.setClockChangeRateMode(config.getConfiguredClockChangeRateMode());
         defaultCorrConfig.setAdditionalSmoothingRecordConfigOverride(
                 new TimeCorrelationRunConfig.AdditionalSmoothingRecordConfig(
                         config.isAdditionalSmoothingCorrelationRecordInsertionEnabled(),
@@ -234,7 +232,7 @@ public class TimeCorrelationController extends BaseController {
         return defaultCorrConfig;
     }
 
-    private TimeCorrelationContext runNewCorrelation(NewTimeCorrelationConfig newCorrConfig) throws Exception {
+    private TimeCorrelationContext runNewCorrelation(NewTimeCorrelationConfigRequest newCorrConfig) throws Exception {
         try {
             return new TimeCorrelationApp(new TimeCorrelationRunConfig(newCorrConfig, config)).run();
         } finally {
@@ -242,7 +240,7 @@ public class TimeCorrelationController extends BaseController {
         }
     }
 
-    private CorrelationResults createNewCorrelation(NewTimeCorrelationConfig newCorrConfig) throws Exception {
+    private CorrelationResults createNewCorrelation(NewTimeCorrelationConfigRequest newCorrConfig) throws Exception {
         try {
             return CorrelationResults.from(runNewCorrelation(newCorrConfig));
         } finally {

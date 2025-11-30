@@ -65,6 +65,7 @@ public class OutputProductService {
                     try {
                         return new OutputProductDef(
                                 def.getName(),
+                                def.getDisplayName(),
                                 def.isBuiltIn(),
                                 def.getClass().getSimpleName(),
                                 getProductTypeAsString(def),
@@ -104,5 +105,5 @@ public class OutputProductService {
         throw new MmtcException("Unexpected type for: " + def.getName());
     }
 
-    public record OutputProductDef(String name, boolean builtIn, String simpleClassName, String type, boolean singleFile, List<String> filenames) { }
+    public record OutputProductDef(String name, String displayName, boolean builtIn, String simpleClassName, String type, boolean singleFile, List<String> filenames) { }
 }

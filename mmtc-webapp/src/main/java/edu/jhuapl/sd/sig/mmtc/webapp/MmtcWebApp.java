@@ -20,6 +20,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 
 public class MmtcWebApp {
     private static final Logger logger = LogManager.getLogger();
@@ -93,6 +94,11 @@ public class MmtcWebApp {
         controllers.add(new OutputProductController(config, this.outputProductService));
         controllers.add(new InfoController(config));
         controllers.forEach(c -> c.registerEndpoints(javalinApp));
+
+        javalinApp.exception(Exception.class, (e, ctx) -> {
+            ctx.status(500);
+            ctx.result(Optional.ofNullable(e.getMessage()).orElse("An error occurred."));
+        });
     }
 
     private SslContextFactory.Server getSslContextFactory() {

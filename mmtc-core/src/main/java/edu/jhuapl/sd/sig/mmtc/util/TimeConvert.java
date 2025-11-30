@@ -17,7 +17,6 @@ import java.time.Year;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationMetricsConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.apache.commons.lang3.StringUtils;
 
@@ -1261,11 +1260,13 @@ import spice.basic.*;
         public final double tdtG;
         public final OffsetDateTime scetUtc;
         public final double scetErrorNanos;
+        public final double owltSec;
 
-        public FrameSampleMetrics(double tdtG, OffsetDateTime scetUtc, double scetErrorNanos) {
+        public FrameSampleMetrics(double tdtG, OffsetDateTime scetUtc, double scetErrorNanos, double owltSec) {
             this.tdtG = tdtG;
             this.scetUtc = scetUtc;
             this.scetErrorNanos = scetErrorNanos;
+            this.owltSec = owltSec;
         }
     }
 
@@ -1279,7 +1280,7 @@ import spice.basic.*;
      * @throws TimeConvertException
      * @throws MmtcException
      */
-    public static FrameSampleMetrics calculateScetErrorNanos(TimeCorrelationMetricsConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
+    public static FrameSampleMetrics calculateFrameSampleMetrics(TimeCorrelationMetricsConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
         final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(
                 Arrays.asList(fs),
                 config,
@@ -1298,7 +1299,8 @@ import spice.basic.*;
         return new FrameSampleMetrics(
                 tcTarget.getTargetSampleTdtG(),
                 actualScet,
-                -1 * ChronoUnit.NANOS.between(estimatedScet, actualScet)
+                -1 * ChronoUnit.NANOS.between(estimatedScet, actualScet),
+                tcTarget.getTargetSampleOwlt()
         );
     }
 

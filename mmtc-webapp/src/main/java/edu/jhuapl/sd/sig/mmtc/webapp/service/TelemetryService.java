@@ -27,12 +27,13 @@ public class TelemetryService {
             FrameSample originalFrameSample,
             double tdtG,
             String scetUtc,
-            double scetErrorMs
+            double scetErrorMs,
+            double owltSec
     ) { }
 
 
-    public List<TimekeepingTelemetryPoint> getTelemetryPoints(OffsetDateTime beginTime, OffsetDateTime endTime, Path sclkKernelPath) throws Exception {
-        final List<FrameSample> frameSamples = config.getTelemetrySource().getSamplesInRange(beginTime, endTime);
+    public List<TimekeepingTelemetryPoint> getTelemetryPoints(OffsetDateTime beginTimeErt, OffsetDateTime endTimeErt, Path sclkKernelPath) throws Exception {
+        final List<FrameSample> frameSamples = config.getTelemetrySource().getSamplesInRange(beginTimeErt, endTimeErt);
 
         final Map<String, String> sclkKernelToLoad = new HashMap<>();
         sclkKernelToLoad.put(sclkKernelPath.toAbsolutePath().toString(), "sclk");
@@ -93,14 +94,15 @@ public class TelemetryService {
         for (FrameSample fs : frameSamples) {
             fs.computeAndSetTdBe(metricsConfig.getFrameErtBitOffsetError());
 
-            final TimeConvert.FrameSampleMetrics fsMetrics = TimeConvert.calculateScetErrorNanos(metricsConfig, fs);
+            final TimeConvert.FrameSampleMetrics fsMetrics = TimeConvert.calculateFrameSampleMetrics(metricsConfig, fs);
 
             list.add(
                     new TimekeepingTelemetryPoint(
                             fs,
                             fsMetrics.tdtG,
                             TimeConvert.timeToIsoUtcString(fsMetrics.scetUtc),
-                            new BigDecimal(fsMetrics.scetErrorNanos).divide(new BigDecimal(1_000_000.0)).doubleValue()
+                            new BigDecimal(fsMetrics.scetErrorNanos).divide(new BigDecimal(1_000_000.0)).doubleValue(),
+                            fsMetrics.owltSec
                     )
             );
         }

@@ -22,8 +22,8 @@ public class TelemetryController extends BaseController {
     @Override
     public void registerEndpoints(Javalin javalinApp) {
         javalinApp.get("/api/v1/telemetry/range", ctx -> {
-            OffsetDateTime beginTime = TimeConvert.parseIsoDoyUtcStr(ctx.queryParam("beginTime"));
-            OffsetDateTime endTime = TimeConvert.parseIsoDoyUtcStr(ctx.queryParam("endTime"));
+            OffsetDateTime beginTimeErt = TimeConvert.parseIsoDoyUtcStr(ctx.queryParam("beginTimeErt"));
+            OffsetDateTime endTimeErt = TimeConvert.parseIsoDoyUtcStr(ctx.queryParam("endTimeErt"));
 
             String sclkKernelName = ctx.queryParam("sclkKernelName");
 
@@ -36,7 +36,7 @@ public class TelemetryController extends BaseController {
             EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) config.getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
             sclkKernelPath = sclkKernelDef.resolveLocation(config).findMatchingFilename(sclkKernelName);
 
-            ctx.json(telemetryService.getTelemetryPoints(beginTime, endTime, sclkKernelPath));
+            ctx.json(telemetryService.getTelemetryPoints(beginTimeErt, endTimeErt, sclkKernelPath));
         });
     }
 

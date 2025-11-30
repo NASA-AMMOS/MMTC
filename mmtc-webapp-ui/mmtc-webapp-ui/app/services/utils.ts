@@ -95,6 +95,21 @@ export function toHhMm(date: Date) {
   return format(date, "HH:mm", { useAdditionalDayOfYearTokens: true });
 }
 
+// todo rename this
 export function parseIso8601Utc(s: string) {
-  return parseISO(s + "Z");
+  return parseISO(s);
+  //return parseISO(s + "Z");
+}
+
+export function getAttrTableHtmlFor(attrs: []) {
+  let rethtml = "<div class='ml-5 mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11px] leading-tight pr-10'>";
+
+  attrs.forEach(pair => {
+    rethtml += `<div class='font-medium text-gray-500 tracking-wide'>${pair.key}</div>`;
+    rethtml += `<div class='text-gray-900'>${pair.val}</div>`;
+  })
+
+  rethtml += "</div>"
+
+  return rethtml;
 }

@@ -3,7 +3,7 @@ import { sub, parseISO } from 'date-fns'
 import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from 'date-fns'
 // import { VisXYContainer, VisLine, VisAxis, VisArea, VisCrosshair, VisTooltip } from '@unovis/vue'
 import type { Period, Range } from '~/types'
-import {parseIso8601Utc} from "../services/utils";
+import {parseIso8601Utc, getAttrTableHtmlFor} from "../services/utils";
 
 import VChart, { THEME_KEY } from 'vue-echarts';
 import { ref, provide } from 'vue';
@@ -108,29 +108,57 @@ const template = (d: DataRecord) => `${formatDate(d.date)}: "foobar"`
 
 // var _data = generateData1();
 
+function buildTooltipContentForTelemetry(paramName, param) {
+  let tooltipSectionForParam = param.marker + `${paramName} <br/>`;
+
+  const attributes = [];
+
+  attributes.push({key: 'SCET Error (ms)', val: `${param.data.originalTtp.scetErrorMs}`});
+  attributes.push({key: 'SCLK', val: `${param.data.originalTtp.originalFrameSample.tkSclkCoarse}:${param.data.originalTtp.originalFrameSample.tkSclkFine}`});
+  attributes.push({key: 'ERT', val: `${param.data.originalTtp.originalFrameSample.ertStr}`});
+  attributes.push({key: 'OWLT (s)', val: `${param.data.originalTtp.owltSec}`});
+
+  tooltipSectionForParam += getAttrTableHtmlFor(attributes);
+
+  return tooltipSectionForParam;
+}
+
+function buildTooltipContentForCorrelation(paramName, param) {
+  let tooltipSectionForParam = param.marker + `${paramName} <br/>`;
+
+  const attributes = [];
+
+  attributes.push({key: 'Encoded SCLK', val: `${param.data.originalTriplet.encSclk}`});
+  attributes.push({key: 'TDT(G)', val: `${param.data.originalTriplet.tdtG}`});
+  attributes.push({key: 'Clock rate', val: `${param.data.originalTriplet.clkchgrate}`});
+
+  tooltipSectionForParam += getAttrTableHtmlFor(attributes);
+
+  return tooltipSectionForParam;
+}
+
 function buildTooltipContent(param) {
   switch(param.seriesId) {
     case 'timeCorrTelemetry':
-      // 'ERT/SCLK/SCET/OWLT/SCET Error'
-      return param.marker + `Actual TLM: ${param.data.originalTtp.originalFrameSample.ertStr}`
+      return buildTooltipContentForTelemetry("Time correlation sample", param);
     case 'timeCorrRecords':
-      return `Actual rec: ${param.data.originalTriplet.encSclk}`
+      return buildTooltipContentForCorrelation("Correlation record", param);
     case 'timeCorrTelemetryPreview':
-      return `Prev TLM: ${param.data.originalTtp.originalFrameSample.ertStr}`
+      return buildTooltipContentForTelemetry("Preview time correlation sample (pending commit)", param);
     case 'timeCorrRecordsPreview':
-      return `Prev rec: ${param.data.originalTriplet.encSclk}`
+      return buildTooltipContentForCorrelation("Preview correlation record (pending commit)", param);
   }
 }
 
 const option = ref({
   // Choose axis ticks based on UTC time.
-  // useUTC: true,
+  // useUTC: true, this is off because we're using the local timezone to represent UTC due to lack of native Date object support for timezones
   tooltip:
     {
       show: true,
       trigger: 'axis',
       formatter: (params) => {
-        let htmlContents = toYyyyDddHhMm(new Date(params[0].axisValue)) + '<hr/>';
+        let htmlContents = 'SCET: ' + toYyyyDddHhMm(new Date(params[0].axisValue)) + '<hr/>';
 
         params.forEach(p => {
           htmlContents += buildTooltipContent(p) + "<br/>";
@@ -161,7 +189,7 @@ const option = ref({
   ],
   xAxis: [
     {
-      name: 'SCET/UTC',
+      name: 'SCET (UTC)',
       nameLocation: 'middle',
       nameGap: 30,
       type: 'time',
@@ -229,6 +257,7 @@ const option = ref({
   series: []
 });
 
+// updates options: sets time range when it's updated from the parent
 function updateChartTimeRange() {
   option.value.xAxis[0].min = props.range.beginDate.getTime()
   option.value.xAxis[1].min = props.range.beginDate.getTime()
@@ -247,6 +276,7 @@ watch(() => props.range, (newRange, oldRange) => {
   updateChartTimeRange();
 })
 
+// updates options: sets chart data when it's updated from the parent
 watch(() => props.chartData, (newChartData, oldChartData) => {
   const telemetryData: TimekeepingTelemetryPoint[] = newChartData.telemetry;
   const telemetrySeriesData = []
@@ -361,18 +391,13 @@ watch(() => props.chartData, (newChartData, oldChartData) => {
 })
 
 async function onClickHandler(event) {
-  console.log(event);
   if (props.chartTimeSelectionCfg.selectFrom === 'timeCorrTlm' && event.seriesId === 'timeCorrTelemetry') {
     if (event.data.originalTtp.tdtG > props.chartTimeSelectionCfg.minTdt && event.data.originalTtp.tdtG < props.chartTimeSelectionCfg.maxTdt) {
       emit('time-selection', {tdt: event.data.originalTtp.tdtG, ertStr: event.data.originalTtp.originalFrameSample.ertStr});
-    } else {
-      console.log('time corr point not within bounds!')
     }
   } else if (props.chartTimeSelectionCfg.selectFrom === 'priorCorrelations' && event.seriesId === 'timeCorrRecords') {
     if (event.data.originalTriplet.tdtG > props.chartTimeSelectionCfg.minTdt && event.data.originalTriplet.tdtG < props.chartTimeSelectionCfg.maxTdt) {
       emit('time-selection', {tdt: event.data.originalTriplet.tdtG, ertStr: undefined});
-    } else {
-      console.log('triplet not within bounds!')
     }
   }
 }
@@ -387,14 +412,8 @@ function getSeriesIndexForId(seriesId) {
   return seriesIndex;
 }
 
+// updates options: sets series colors and selectability when we receive new selection configuration from the parent
 function configSeriesForSelection(seriesId, originalDataObjKey, isSelecting) {
-  const currentZoom = option.value.dataZoom?.map(key => ({
-    start: key.start,
-    end: key.end,
-    startValue: key.startValue,
-    endValue: key.endValue,
-  }));
-
   const seriesIndex = getSeriesIndexForId(seriesId);
   option.value.series[seriesIndex].cursor = isSelecting ? 'pointer' : 'default';
 
@@ -420,10 +439,13 @@ function configSeriesForSelection(seriesId, originalDataObjKey, isSelecting) {
     }
   })
 
+  /*
   if (currentZoom) {
     option.value.dataZoom = currentZoom;
     //chart.setOption({ dataZoom: currentZoom }, false);
   }
+
+   */
 
   /*
   timeCorrChart.value.setOption({
@@ -443,6 +465,8 @@ watch(() => props.chartTimeSelectionCfg, (newVal, oldVal) => {
     return;
   }
 
+  const savedDataZoom = JSON.parse(JSON.stringify(timeCorrChart.value.chart.getOption().dataZoom));
+
   switch(props.chartTimeSelectionCfg.selectFrom) {
     case 'timeCorrTlm': {
       configSeriesForSelection('timeCorrTelemetry', 'originalTtp', true);
@@ -458,6 +482,10 @@ watch(() => props.chartTimeSelectionCfg, (newVal, oldVal) => {
       break;
     default:
       console.warn('unexpected selection config: ' + props.chartTimeSelectionCfg);
+  }
+
+  if (savedDataZoom) {
+    option.value.dataZoom = savedDataZoom;
   }
 })
 

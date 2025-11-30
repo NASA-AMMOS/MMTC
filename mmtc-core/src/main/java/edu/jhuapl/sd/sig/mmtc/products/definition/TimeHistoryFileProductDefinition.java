@@ -63,4 +63,9 @@ public class TimeHistoryFileProductDefinition extends AppendedFileOutputProductD
         confUpdates.put("table.timeHistoryFile.path", newProductOutputPath.toString());
         return confUpdates;
     }
+
+    @Override
+    public String getDisplayName() {
+        return "Time History File";
+    }
 }

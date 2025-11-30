@@ -56,4 +56,9 @@ public class RawTlmTableProductDefinition extends AppendedFileOutputProductDefin
         confUpdates.put("table.rawTelemetryTable.path", newProductOutputPath.toString());
         return confUpdates;
     }
+
+    @Override
+    public String getDisplayName() {
+        return "Raw Telemetry Table";
+    }
 }

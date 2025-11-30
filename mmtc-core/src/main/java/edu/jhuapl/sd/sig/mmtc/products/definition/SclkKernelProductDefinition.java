@@ -81,6 +81,11 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         return confUpdates;
     }
 
+    @Override
+    public String getDisplayName() {
+        return "SCLK Kernel";
+    }
+
     public ProductWriteResult writeToAlternatePath(TimeCorrelationContext ctx, Path sclkKernelOutputPath) throws MmtcException {
         return SclkKernel.writeNewProduct(ctx, sclkKernelOutputPath);
     }
