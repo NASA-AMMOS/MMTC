@@ -1100,8 +1100,8 @@ import spice.basic.*;
             throw new TimeConvertException("Unable to convert SCLK string to numeric SCLK. Three or more stage clocks not supported.");
         }
 
-        Double coarsetime = new Double(timefields[0]);
-        Double finetime   = new Double(timefields[1]);
+        Double coarsetime = Double.parseDouble(timefields[0]);
+        Double finetime   = Double.parseDouble(timefields[1]);
         Double sclk       = coarsetime + finetime/tickRate;
 
         return sclk;
@@ -1141,7 +1141,7 @@ import spice.basic.*;
         /* Convert the seconds part of the time into a double, round it to the specified number of fraction
          * of a second digits and then reassemble the date/time string.
          */
-        Double seconds = new Double(hhmmss[2]);
+        Double seconds = Double.parseDouble(hhmmss[2]);
         DecimalFormat secFormat = new DecimalFormat(pattern);
         secFormat.setRoundingMode(RoundingMode.HALF_UP);
         String secstr = secFormat.format(seconds);

@@ -6,6 +6,7 @@
 
 rootProject.name = "mmtc"
 include(":mmtc-core")
+include(":mmtc-output-plugin-sdk")
 include(":mmtc-plugin-ampcs")
 include(":mmtc-tlm-source-plugin-sdk")
 include(":jnispice")
@@ -22,6 +23,10 @@ dependencyResolutionManagement {
             library("log4j-core", "org.apache.logging.log4j:log4j-core:2.25.1")
             library("log4j-jcl", "org.apache.logging.log4j:log4j-jcl:2.25.1")
             library("log4j-slf4j", "org.apache.logging.log4j:log4j-slf4j2-impl:2.25.1")
+
+            // provides javax.xml.bind classes
+            library("jakarta-xml", "jakarta.xml.bind:jakarta.xml.bind-api:3.0.1")
+            library("jaxb-impl", "com.sun.xml.bind:jaxb-impl:3.0.1")
         }
 
         create("testlibs") {
