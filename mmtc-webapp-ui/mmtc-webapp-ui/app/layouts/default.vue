@@ -142,49 +142,5 @@ function rightSidebarToggle() {
     <slot />
 
     <NotificationsSlideover />
-    <!--
-    <UDashboardSidebar
-      id="rightSidebar"
-      side="right"
-      v-model:collapsed="rightCollapsed"
-      collapsible
-      resizable
-      minSize=15
-      class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
-    >
-
-      <template #default="{ collapsed }">
-        <span>
-          <span v-if="!collapsed">
-            <UHeader>
-              <template #left>
-                <UButton icon="i-lucide-sidebar-open" size="md" color="neutral" variant="outline" @click="rightSidebarToggle"></UButton>
-              </template>
-              <template #default>
-                &nbsp;
-              </template>
-              <template #right>
-                <UDropdownMenu :items="appMenuItems">
-                  <UButton label="Menu" color="neutral" variant="outline" icon="i-lucide-square-menu" />
-                </UDropdownMenu>
-              </template>
-
-            </UHeader>
-          </span>
-        </span>
-        <span v-if="collapsed">
-          <UDropdownMenu :items="appMenuItems">
-                <UButton color="neutral" variant="outline" icon="i-lucide-square-menu" />
-          </UDropdownMenu>
-          <UButton icon="i-lucide-sidebar-close" size="md" color="neutral" variant="outline" @click="rightSidebarToggle" class="mt-2"></UButton>
-        </span>
-
-        <span class="">Correlation History</span>
-        <hr/>
-
-      </template>
-    </UDashboardSidebar>
-    -->
   </UDashboardGroup>
 </template>
