@@ -15,7 +15,7 @@ const leftSidebarBottomLinks =
   {
     label: 'Documentation',
     icon: 'i-lucide-info',
-    to: 'https://github.com/nuxt-ui-templates/dashboard',
+    to: '/MMTC_Users_Guide.pdf',
     target: '_blank'
   },
   {

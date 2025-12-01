@@ -35,8 +35,17 @@ public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigIn
 
 
         final Optional<Double> testModeOwltSec = cmdLineConfig.isTestMode() ? Optional.of(cmdLineConfig.getTestModeOwlt()) : Optional.empty();
-        final Optional<Double> assignVal = cmdLineConfig.getClockChangeRateMode().equals(ASSIGN) ? Optional.of(cmdLineConfig.getClockChangeRateAssignedValue()) : Optional.empty();
-        final Optional<String> assignValKey = cmdLineConfig.getClockChangeRateMode().equals(ASSIGN_KEY) ? Optional.of(cmdLineConfig.getClockChangeRateAssignedKey()) : Optional.empty();
+
+        Optional<Double> assignVal = Optional.empty();
+        Optional<String> assignValKey = Optional.empty();
+
+        if (cmdLineConfig.hasClockChangeRateMode()) {
+            if (cmdLineConfig.getClockChangeRateMode().equals(ASSIGN)) {
+                assignVal = Optional.of(cmdLineConfig.getClockChangeRateAssignedValue());
+            } else if  (cmdLineConfig.getClockChangeRateMode().equals(ASSIGN_KEY)) {
+                assignValKey = Optional.of(cmdLineConfig.getClockChangeRateAssignedKey());
+            }
+        }
 
         final TimeCorrelationRunConfig.DryRunConfig dryRunConfig = cmdLineConfig.isDryRun() ? new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.DRY_RUN_RETAIN_NO_PRODUCTS, null) : new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.NOT_DRY_RUN, null);
 

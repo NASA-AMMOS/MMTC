@@ -91,7 +91,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         final Optional<OffsetDateTime> targetSampleRangeStartErt;
         final Optional<OffsetDateTime> targetSampleRangeStopErt;
         final Optional<OffsetDateTime> targetSampleExactErt;
-        final Optional<OffsetDateTime> priorCorrelationExactErt;
+        final Optional<Double> priorCorrelationExactTdt;
         final boolean testModeOwltEnabled;
         final Optional<Double> testModeOwltSec;
         final Optional<Double> clockChangeRateAssignedValue;
@@ -109,7 +109,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
                 Optional<OffsetDateTime> targetSampleRangeStartErt,
                 Optional<OffsetDateTime> targetSampleRangeStopErt,
                 Optional<OffsetDateTime> targetSampleExactErt,
-                Optional<OffsetDateTime> priorCorrelationExactErt,
+                Optional<Double> priorCorrelationExactTdt,
                 boolean testModeOwltEnabled,
                 Optional<Double> testModeOwltSec,
                 Optional<Double> clockChangeRateAssignedValue,
@@ -124,7 +124,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
             this.targetSampleRangeStartErt = targetSampleRangeStartErt;
             this.targetSampleRangeStopErt = targetSampleRangeStopErt;
             this.targetSampleExactErt = targetSampleExactErt;
-            this.priorCorrelationExactErt = priorCorrelationExactErt;
+            this.priorCorrelationExactTdt = priorCorrelationExactTdt;
             this.testModeOwltEnabled = testModeOwltEnabled;
             this.testModeOwltSec = testModeOwltSec;
             this.clockChangeRateAssignedValue = clockChangeRateAssignedValue;
@@ -172,8 +172,10 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
     private void setTargetAndBasisSampleInputs() {
         if (this.runConfigInputs.targetSampleInputErtMode.equals(TargetSampleInputErtMode.RANGE)) {
             this.resolvedTargetSampleRange = Optional.of(new OffsetDateTimeRange(this.runConfigInputs.targetSampleRangeStartErt.get(), this.runConfigInputs.targetSampleRangeStopErt.get()));
+            this.resolvedTargetSampleExactErt = Optional.empty();
         } else {
             this.resolvedTargetSampleExactErt = this.runConfigInputs.targetSampleExactErt;
+            this.resolvedTargetSampleRange = Optional.empty();
         }
     }
 
@@ -289,8 +291,8 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
      */
     public double getTestModeOwlt() { return runConfigInputs.testModeOwltSec.get(); }
 
-    public Optional<OffsetDateTime> getPriorCorrelationErt() {
-        return runConfigInputs.priorCorrelationExactErt;
+    public Optional<Double> getPriorCorrelationTdt() {
+        return runConfigInputs.priorCorrelationExactTdt;
     }
 
     /**
@@ -429,7 +431,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         final Optional<OffsetDateTime> targetSampleRangeStartErt;
         final Optional<OffsetDateTime> targetSampleRangeStopErt;
         final Optional<OffsetDateTime> targetSampleExactErt;
-        final Optional<OffsetDateTime> priorCorrelationExactErt;
+        final Optional<OffsetDateTime> priorCorrelationExactTdt;
         final boolean testModeOwltEnabled;
         final Optional<Double> testModeOwltSec;
         final Optional<Double> clockChangeRateAssignedValue;
@@ -455,8 +457,8 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
             throw new IllegalStateException("Unknown mode: " + getTargetSampleInputErtMode());
         }
 
-        if (getPriorCorrelationErt().isPresent()) {
-            elts.add(String.format("Prior corr ERT = %s", getPriorCorrelationErt().get()));
+        if (getPriorCorrelationTdt().isPresent()) {
+            elts.add(String.format("Prior corr TDT = %s", getPriorCorrelationTdt().get()));
         }
 
         if (isTestMode()) {

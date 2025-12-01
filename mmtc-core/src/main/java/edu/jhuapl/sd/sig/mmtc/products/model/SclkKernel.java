@@ -292,6 +292,57 @@ public class SclkKernel extends TextProduct {
         throw new TextProductException("Look back time invalid for the specified SCLK kernel.");
     }
 
+    /**
+     * Retrieves a data record from the current SCLK kernel that is the specified number of hours
+     * previous to the supplied time in TDT.
+     *
+     * @param fromTdt       IN the time to look back from in TDT
+     * @param minLookbackHours IN the min number of hours to look back
+     * @param maxLookbackHours IN the max number of hours to look back
+     * @return the parsed record that is the number of hours back
+     * @throws TextProductException if the prior record could not be found
+     */
+    public List<String[]> getPriorRecs(Double fromTdt, Double minLookbackHours, Double maxLookbackHours, Collection<String> smoothingRecordTdtStringsToIgnore) throws TextProductException {
+        final double minLookbackSeconds = minLookbackHours * 3600.;
+        final double maxLookbackSeconds = maxLookbackHours * 3600.;
+
+        List<String[]> results = new ArrayList<>();
+
+        try {
+            for (int i = endDataNum; i > 0; i--) {
+                String record = sourceProductLines.get(i);
+
+                if (! isDataRecord(record)) {
+                    continue;
+                }
+
+                final String[] recTripletFields = parseRecord(record, NUM_FIELDS_IN_TRIPLET);
+                final String recTdtStr = recTripletFields[TRIPLET_TDTG_FIELD_INDEX].substring(1);
+                final double recTdtSec = TimeConvert.tdtCalStrToTdt(recTdtStr);
+
+                if (smoothingRecordTdtStringsToIgnore.contains(recTdtStr)) {
+                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to it being a smoothing record", recTdtStr));
+                    continue;
+                }
+
+                final double recDeltaTdt = fromTdt - recTdtSec;
+                if ((recDeltaTdt < minLookbackSeconds) || recDeltaTdt > maxLookbackSeconds) {
+                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to not meeting lookback constraints", recTdtStr));
+                    continue;
+                }
+
+                results.add(recTripletFields);
+            }
+        } catch (TimeConvertException e) {
+            throw new TextProductException("Unable to convert TDT string to numeric TDT seconds.", e);
+        }
+
+        if (results.isEmpty()) {
+            throw new TextProductException("Look back time invalid for the specified SCLK kernel.");
+        }
+
+        return results;
+    }
 
      /**
      * Creates a new time correlation record from the encoded SCLK, TDT, and clock change rate triplet

@@ -41,6 +41,7 @@ watch(
   range,
   (newVal, oldVal) => {
     if (isBefore(range.value.beginDate, range.value.endDate)) {
+      // todo improve this to not emit if both start and end aren't populated in the model
       emit('update-date-range', range.value.getCopy());
     }
   },
@@ -92,7 +93,7 @@ watch(
 
 
         <div class="col-span-1" v-for="quickSelectOption in tenQuickSelectOptions">
-          <UButton @click="quickSelect(quickSelectOption)" :disabled="props.disabled" color="primary" variant="subtle" size="sm" class="text-[var(--ui-fg)]" style="width: 110px;">
+          <UButton @click="quickSelect(quickSelectOption)" :disabled="props.disabled" color="primary" variant="subtle" size="sm" class="text-[var(--ui-fg)]" style="width: 120px;">
             {{ quickSelectOption.displayText }}
           </UButton>
         </div>

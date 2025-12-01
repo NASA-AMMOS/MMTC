@@ -26,9 +26,6 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
     }
 
     public static WindowingTelemetrySelectionStrategy forSeparateConsecutiveWindows(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
-        if (! config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
-            throw new IllegalStateException("This telemetry selection strategy only supports querying over an ERT range for a target sample");
-        }
         return new WindowingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus, config.getSamplesPerSet());
     }
 
@@ -76,6 +73,7 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
             queryStopTime = config.getResolvedTargetSampleRange().get().getStop();
         } else if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
             // todo there has to be a grace window here to query enough telemetry to find the supplemental sample for a target sample, add a new config key?
+            // this problem won't exist for AmpcsTlmWithFrames because it'll query back separately according to its own configuration
             queryStartTime = config.getResolvedTargetSampleExactErt().get().minus(60, ChronoUnit.MINUTES);
             queryStopTime = config.getResolvedTargetSampleExactErt().get().plus(60, ChronoUnit.MINUTES);
         } else {

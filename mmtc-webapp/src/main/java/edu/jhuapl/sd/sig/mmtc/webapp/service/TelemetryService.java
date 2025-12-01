@@ -32,7 +32,7 @@ public class TelemetryService {
     ) { }
 
 
-    public List<TimekeepingTelemetryPoint> getTelemetryPoints(OffsetDateTime beginTimeErt, OffsetDateTime endTimeErt, Path sclkKernelPath) throws Exception {
+    public synchronized List<TimekeepingTelemetryPoint> getTelemetryPoints(OffsetDateTime beginTimeErt, OffsetDateTime endTimeErt, Path sclkKernelPath) throws Exception {
         final List<FrameSample> frameSamples = config.getTelemetrySource().getSamplesInRange(beginTimeErt, endTimeErt);
 
         final Map<String, String> sclkKernelToLoad = new HashMap<>();

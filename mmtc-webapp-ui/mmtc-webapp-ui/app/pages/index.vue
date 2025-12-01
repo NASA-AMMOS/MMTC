@@ -76,7 +76,7 @@ async function setDefaultDateRange() {
   if (allTimeCorrelations.length == 1) {
     rangeStartScetUtcStr = allTimeCorrelations[0].scetUtc
   } else {
-    rangeStartScetUtcStr = allTimeCorrelations[allTimeCorrelations.length - 2].scetUtc
+    rangeStartScetUtcStr = allTimeCorrelations[allTimeCorrelations.length - 1].scetUtc
   }
 
   const rangeStartScetUtc = parseISO(rangeStartScetUtcStr + 'Z');
@@ -89,25 +89,25 @@ async function setDefaultDateRange() {
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
     endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 7}),
-    displayText: "Last corrs +7d"
+    displayText: "Last corr +7d"
   });
 
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
     endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 14}),
-    displayText: "Last corrs +14d"
+    displayText: "Last corr +14d"
   });
 
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
     endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 30}),
-    displayText: "Last corrs +30d"
+    displayText: "Last corr +30d"
   });
 
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
     endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
-    displayText: "Last corrs til now"
+    displayText: "Last corr til now"
   });
 
   quickSelectOptions.push({

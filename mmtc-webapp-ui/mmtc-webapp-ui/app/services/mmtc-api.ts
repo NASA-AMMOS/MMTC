@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // const baseUrl = 'http://localhost:8080/backend-api'
-const baseUrl = 'http://localhost:3000/backend-api'
+// const baseUrl = 'http://localhost:3000/backend-api'
+const baseUrl = '/api'
 
 export interface TdtRange{
   minTdt: number,

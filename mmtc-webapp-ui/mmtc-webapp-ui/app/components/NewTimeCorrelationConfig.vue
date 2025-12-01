@@ -160,9 +160,6 @@ const schema = z.object({
 
 type Schema = z.output<typeof schema>
 
-// 'RANGE'' or 'exact'
-const targetSampleInputErtMode = ref('RANGE');
-
 const newCorrelationMinTdt = ref(0.0);
 const newCorrelationMinLookbackHours = ref(0.0);
 const newCorrelationMaxLookbackHours = ref(0.0);
@@ -436,10 +433,10 @@ onMounted(async () => {
 
   // only allow exact target sample selection when samples per set is 1
   if (defaultCorrelationConfig.value.samplesPerSet === 1) {
-    targetSampleInputErtMode.value = 'EXACT'
+    state.targetSampleInputErtMode = 'EXACT'
     targetSampleInputErtModeChoices.value = ['EXACT', 'RANGE']
   } else {
-    targetSampleInputErtMode.value = 'RANGE'
+    state.targetSampleInputErtMode = 'RANGE'
     targetSampleInputErtModeChoices.value = ['RANGE']
   }
 
@@ -462,7 +459,7 @@ onMounted(async () => {
         <USelect v-model="state.targetSampleInputErtMode" :items="targetSampleInputErtModeChoices" class="w-full"/>
       </UFormField>
 
-      <UFormField label="Target sample (ERT)" name="targetSampleExactErt" size="sm" v-if="targetSampleInputErtMode === 'exact'">
+      <UFormField label="Target sample (ERT)" name="targetSampleExactErt" size="sm" v-if="state.targetSampleInputErtMode === 'EXACT'">
         <div class="grid grid-cols-4 gap-x-2">
           <div class="col-span-3">
           <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
@@ -473,7 +470,7 @@ onMounted(async () => {
         </div>
       </UFormField>
 
-      <UFormField label="Target sample range begin (ERT)" name="targetSampleRangeStartErt" size="sm" v-if="targetSampleInputErtMode === 'RANGE'">
+      <UFormField label="Target sample range begin (ERT)" name="targetSampleRangeStartErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
         <div class="grid grid-cols-4 gap-x-2">
           <div class="col-span-3">
             <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
@@ -486,7 +483,7 @@ onMounted(async () => {
         </div>
       </UFormField>
 
-      <UFormField label="Target sample range end (ERT)" name="targetSampleRangeStopErt" size="sm" v-if="targetSampleInputErtMode === 'RANGE'">
+      <UFormField label="Target sample range end (ERT)" name="targetSampleRangeStopErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
         <div class="grid grid-cols-4 gap-x-2">
           <div class="col-span-3">
             <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>

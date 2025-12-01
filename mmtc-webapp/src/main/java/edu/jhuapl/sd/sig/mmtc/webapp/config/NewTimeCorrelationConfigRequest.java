@@ -13,7 +13,7 @@ public class NewTimeCorrelationConfigRequest implements TimeCorrelationRunConfig
     public OffsetDateTime targetSampleRangeStartErt;
     public OffsetDateTime targetSampleRangeStopErt;
     public OffsetDateTime targetSampleExactErt;
-    public OffsetDateTime priorCorrelationExactTdt;
+    public Double priorCorrelationExactTdt;
     public boolean testModeOwltEnabled;
     public double testModeOwltSec;
 
@@ -76,7 +76,7 @@ public class NewTimeCorrelationConfigRequest implements TimeCorrelationRunConfig
         this.targetSampleExactErt = targetSampleExactErt;
     }
 
-    public void setPriorCorrelationExactTdt(OffsetDateTime priorCorrelationExactTdt) {
+    public void setPriorCorrelationExactTdt(Double priorCorrelationExactTdt) {
         this.priorCorrelationExactTdt = priorCorrelationExactTdt;
     }
 

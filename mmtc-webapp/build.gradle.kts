@@ -63,8 +63,15 @@ val copyBuiltWebappUiIntoSrc = tasks.register<Copy>("copyBuiltWebappUiIntoSrc") 
     into(projectDir.toPath().resolve("src/main/resources/static"))
 }
 
+val copyBuiltUserDocIntoSrc = tasks.register<Copy>("copyBuiltUserDocIntoSrc") {
+    dependsOn(rootProject.tasks.getByName("userGuidePdf"))
+    from(rootProject.projectDir.toPath().resolve("build/docs/MMTC_Users_Guide.pdf"))
+    into(projectDir.toPath().resolve("src/main/resources/docs"))
+}
+
 tasks.processResources {
-    // dependsOn(copyBuiltWebappUiIntoSrc)
+    dependsOn(copyBuiltWebappUiIntoSrc)
+    dependsOn(copyBuiltUserDocIntoSrc)
 }
 
 tasks.clean {

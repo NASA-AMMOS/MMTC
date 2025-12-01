@@ -2,6 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.app;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.math.BigDecimal;
 
@@ -300,6 +301,44 @@ public class TimeCorrelationApp {
         return clkChgRate;
     }
 
+    private String[] getLookbackRecordForPredictedClkChgRate(Double tdtGOfNewTriplet) throws MmtcException, TextProductException, TimeConvertException {
+        Optional<Double> desiredPriorCorrelationTdt = config.getPriorCorrelationTdt();
+
+        // this is returned in order of most recent to oldest
+        final List<String[]> priorRecsWithinLookbackWindow = ctx.currentSclkKernel.get().getPriorRecs(
+                tdtGOfNewTriplet,
+                config.getPredictedClkRateLookBackHours(),
+                config.getMaxPredictedClkRateLookBackHours(),
+                runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback()
+        );
+
+        for (String[] record : priorRecsWithinLookbackWindow) {
+            if (desiredPriorCorrelationTdt.isPresent()) {
+                if (TimeConvert.tdtCalStrToTdt(record[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1)).equals(desiredPriorCorrelationTdt.get())) {
+                    return record;
+                }
+            } else {
+                return record;
+            }
+        }
+
+        if (desiredPriorCorrelationTdt.isPresent()) {
+            throw new MmtcException("Could not find the specified triplet to use as the lookback record with TDT: " + config.getPriorCorrelationTdt().get());
+        } else {
+            final String[] mostRecentLookbackRecMeetingMinimumOnly = ctx.currentSclkKernel.get().getPriorRec(tdtGOfNewTriplet, config.getPredictedClkRateLookBackHours(), runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
+            Double lookbackRecTdtG        = TimeConvert.tdtCalStrToTdt(mostRecentLookbackRecMeetingMinimumOnly[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
+            final double deltaTdt = tdtGOfNewTriplet - lookbackRecTdtG;
+
+            String errorMsg = "Insufficient earlier data in the input SCLK Kernel to compute the Predicted CLKRATE. ";
+            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + mostRecentLookbackRecMeetingMinimumOnly[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1) + ",";
+            errorMsg       += "which is " + deltaTdt/3600 + " hours older than the new record being generated. ";
+            errorMsg       += "The most recent lookback record is determined using a combination of the lookback and max lookback configuration values, and may not necessarily be the most recent entry in the latest SCLK Kernel. ";
+            errorMsg       += String.format("However, the maximum allowable difference specified by the compute.tdtG.rate.predicted.maxLookBackDays configuration option is %f hours. ", config.getMaxPredictedClkRateLookBackHours());
+            errorMsg       += "Please consider rerunning MMTC with either the --clkchgrate-assign or --clkchgrate-nodrift mode selected, or rerun within a different time period.";
+
+            throw new MmtcException(errorMsg);
+        }
+    }
 
     /**
      * Compute the predicted clock change rate. This method compares the newly
@@ -315,7 +354,7 @@ public class TimeCorrelationApp {
      * @throws MmtcException if the new SCLK or TDT values overlap a previous time correlation
      */
     private Double computePredictedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException, MmtcException {
-        String[] lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tdt_g, config.getPredictedClkRateLookBackHours(), runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
+        String[] lookBackRec = getLookbackRecordForPredictedClkChgRate(tdt_g);
 
         logger.debug("computePredictedClkChgRate(): lookBackRec from SCLK = " +
                 lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX] + " " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX] + " "
@@ -329,28 +368,6 @@ public class TimeCorrelationApp {
         Double tdt_g0        = TimeConvert.tdtCalStrToTdt(lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
 
         logger.debug("computePredictedClkChgRate(): sclk0 = " + sclk0 + ", tdt_g0 = " + tdt_g0 + ", sclk = " + sclk + ", tdt_g = " + tdt_g);
-
-        // Check that the selected look back record from the input SCLK Kernel is not older than the time of the current
-        // sample minus the maximum number of look back hours as specified in the configuration parameters.  If it is,
-        // throw an exception. Processing should not continue. The user should check that the input SCLK Kernel is
-        // correct for the run or rerun in Assign (--clkchgrate-assign) or No-Drift (--clkchgrate-nodrift) modes to
-        // compute the CLKRATE.
-        final double deltaTDT = tdt_g - tdt_g0;
-        logger.debug("computePredictedClkChgRate(): The look back record from the SCLK Kernel used to compute the " +
-                " Predicted CLKRATE is " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX] + ",\nwhich is " + deltaTDT/3600 + " hours earlier than the current TDT(G) of " +
-                tdtGStr + ". Processing continues.");
-
-        if (deltaTDT > (config.getMaxPredictedClkRateLookBackHours()) * 3600.) {
-            String errorMsg = "Insufficient earlier data in the input SCLK Kernel to compute the Predicted CLKRATE. ";
-            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1) + ",";
-            errorMsg       += "which is " + deltaTDT/3600 + " hours older than the new record being generated. ";
-            errorMsg       += "The most recent lookback record is determined using a combination of the lookback and max lookback configuration values, and may not necessarily be the most recent entry in the latest SCLK Kernel. ";
-            errorMsg       += String.format("However, the maximum allowable difference specified by the compute.tdtG.rate.predicted.maxLookBackDays configuration option is %f hours. ", config.getMaxPredictedClkRateLookBackHours());
-            errorMsg       += "Please consider rerunning MMTC with either the --clkchgrate-assign or --clkchgrate-nodrift mode selected, or rerun within a different time period.";
-
-            throw new MmtcException(errorMsg);
-        }
-
         return computeClkChgRate(sclk0, tdt_g0, sclk, tdt_g);
     }
 

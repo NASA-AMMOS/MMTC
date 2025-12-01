@@ -13,15 +13,16 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  routeRules: {
-    '/api/**': {
-      cors: true,
-    },
-    '/backend-api/**': {
-      cors: true,
-      proxy: { to: "http://localhost:8080/api/**"}
-    }
-  },
+  // routeRules: {
+  //   '/api/**': {
+  //     cors: true,
+  //   },
+  //   '/backend-api/**': {
+  //     cors: true,
+  //     proxy: { to: "http://localhost:9090/api/**"}
+  //   }
+  // },
+
 
   compatibilityDate: '2024-07-11',
 

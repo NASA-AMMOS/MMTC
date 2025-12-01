@@ -8,7 +8,7 @@ const props = defineProps<{
 const html = computed(() => {
   const attributes = [];
 
-  attributes.push({key: 'SCLK', val: `${props.correlation.target.targetSample.sclkCoarse}:${props.correlation.target.targetSample.sclkFine}` });
+  attributes.push({key: 'SCLK', val: `${props.correlation.target.targetSample.tkSclkCoarse}:${props.correlation.target.targetSample.tkSclkFine}` });
   attributes.push({key: 'Ground Station ID', val: props.correlation.target.targetSampleGroundStationId })
   attributes.push({key: 'OWLT (sec)', val: props.correlation.owlt_sec });
   attributes.push({key: 'ERT', val: props.correlation.target.targetSampleErt})

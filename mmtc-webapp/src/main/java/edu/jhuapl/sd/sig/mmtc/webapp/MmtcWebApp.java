@@ -67,6 +67,7 @@ public class MmtcWebApp {
             }
 
             javalinConfig.staticFiles.add("/static");
+            javalinConfig.staticFiles.add("/docs");
 
             javalinConfig.jsonMapper(new JavalinJackson(MmtcObjectMapper.get(), false));
         });
@@ -96,6 +97,7 @@ public class MmtcWebApp {
         controllers.forEach(c -> c.registerEndpoints(javalinApp));
 
         javalinApp.exception(Exception.class, (e, ctx) -> {
+            logger.error("Server error", e);
             ctx.status(500);
             ctx.result(Optional.ofNullable(e.getMessage()).orElse("An error occurred."));
         });
