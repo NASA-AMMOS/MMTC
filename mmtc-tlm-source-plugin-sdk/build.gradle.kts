@@ -12,6 +12,10 @@ dependencies {
     implementation(libs.log4j.core)
     implementation(libs.log4j.jcl)
 
+    // provides javax.xml.bind classes
+    implementation(libs.jakarta.xml)
+    implementation(libs.jaxb.impl)
+
     testImplementation(project(":mmtc-core"))
     testImplementation(testlibs.junit.jupiter.api)
     testImplementation(testlibs.junit.jupiter.params)
@@ -23,6 +27,8 @@ dependencies {
 description = "mmtc-tlm-plugin-example"
 
 java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
     withJavadocJar()
 }
 
@@ -38,7 +44,8 @@ tasks.jar {
         attributes(
             "Build-Date" to Instant.now().toString(),
             "Implementation-Title" to project.name,
-            "Implementation-Version" to project.version
+            "Implementation-Version" to project.version,
+            "Multi-Release" to "true"
         )
     }
 }

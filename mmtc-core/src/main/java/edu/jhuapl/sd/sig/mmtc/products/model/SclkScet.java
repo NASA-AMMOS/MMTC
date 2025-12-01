@@ -168,8 +168,8 @@ public class SclkScet {
 
         String sclk     = fields[SCLK];
         String datetime = fields[SCET];
-        Double dut      = new Double(fields[DUT]);
-        Double sclkrate = new Double(fields[SCLKRATE]);
+        Double dut      = Double.parseDouble(fields[DUT]);
+        Double sclkrate = Double.parseDouble(fields[SCLKRATE]);
 
         return new SclkScet(sclk, TimeConvert.parseIsoDoyUtcStr(datetime), dut, sclkrate);
     }

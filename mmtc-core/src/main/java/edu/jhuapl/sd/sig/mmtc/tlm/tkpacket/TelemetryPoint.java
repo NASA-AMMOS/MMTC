@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.tkpacket;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 
 /**
  * Represents a TelemetryPoint element found in the timekeeping packet definition XML file.

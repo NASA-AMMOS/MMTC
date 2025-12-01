@@ -339,7 +339,7 @@ public class SclkScetFile extends TextProduct {
                 String[] fields = sclkKernelRecord.split("\\s+");
 
                 /* Convert the encoded SCLK back to regular SCLK ticks. */
-                Double encSclk = new Double(fields[0]);
+                Double encSclk = Double.parseDouble(fields[0]);
                 sclkTicks = TimeConvert.encSclkToSclk(naifScId, clockTickRate, encSclk);
                 logger.trace("SclkScetFile.List(): str encSclk = " + fields[0] + ", Double encSclk = " + encSclk);
 
@@ -360,7 +360,7 @@ public class SclkScetFile extends TextProduct {
                 dutval = getDutBefore(scetUtc);
 
                 /* The SCLK change rate is the same as the SCLK kernel clock change rate. */
-                sclkrate = new Double(fields[2]);
+                sclkrate = Double.parseDouble(fields[2]);
 
 
                 logger.trace("SclkScetFile.List(): sclkTicks = " + sclkTicks + ", scetUtc = " + scetUtc +

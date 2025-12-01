@@ -11,6 +11,11 @@ val precompiledJniSpiceClasses by configurations.creating {
     isCanBeResolved = true
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 dependencies {
     precompiledJniSpiceClasses(project(mapOf(
         "path" to ":jnispice",
@@ -33,6 +38,10 @@ dependencies {
     implementation(libs.log4j.core)
     implementation(libs.log4j.jcl)
     implementation(libs.commons.io)
+
+    // provides javax.xml.bind classes
+    implementation(libs.jakarta.xml)
+    implementation(libs.jaxb.impl)
 
     testImplementation(testlibs.junit.jupiter.api)
     testImplementation(testlibs.junit.jupiter.params)
@@ -82,7 +91,8 @@ val uberJar = tasks.register<Jar>("uberJar") {
                 "Main-Class" to "edu.jhuapl.sd.sig.mmtc.app.MmtcCli",
                 "Build-Date" to Instant.now().toString(),
                 "Implementation-Version" to project.version,
-                "Implementation-Title" to project.name
+                "Implementation-Title" to project.name,
+                "Multi-Release" to "true"
         )
     }
 }

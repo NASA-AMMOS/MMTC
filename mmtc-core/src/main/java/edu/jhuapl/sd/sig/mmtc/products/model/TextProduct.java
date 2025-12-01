@@ -5,7 +5,6 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.xml.soap.Text;
 import java.io.*;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
