@@ -1,13 +1,11 @@
 import com.netflix.gradle.plugins.packaging.CopySpecEnhancement.permissionGroup
 import com.netflix.gradle.plugins.packaging.CopySpecEnhancement.user
 import com.netflix.gradle.plugins.rpm.Rpm
-import org.asciidoctor.gradle.jvm.pdf.AsciidoctorPdfTask
 
 plugins {
     distribution
     id("com.netflix.nebula.ospackage") version "11.11.2"
-    id("org.asciidoctor.jvm.convert") version "4.0.5"
-    id("org.asciidoctor.jvm.pdf") version "4.0.5"
+    id("mmtc.java-conventions")
 }
 
 allprojects {
@@ -29,27 +27,35 @@ allprojects {
     }
 }
 
-asciidoctorj {
-    fatalWarnings("Errno")
+val asciidoctorRuntime by configurations.creating
+
+dependencies {
+    asciidoctorRuntime("org.asciidoctor:asciidoctorj:2.5.7")
+    asciidoctorRuntime("org.asciidoctor:asciidoctorj-pdf:2.3.10")
 }
 
-val asciidoctor = tasks.register<AsciidoctorPdfTask>("userGuidePdf") {
+// runs in a separate JVM to hide its older snakeyaml dependency from conflicting with a newer snakeyaml dependency brought in by SCA plugins
+val asciidoctor = tasks.register<JavaExec>("userGuidePdf") {
     inputs.files("docs/MMTC_Users_Guide.adoc")
     inputs.files("docs/themes/basic/basic-theme.yml")
-
-    setBaseDir(file("docs"))
-    setSourceDir(file("docs"))
-    setOutputDir(file("build/docs"))
-    setTheme("basic")
-
     outputs.dir("build/docs")
-}
 
-pdfThemes {
-    local("basic") {
-        themeDir = file("docs/themes/basic")
-        themeName = "basic"
-    }
+    group = "documentation"
+    description = "Generate a PDF of MMTC's User Guide from its .adoc source"
+
+    classpath = asciidoctorRuntime
+    mainClass.set("org.asciidoctor.jruby.cli.AsciidoctorInvoker")
+
+    // read from https://github.com/asciidoctor/asciidoctorj/blob/main/asciidoctorj-cli/src/main/java/org/asciidoctor/cli/AsciidoctorCliOptions.java
+    args(
+        "-b", "pdf",                      // backend
+        "-B", "docs",                             // 'base' dir
+        "-R", "docs",                             // 'source' dir
+        "-D", "build/docs",                       // 'destination' dir
+        "-a", "pdf-theme=basic",                  // theme attrs
+        "-a", "pdf-themesdir=themes/basic",       // theme attrs
+        "docs/MMTC_Users_Guide.adoc"
+    )
 }
 
 val createDistDir = tasks.register("createDistDir") {

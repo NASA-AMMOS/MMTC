@@ -14,3 +14,7 @@ repositories {
     gradlePluginPortal()
 }
 
+dependencies {
+    implementation("com.github.spotbugs.snom:spotbugs-gradle-plugin:6.4.7")
+    implementation("org.owasp:dependency-check-gradle:12.1.9")
+}
