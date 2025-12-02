@@ -2,7 +2,7 @@ import java.io.ByteArrayOutputStream
 import java.time.Instant
 
 plugins {
-    id("java-conventions")
+    id("mmtc.java-conventions")
     `maven-publish`
 }
 

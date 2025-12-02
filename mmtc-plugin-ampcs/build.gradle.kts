@@ -1,7 +1,7 @@
 import java.time.Instant
 
 plugins {
-    id("java-conventions")
+    id("mmtc.java-conventions")
 }
 
 val precompiledJniSpiceClasses by configurations.creating {
