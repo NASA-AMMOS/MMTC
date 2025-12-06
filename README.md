@@ -33,7 +33,15 @@ Missions adapt MMTC to their mission by accomplishing the following two steps:
 
 ## Quick Start
 
-MMTC requires Red Hat Enterprise Linux (RHEL) 8 or 9 and Java 8.  After cloning the repository and running `./gradlew build`, two MMTC installation options are available:
+Build requirements:
+- Red Hat Enterprise Linux (RHEL) 8 or 9 on an x86-64 host
+- Java 17
+
+Runtime requirements:
+- Red Hat Enterprise Linux (RHEL) 8 or 9 on an x86-64 host
+- Java 8 for all components except the web application, which requires Java 17
+
+After cloning the repository and running `./gradlew build`, two MMTC installation options are available:
 
 ### Demo
 
@@ -44,7 +52,6 @@ For users who wish to experiment with MMTC’s behavior and functionality withou
 3. Run `setup-demo-zip.sh` to configure environment variables, adjust the config, and automatically run MMTC several times
 
 See the "Quick Start Guide" section of the User Guide for complete instructions.
-
 
 ### Installation
 
@@ -59,6 +66,6 @@ For further information, please see the User Guide at `docs/User_Guide.adoc`, wh
 
 ## Copyright
 
-© 2024 The Johns Hopkins University Applied Physics Laboratory LLC
+© 2025 The Johns Hopkins University Applied Physics Laboratory LLC
 
 This work was performed for the Jet Propulsion Laboratory, California Institute of Technology, sponsored by the United States Government under the Prime Contract 80NM0018D00004 between the Caltech and NASA under subcontract number 1658085.

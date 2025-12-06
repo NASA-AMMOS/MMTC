@@ -1,3 +1,6 @@
 
-### copied built webapp resources ###
+### contains copied webapp static bundle ###
 src/main/resources/static/
+
+### contains copied user doc PDF ###
+src/main/resources/docs
