@@ -141,6 +141,5 @@ function rightSidebarToggle() {
 
     <slot />
 
-    <NotificationsSlideover />
   </UDashboardGroup>
 </template>
