@@ -1,7 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ public class ConsecutiveMasterChannelFrameFilterTest {
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveMasterChannelFrameFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
 
             testFilterPasses(config, getFrameSamples(SEQ_MCFCS), "six frames with sequential MCFCs");
@@ -62,7 +63,7 @@ public class ConsecutiveMasterChannelFrameFilterTest {
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveMasterChannelFrameFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
             testFilterFails(config, getFrameSamples(RESTARTING_MCFCS), "six frames with restarting MCFCs");
 
@@ -86,7 +87,7 @@ public class ConsecutiveMasterChannelFrameFilterTest {
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveMasterChannelFrameFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
             testFilterPasses(config, getFrameSamples(BASIC_ROLLOVER), "basic rollover");
 
@@ -110,7 +111,7 @@ public class ConsecutiveMasterChannelFrameFilterTest {
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveMasterChannelFrameFilterTestWithLargerSupplementalSampleOffset");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
             testFilterPasses(config, getFrameSamples(new int[]{0, 3, 6, 9, 12}), "basic sequence");
 
@@ -132,7 +133,7 @@ public class ConsecutiveMasterChannelFrameFilterTest {
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveMasterChannelFrameFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
             testFilterPasses(config, Arrays.asList(new FrameSample(), new FrameSample()), "two empty frames");
         }
@@ -146,7 +147,7 @@ public class ConsecutiveMasterChannelFrameFilterTest {
                     .thenReturn("src/test/resources/FilterTests/ConsecutiveMasterChannelFrameFilterTestWithZeroMaxMcfc");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
             assertThrows(MmtcException.class, () -> {
                 mcfcFilter.process(getFrameSamples(new int[]{0, 3, 6, 9, 12}), config);
@@ -154,11 +155,11 @@ public class ConsecutiveMasterChannelFrameFilterTest {
         }
     }
 
-    private void testFilterPasses(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterPasses(TimeCorrelationRunConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertTrue(mcfcFilter.process(frameSamples, config), message);
     }
 
-    private void testFilterFails(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterFails(TimeCorrelationRunConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertFalse(mcfcFilter.process(frameSamples, config), message);
     }
 

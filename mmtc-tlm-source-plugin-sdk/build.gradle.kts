@@ -45,9 +45,9 @@ tasks.jar {
 
     duplicatesStrategy=DuplicatesStrategy.EXCLUDE
 
+    // not including Build-Date in manifests for now, to avoid excessive rebuilds
     manifest {
         attributes(
-            "Build-Date" to Instant.now().toString(),
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
             "Multi-Release" to "true"

@@ -90,10 +90,10 @@ val uberJar = tasks.register<Jar>("uberJar") {
 
     duplicatesStrategy=DuplicatesStrategy.EXCLUDE
 
+    // not including Build-Date in manifests for now, to avoid excessive rebuilds
     manifest {
         attributes(
                 "Main-Class" to "edu.jhuapl.sd.sig.mmtc.app.MmtcCli",
-                "Build-Date" to Instant.now().toString(),
                 "Implementation-Version" to project.version,
                 "Implementation-Title" to project.name,
                 "Multi-Release" to "true"
@@ -101,26 +101,43 @@ val uberJar = tasks.register<Jar>("uberJar") {
     }
 }
 
+fun getCurrentCommitShortHash(): String {
+    val execStdOut = ByteArrayOutputStream()
+
+    val process = Runtime.getRuntime().exec("git rev-parse --short HEAD")
+    val output = process.inputStream.bufferedReader().readText()
+    process.waitFor()
+    return output.trim()
+}
+
+fun calculateNewVersionDescriptionFileContents(): String {
+    val versionString = "version=" + project.version
+    val buildDate = "buildDate=" + Instant.now().toString()
+
+    val commit = "commit=" + getCurrentCommitShortHash()
+
+    return arrayOf(versionString, buildDate, commit).joinToString("\n")
+}
+
 val writeVersionDescriptionFile = tasks.register("writeVersionDescriptionFile") {
-    // set this task to never be up-to-date, so it is always rerun.  this ensures the build date and commit hash accurately represent the origin of the output artifacts of this build
-    outputs.upToDateWhen { false }
+    val versionDescriptionFilepath = project.layout.projectDirectory.file("src/main/resources/version-description.properties").asFile
+    val currentCommitHash = getCurrentCommitShortHash()
+
+    outputs.file(versionDescriptionFilepath)
+
+    // if the current version file's hash has not changed, do not mark this task dirty (to avoid an unnecessary rebuild, as at this point only the build date could be out of date)
+    outputs.upToDateWhen {
+        versionDescriptionFilepath.exists() && versionDescriptionFilepath.readText().contains(currentCommitHash)
+    }
 
     doLast {
-        val versionString = "version=" + project.version
-        val buildDate = "buildDate=" + Instant.now().toString()
-
-        val execStdOut = ByteArrayOutputStream()
-
-        exec {
-            commandLine("git", "rev-parse", "--short", "HEAD")
-            standardOutput = execStdOut
-        }
-
-        val commit = "commit=" + execStdOut.toString()
-
         project.projectDir.resolve("src/main/resources/version-description.properties")
-            .writeText(arrayOf(versionString, buildDate, commit).joinToString("\n"))
+            .writeText(calculateNewVersionDescriptionFileContents())
     }
+}
+
+tasks.getByName("sourcesJar") {
+    dependsOn(writeVersionDescriptionFile)
 }
 
 tasks.getByName("cleanWriteVersionDescriptionFile") {

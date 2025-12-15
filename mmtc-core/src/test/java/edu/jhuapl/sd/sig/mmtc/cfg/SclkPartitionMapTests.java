@@ -10,13 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class SclkPartitionMapTests {
-    private TimeCorrelationCliAppConfig config;
     private SclkPartitionMap partitionMap;
 
     @BeforeEach
     void loadMap() throws Exception {
         // Load the config to get the path to the partition map
-        TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(new String[]{"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"});
+        TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"));
 
         // Create a new partition map object (ignore the one from TimeCorrelationAppConfig)
         partitionMap = new SclkPartitionMap(config.getSclkPartitionMapPath());

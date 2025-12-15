@@ -55,9 +55,9 @@ public class TimeConvertTests {
     @DisplayName("cdsToIsoUtc Test 1")
     void cdsToIsoUtc_test1() throws TimeConvertException {
         String cds = "17557::84628545::8970";
-        Integer cdsDay = new Integer(17557);
-        Integer cdsMsOfDay = new Integer(84628545);
-        Integer cdsSubMs = new Integer(8970);
+        Integer cdsDay = 17557;
+        Integer cdsMsOfDay = 84628545;
+        Integer cdsSubMs = 8970;
         String utc;
 
         /* Function to test */
@@ -71,9 +71,9 @@ public class TimeConvertTests {
     @DisplayName("cdsToIsoUtc Test 2")
     void cdsToIsoUtc_test2() throws TimeConvertException {
             String cds = "21902::41473294::1970";
-            Integer cdsDay = new Integer(21902);
-            Integer cdsMsOfDay = new Integer(41473294);
-            Integer cdsSubMs = new Integer(1970);
+            Integer cdsDay = 21902;
+            Integer cdsMsOfDay = 41473294;
+            Integer cdsSubMs = 1970;
             String utc;
 
             /* Function to test */
@@ -262,9 +262,9 @@ public class TimeConvertTests {
         TimeConvert.loadSpiceKernel("src/test/resources/nh_kernels/lsk/naif0012.tls");
 
         String cds = "21902::41473294::1970";
-        Integer cdsDay = new Integer(21902);
-        Integer cdsMsOfDay = new Integer(41473294);
-        Integer cdsSubMs = new Integer(1970);
+        Integer cdsDay = 21902;
+        Integer cdsMsOfDay = 41473294;
+        Integer cdsSubMs = 1970;
 
         /* Function to test */
         Double et = TimeConvert.cdsToEt(cdsDay, cdsMsOfDay, cdsSubMs);
@@ -296,9 +296,9 @@ public class TimeConvertTests {
         KernelDatabase.load("src/test/resources/nh_kernels/lsk/naif0012.tls");
 
         String cds = "21902::41473294::1970";
-        Integer cdsDay = new Integer(21902);
-        Integer cdsMsOfDay = new Integer(41473294);
-        Integer cdsSubMs = new Integer(1970);
+        Integer cdsDay = 21902;
+        Integer cdsMsOfDay = 41473294;
+        Integer cdsSubMs = 1970;
 
         /* Function to test */
         Double tdt = TimeConvert.cdsToTdt(cdsDay, cdsMsOfDay, cdsSubMs);
@@ -327,9 +327,9 @@ public class TimeConvertTests {
         KernelDatabase.load("src/test/resources/nh_kernels/lsk/naif0012.tls");
 
         String cds = "21902::41473294::1970";
-        Integer cdsDay = new Integer(21902);
-        Integer cdsMsOfDay = new Integer(41473294);
-        Integer cdsSubMs = new Integer(1970);
+        Integer cdsDay = 21902;
+        Integer cdsMsOfDay = 41473294;
+        Integer cdsSubMs = 1970;
 
         /* Function to test */
         String tdt = TimeConvert.cdsToTdtStr(cdsDay, cdsMsOfDay, cdsSubMs);
@@ -376,7 +376,7 @@ public class TimeConvertTests {
         KernelDatabase.load("src/test/resources/nh_kernels/lsk/naif0012.tls");
 
         /* Function to test */
-        String tdtstr = TimeConvert.tdtToTdtCalStr(new Double(566934608.95675));
+        String tdtstr = TimeConvert.tdtToTdtCalStr(566934608.95675);
 
         System.out.println("tdtToTdtStr_test1: TDT value          = " + tdtstr);
 
@@ -406,7 +406,7 @@ public class TimeConvertTests {
         KernelDatabase.load("src/test/resources/nh_kernels/lsk/naif0012.tls");
 
         /* Function to test */
-        Double tdt = TimeConvert.etToTdt(new Double(566955142.477760));
+        Double tdt = TimeConvert.etToTdt(566955142.477760);
 
         DecimalFormat secfmt = new DecimalFormat("##.######");
         secfmt.setRoundingMode(RoundingMode.HALF_UP);
@@ -545,10 +545,10 @@ public class TimeConvertTests {
         KernelDatabase.load("src/test/resources/nh_kernels/lsk/naif0012.tls");
         KernelDatabase.load("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc");
 
-        Integer naif_sc_id = new Integer(-98);
-        Integer partition = new Integer(3);
-        Integer coarse = new Integer(353441135);
-        Integer fine       = new Integer(0);
+        Integer naif_sc_id = -98;
+        Integer partition = 3;
+        Integer coarse = 353441135;
+        Integer fine       = 0;
 
         /* Function to test */
         Double encSclk_a = TimeConvert.sclkToEncSclk(naif_sc_id, partition, coarse, fine);
@@ -699,8 +699,8 @@ public class TimeConvertTests {
     @Test
     @DisplayName("eq Test 1")
     void eq_test1() {
-        Double first  = new Double(1.234567);
-        Double second = new Double(1.234550);
+        Double first  = 1.234567;
+        Double second = 1.234550;
         boolean areEqual = TimeConvert.eq(first, second, 0.0001);
         assertTrue(areEqual);
     }
@@ -709,8 +709,8 @@ public class TimeConvertTests {
     @Test
     @DisplayName("eq Test 2")
     void eq_test2() {
-        Double first  = new Double(1.234567);
-        Double second = new Double(1.234550);
+        Double first  = 1.234567;
+        Double second = 1.234550;
         boolean areEqual = TimeConvert.eq(first, second, 0.000000001);
         assertFalse(areEqual);
     }
@@ -719,8 +719,8 @@ public class TimeConvertTests {
     @Test
     @DisplayName("ne Test 1")
     void ne_test1() {
-        Double first  = new Double(1.234567);
-        Double second = new Double(1.235550);
+        Double first  = 1.234567;
+        Double second = 1.235550;
         boolean areEqual = TimeConvert.ne(first, second, 0.0000000001);
         assertTrue(areEqual);
     }
@@ -728,8 +728,8 @@ public class TimeConvertTests {
     @Test
     @DisplayName("ne Test 2")
     void ne_test2() {
-        Double first  = new Double(1.234566);
-        Double second = new Double(1.234567);
+        Double first  = 1.234566;
+        Double second = 1.234567;
         boolean areEqual = TimeConvert.ne(first, second, 0.01);
         assertFalse(areEqual);
     }
