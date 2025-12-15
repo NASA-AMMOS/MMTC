@@ -2,7 +2,8 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.GroundStationFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -31,7 +32,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -64,7 +65,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T04:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T04:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -100,7 +101,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T00:00:30.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T00:00:30.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -136,7 +137,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T13:00:30.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T13:00:30.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -172,7 +173,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-6h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-003T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-003T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -198,7 +199,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-12h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-003T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-003T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -229,7 +230,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-352T00:00:00.000Z", "2017-353T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-352T00:00:00.000Z", "2017-353T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -268,7 +269,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h-OnlyStation55");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-353T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-353T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -307,7 +308,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -332,7 +333,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2020-001T00:00:00.000Z", "2021-001T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2020-001T00:00:00.000Z", "2021-001T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -357,7 +358,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-340T00:00:00.000Z", "2017-341T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-340T00:00:00.000Z", "2017-341T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -382,7 +383,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_EMPTY);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -407,7 +408,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-353T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-353T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
@@ -440,13 +441,13 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                 ).collect(Collectors.toList());
     }
 
-    private void generalQueryPeriodAssertions(TimeCorrelationCliAppConfig config, List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges) {
+    private void generalQueryPeriodAssertions(TimeCorrelationRunConfig config, List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges) {
         OffsetDateTime prevStartTime = null;
         OffsetDateTime prevStopTime = null;
 
         for (Pair<OffsetDateTime, OffsetDateTime> queriedRange : queriedRanges) {
             if (prevStartTime == null) {
-                assertEquals(config.getStopTime(), queriedRange.getRight());
+                assertEquals(config.getResolvedTargetSampleRange().get().getStop(), queriedRange.getRight());
             } else {
                 // check query frequency
 
@@ -461,12 +462,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                 );
             }
 
-            assertFalse(queriedRange.getLeft().isBefore(config.getStartTime()));
+            assertFalse(queriedRange.getLeft().isBefore(config.getResolvedTargetSampleRange().get().getStart()));
 
             // check query duration
             assertTrue(queriedRange.getLeft().isBefore(queriedRange.getRight()));
 
-            if (queriedRange.getLeft().equals(config.getStartTime())) {
+            if (queriedRange.getLeft().equals(config.getResolvedTargetSampleRange().get().getStart())) {
                 // if the period is bounded on the left by the input start time, allow it to be less than the normal query width
                 assertTrue(Duration.between(queriedRange.getLeft(), queriedRange.getRight()).toMinutes() <= config.getSamplingSampleSetBuildingStrategyQueryWidthMinutes());
             } else {

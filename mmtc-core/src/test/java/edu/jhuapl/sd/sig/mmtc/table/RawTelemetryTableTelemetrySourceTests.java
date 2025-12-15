@@ -1,7 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.ValidFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
@@ -19,11 +20,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.*;
 
 public class RawTelemetryTableTelemetrySourceTests {
-    private TimeCorrelationCliAppConfig config;
+    private TimeCorrelationRunConfig config;
     private RawTelemetryTableTelemetrySource tableTlmSource;
 
     void loadConfigAndTlmSource(String[] args, String rawTlmTablePath) throws Exception {
-        config = spy(new TimeCorrelationCliAppConfig(args));
+        config = spy(new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(args)));
         when(config.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(rawTlmTablePath);
 
         try {
@@ -52,7 +53,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         );
 
         try {
-            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
+            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
             assertEquals(0, samples.size());
         }
         catch (MmtcException ex) {
@@ -69,7 +70,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         loadSpice();
 
         try {
-            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
+            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
             assertEquals(1, samples.size());
             TimeConvert.unloadSpiceKernels();
         }
@@ -87,7 +88,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         loadSpice();
 
         try {
-            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
+            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
             assertEquals(0, samples.size());
             TimeConvert.unloadSpiceKernels();
         }
@@ -105,7 +106,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         loadSpice();
 
         try {
-            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
+            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
             assertTrue(samples.size() >= config.getSamplesPerSet());
             TimeConvert.unloadSpiceKernels();
         }
@@ -116,9 +117,9 @@ public class RawTelemetryTableTelemetrySourceTests {
 
     @Test
     void testUseUnallowableFilter() throws Exception {
-        TimeCorrelationCliAppConfig mockedConfig = mock(TimeCorrelationCliAppConfig.class);
+        TimeCorrelationRunConfig mockedConfig = mock(TimeCorrelationRunConfig.class);
         Map<String, TimeCorrelationFilter> enabledFilters = new HashMap<>();
-        enabledFilters.put(TimeCorrelationCliAppConfig.VALID_FILTER, new ValidFilter());
+        enabledFilters.put(TimeCorrelationRunConfig.VALID_FILTER, new ValidFilter());
         when(mockedConfig.getFilters()).thenReturn(enabledFilters);
         when(mockedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn("src/test/resources/tables/RawTelemetryTable_empty.csv");
 
@@ -128,7 +129,7 @@ public class RawTelemetryTableTelemetrySourceTests {
                 MmtcException.class,
                 () -> tlmArchive.applyConfiguration(mockedConfig),
                 "When using the RawTelemetryTable telemetry source, the " +
-                        TimeCorrelationCliAppConfig.VALID_FILTER +
+                        TimeCorrelationRunConfig.VALID_FILTER +
                         " filter is not applicable and must be disabled by setting the configuration option " +
                         "filter.<filter name>.enabled to false."
         );

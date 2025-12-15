@@ -2,7 +2,8 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.GroundStationFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -26,7 +27,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowing");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -37,7 +38,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
 
             TimeCorrelationTarget tcTarget = tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters);
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
 
             // we expect 5 samples, as this is the sample set size given in the config we're using
             assertEquals(5, tcTarget.getSampleSet().size());
@@ -63,7 +64,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowing");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-352T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-352T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -74,7 +75,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
 
             TimeCorrelationTarget tcTarget = tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters);
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
 
             // we expect 5 samples, as this is the sample set size given in the config we're using
             assertEquals(5, tcTarget.getSampleSet().size());
@@ -100,7 +101,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowing");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -113,7 +114,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     timeCorrelationTarget -> new GroundStationFilter().process(timeCorrelationTarget.getSampleSet(), config)
             );
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
 
             // we expect 5 samples, as this is the sample set size given in the config we're using
             assertEquals(5, tcTarget.getSampleSet().size());
@@ -139,7 +140,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowingOnlyStation55");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -152,7 +153,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     timeCorrelationTarget -> new GroundStationFilter().process(timeCorrelationTarget.getSampleSet(), config)
             );
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
 
             // we expect 5 samples, as this is the sample set size given in the config we're using
             assertEquals(5, tcTarget.getSampleSet().size());
@@ -179,7 +180,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowing");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -195,7 +196,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
 
             assertEquals("Unable to find valid sample set", thrownException.getMessage());
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
     }
 
@@ -206,7 +207,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowing");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2020-001T00:00:00.000Z", "2021-001T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2020-001T00:00:00.000Z", "2021-001T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -222,7 +223,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
 
             assertEquals("Unable to find valid sample set", thrownException.getMessage());
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
     }
 
@@ -233,7 +234,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowing");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2017-353T00:00:00.000Z", "2017-354T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-353T00:00:00.000Z", "2017-354T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -249,7 +250,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
 
             assertEquals("Unable to find valid sample set", thrownException.getMessage());
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
     }
 
@@ -260,7 +261,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowing");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_EMPTY);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -276,7 +277,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
 
             assertEquals("Unable to find valid sample set", thrownException.getMessage());
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
     }
 
@@ -287,7 +288,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/SlidingWindowing");
 
-            final TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z");
+            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z"));
             final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
 
             WindowingTelemetrySelectionStrategy tlmSelecStrat = WindowingTelemetrySelectionStrategy.forSlidingWindow(
@@ -303,7 +304,7 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
 
             assertEquals("Test exception from filter", thrownException.getMessage());
 
-            verify(tlmSource, times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+            verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
     }
 }

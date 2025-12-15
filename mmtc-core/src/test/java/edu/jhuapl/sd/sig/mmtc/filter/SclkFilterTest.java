@@ -1,7 +1,9 @@
 package edu.jhuapl.sd.sig.mmtc.filter;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
 import org.junit.jupiter.api.Test;
@@ -26,7 +28,7 @@ public class SclkFilterTest {
                     .thenReturn("src/test/resources/FilterTests/SclkFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
             testFilterPasses(
                     config,
@@ -98,7 +100,7 @@ public class SclkFilterTest {
                     .thenReturn("src/test/resources/FilterTests/SclkFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
             // passes even when no TK SCLK is provided
             testFilterPasses(
@@ -123,7 +125,7 @@ public class SclkFilterTest {
                     .thenReturn("src/test/resources/FilterTests/SclkFilterTest");
 
             String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
-            TimeCorrelationCliAppConfig config = new TimeCorrelationCliAppConfig(cliArgs);
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
 
             testFilterPasses(
                     config,
@@ -163,11 +165,11 @@ public class SclkFilterTest {
         }
     }
 
-    private void testFilterPasses(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterPasses(TimeCorrelationRunConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertTrue(sclkFilter.process(frameSamples, config), message);
     }
 
-    private void testFilterFails(TimeCorrelationCliAppConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
+    private void testFilterFails(TimeCorrelationRunConfig config, List<FrameSample> frameSamples, String message) throws MmtcException {
         assertFalse(sclkFilter.process(frameSamples, config), message);
     }
 

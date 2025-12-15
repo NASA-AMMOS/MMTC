@@ -3,7 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 import edu.jhuapl.sd.sig.mmtc.TestHelper;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.RawTelemetryTableTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -39,9 +39,9 @@ public abstract class BaseTelemetrySelectionStrategyTest {
         TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
     }
 
-    protected static TelemetrySource getSpiedRawTelemetrySourceFor(TimeCorrelationCliAppConfig config, String path) throws Exception {
+    protected static TelemetrySource getSpiedRawTelemetrySourceFor(TimeCorrelationRunConfig config, String path) throws Exception {
         RawTelemetryTableTelemetrySource rawTlmTable = new RawTelemetryTableTelemetrySource();
-        TimeCorrelationCliAppConfig spiedConfig = Mockito.spy(config);
+        TimeCorrelationRunConfig spiedConfig = Mockito.spy(config);
         when(spiedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(path);
         rawTlmTable.applyConfiguration(spiedConfig);
         return Mockito.spy(rawTlmTable);

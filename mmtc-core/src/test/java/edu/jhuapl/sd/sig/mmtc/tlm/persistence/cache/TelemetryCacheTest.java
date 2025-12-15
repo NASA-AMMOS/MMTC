@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationAppConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.RawTelemetryTableTelemetrySource;
@@ -28,7 +28,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 class TelemetryCacheTest {
-    private TimeCorrelationAppConfig config;
+    private TimeCorrelationRunConfig config;
     private RawTelemetryTableTelemetrySource vanillaRawTlmTableSource;
     private RawTelemetryTableTelemetrySource spiedRawTlmTableSource;
     private CachingTelemetrySource cachingTlmSource;
@@ -47,7 +47,7 @@ class TelemetryCacheTest {
     }
 
     void loadConfigAndTestTlmSources(String[] args, String rawTlmTablePath) throws Exception {
-        config = spy(new TimeCorrelationCliAppConfig(args));
+        config = spy(new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(args)));
         when(config.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(rawTlmTablePath);
 
         vanillaRawTlmTableSource = new RawTelemetryTableTelemetrySource();
@@ -68,17 +68,17 @@ class TelemetryCacheTest {
                 "src/test/resources/tables/RawTelemetryTable_NH_reformatted.csv"
         );
 
-        List<FrameSample> samplesReturnByRawTlmTable = vanillaRawTlmTableSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
-        List<FrameSample> samplesReturnedByCachingTlmSource = cachingTlmSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
+        List<FrameSample> samplesReturnByRawTlmTable = vanillaRawTlmTableSource.getSamplesInRange(getStart(config), getStop(config));
+        List<FrameSample> samplesReturnedByCachingTlmSource = cachingTlmSource.getSamplesInRange(getStart(config), getStop(config));
 
         // ensure that, with an empty cache, the caching TLM source retrieves the exact same samples as the actual raw TLM table source
         assertEquals(24, samplesReturnByRawTlmTable.size());
-        Mockito.verify(spiedRawTlmTableSource, Mockito.times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+        Mockito.verify(spiedRawTlmTableSource, Mockito.times(1)).getSamplesInRange(getStart(config), getStop(config));
         assertEquals(samplesReturnByRawTlmTable, samplesReturnedByCachingTlmSource);
 
         // ensure that, with a populated cache, the caching TLM source retrieves the exact same samples as the actual raw TLM table source and that the spied inner telemetry source hasn't been called again
-        samplesReturnedByCachingTlmSource = cachingTlmSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
-        Mockito.verify(spiedRawTlmTableSource, Mockito.times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+        samplesReturnedByCachingTlmSource = cachingTlmSource.getSamplesInRange(getStart(config), getStop(config));
+        Mockito.verify(spiedRawTlmTableSource, Mockito.times(1)).getSamplesInRange(getStart(config), getStop(config));
         assertEquals(samplesReturnByRawTlmTable, samplesReturnedByCachingTlmSource);
     }
 
@@ -89,11 +89,11 @@ class TelemetryCacheTest {
                 "src/test/resources/tables/RawTelemetryTable_NH_reformatted.csv"
         );
 
-        List<FrameSample> samplesReturnByRawTlmTable = vanillaRawTlmTableSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
-        List<FrameSample> samplesReturnedByCachingTlmSource = cachingTlmSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
+        List<FrameSample> samplesReturnByRawTlmTable = vanillaRawTlmTableSource.getSamplesInRange(getStart(config), getStop(config));
+        List<FrameSample> samplesReturnedByCachingTlmSource = cachingTlmSource.getSamplesInRange(getStart(config), getStop(config));
 
         assertEquals(0, samplesReturnByRawTlmTable.size());
-        Mockito.verify(spiedRawTlmTableSource, Mockito.times(1)).getSamplesInRange(config.getStartTime(), config.getStopTime());
+        Mockito.verify(spiedRawTlmTableSource, Mockito.times(1)).getSamplesInRange(getStart(config), getStop(config));
         assertEquals(samplesReturnByRawTlmTable, samplesReturnedByCachingTlmSource);
     }
 
@@ -104,8 +104,8 @@ class TelemetryCacheTest {
                 "src/test/resources/tables/RawTelemetryTable_NH_reformatted.csv"
         );
 
-        List<FrameSample> samplesReturnByRawTlmTable = vanillaRawTlmTableSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
-        List<FrameSample> samplesReturnedByCachingTlmSource = cachingTlmSource.getSamplesInRange(config.getStartTime(), config.getStopTime());
+        List<FrameSample> samplesReturnByRawTlmTable = vanillaRawTlmTableSource.getSamplesInRange(getStart(config), getStop(config));
+        List<FrameSample> samplesReturnedByCachingTlmSource = cachingTlmSource.getSamplesInRange(getStart(config), getStop(config));
 
         assertEquals(0, samplesReturnByRawTlmTable.size());
         Mockito.verify(spiedRawTlmTableSource, Mockito.times(1)).getSamplesInRange(Mockito.any(), Mockito.any());
@@ -296,5 +296,13 @@ class TelemetryCacheTest {
         fs.setFrameSizeBits(1080);
 
         return fs;
+    }
+
+    private static OffsetDateTime getStart(TimeCorrelationRunConfig config) {
+        return config.getResolvedTargetSampleRange().get().getStart();
+    }
+
+    private static OffsetDateTime getStop(TimeCorrelationRunConfig config) {
+        return config.getResolvedTargetSampleRange().get().getStop();
     }
 }
