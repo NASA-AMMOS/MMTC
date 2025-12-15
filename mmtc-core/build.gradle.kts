@@ -101,9 +101,8 @@ val uberJar = tasks.register<Jar>("uberJar") {
     }
 }
 
-fun getCurrentCommitShortHash(): String {
-    val execStdOut = ByteArrayOutputStream()
 
+fun getCurrentCommitShortHash(): String {
     val process = Runtime.getRuntime().exec("git rev-parse --short HEAD")
     val output = process.inputStream.bufferedReader().readText()
     process.waitFor()
@@ -131,8 +130,7 @@ val writeVersionDescriptionFile = tasks.register("writeVersionDescriptionFile") 
     }
 
     doLast {
-        project.projectDir.resolve("src/main/resources/version-description.properties")
-            .writeText(calculateNewVersionDescriptionFileContents())
+        project.projectDir.resolve("src/main/resources/version-description.properties").writeText(calculateNewVersionDescriptionFileContents())
     }
 }
 
