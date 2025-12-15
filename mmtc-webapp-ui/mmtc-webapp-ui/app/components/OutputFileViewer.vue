@@ -96,7 +96,7 @@ async function downloadFile() {
       <UHeader :title="outputProductDefDisplayName" class="mt-2">
         <template #right>
           <USelect v-model="fileSelectionChoice" :items="fileSelectionOptions"/>
-          <UButton color="secondary" @click="downloadFile">
+          <UButton color="secondary" @click="downloadFile" data-testid="output-product-download">
             Download
           </UButton>
         </template>

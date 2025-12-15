@@ -1,10 +1,17 @@
 <Configuration status="ERROR">
     <Loggers>
-        <Root level="debug">
+        <Root level="INFO">
             <AppenderRef ref="mmtcConsole"/>
             <AppenderRef ref="mmtcLogFile"/>
         </Root>
-        <Logger name="org.apache.commons.beanutils" level="WARN" />
+        <Logger name="org.apache.commons.beanutils" level="WARN">
+            <AppenderRef ref="mmtcConsole"/>
+            <AppenderRef ref="mmtcLogFile"/>
+        </Logger>
+        <Logger name="edu.jhuapl.sd.sig.mmtc" level="DEBUG">
+            <AppenderRef ref="mmtcConsole"/>
+            <AppenderRef ref="mmtcLogFile"/>
+        </Logger>
     </Loggers>
 
     <Appenders>

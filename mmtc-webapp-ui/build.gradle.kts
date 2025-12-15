@@ -14,12 +14,15 @@ val nuxtBuild = tasks.register<Exec>("nuxtBuild") {
 
     executable("npx")
     args("nuxt", "generate")
+
+    outputs.dir("mmtc-webapp-ui/.output/public/")
 }
 
 tasks {
     build {
         dependsOn(nuxtBuild)
     }
+
     clean {
         dependsOn("cleanNuxtBuild")
     }

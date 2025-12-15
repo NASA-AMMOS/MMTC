@@ -50,7 +50,8 @@ watch(outputProductDefs, async (newOutputProductDefs, oldOutputProductDefs) => {
   newOutputProductDefs.forEach((def) => {
     outputProductMenuItems.push({
       label: def.displayName,
-      to: '/outputs/' + def.name
+      to: '/outputs/' + def.name,
+      'data-testid': 'output-product-' + def.name
     })
   });
 
