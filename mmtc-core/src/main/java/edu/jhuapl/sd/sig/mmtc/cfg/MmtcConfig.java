@@ -64,6 +64,7 @@ public abstract class MmtcConfig {
     private static final Logger logger = LogManager.getLogger();
 
     public MmtcConfig() throws Exception {
+        logger.debug("Running on Java " + System.getProperty("java.version"));
         logger.debug("Loading configuration");
 
         this.mmtcHome = Paths.get(System.getenv("MMTC_HOME")).toAbsolutePath();
