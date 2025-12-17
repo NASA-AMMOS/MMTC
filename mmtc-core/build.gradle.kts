@@ -23,8 +23,8 @@ dependencies {
     )))
 
     // provides javax.xml.bind classes
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:4.0.2")
-    implementation("com.sun.xml.bind:jaxb-impl:4.0.2")
+    implementation(libs.jakarta.xml)
+    implementation(libs.jaxb.impl)
 
     implementation("commons-beanutils:commons-beanutils:1.11.0")
     implementation("org.apache.commons:commons-configuration2:2.12.0")

@@ -23,8 +23,8 @@ dependencies {
     compileOnly(project(":mmtc-core"))
 
     // provides javax.xml.bind classes
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:4.0.2")
-    implementation("com.sun.xml.bind:jaxb-impl:4.0.2")
+    implementation(libs.jakarta.xml)
+    implementation(libs.jaxb.impl)
 
     implementation(libs.commons.csv)
     implementation(libs.commons.lang3)

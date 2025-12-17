@@ -4,14 +4,8 @@
             <AppenderRef ref="mmtcConsole"/>
             <AppenderRef ref="mmtcLogFile"/>
         </Root>
-        <Logger name="org.apache.commons.beanutils" level="WARN">
-            <AppenderRef ref="mmtcConsole"/>
-            <AppenderRef ref="mmtcLogFile"/>
-        </Logger>
-        <Logger name="edu.jhuapl.sd.sig.mmtc" level="DEBUG">
-            <AppenderRef ref="mmtcConsole"/>
-            <AppenderRef ref="mmtcLogFile"/>
-        </Logger>
+        <Logger name="org.apache.commons.beanutils" level="WARN" />
+        <Logger name="edu.jhuapl.sd.sig.mmtc" level="DEBUG" />
     </Loggers>
 
     <Appenders>
