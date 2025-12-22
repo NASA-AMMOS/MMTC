@@ -2,6 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.cfg;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
+import org.apache.commons.cli.Option;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,23 +17,24 @@ public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigIn
 
     private final String[] args;
 
+    private CorrelationCommandLineConfig cmdLineConfig;
+
     public TimeCorrelationCliInputConfig(String... args) throws Exception {
         this.args = args;
     }
 
     @Override
-    public TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs getRunConfigInputs(Map<String, TelemetrySource.AdditionalOption> additionalTlmSrcOptionsByName) throws Exception {
+    public TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs getRunConfigInputs(List<TelemetrySource.AdditionalOption> additionalTlmSourceOptions) throws Exception {
         logger.info("Command line arguments: " + Arrays.asList(args));
 
-        final CorrelationCommandLineConfig cmdLineConfig = new CorrelationCommandLineConfig(
+        this.cmdLineConfig = new CorrelationCommandLineConfig(
                 args,
-                additionalTlmSrcOptionsByName.values().stream().map(additionalOption -> additionalOption.cliOption).collect(Collectors.toList())
+                additionalTlmSourceOptions.stream().map(additionalOption -> additionalOption.cliOption).collect(Collectors.toList())
         );
 
         if (! cmdLineConfig.load()) {
             throw new MmtcException("Error parsing command line arguments.");
         }
-
 
         final Optional<Double> testModeOwltSec = cmdLineConfig.isTestMode() ? Optional.of(cmdLineConfig.getTestModeOwlt()) : Optional.empty();
 
@@ -49,6 +51,15 @@ public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigIn
 
         final TimeCorrelationRunConfig.DryRunConfig dryRunConfig = cmdLineConfig.isDryRun() ? new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.DRY_RUN_RETAIN_NO_PRODUCTS, null) : new TimeCorrelationRunConfig.DryRunConfig(TimeCorrelationRunConfig.DryRunMode.NOT_DRY_RUN, null);
 
+        List<TelemetrySource.ParsedAdditionalOption> parsedAdditionalOptions = new ArrayList<>();
+
+        for (TelemetrySource.AdditionalOption additionalTlmSrcOption : additionalTlmSourceOptions) {
+            parsedAdditionalOptions.add(new TelemetrySource.ParsedAdditionalOption(
+                    additionalTlmSrcOption.name,
+                    Optional.ofNullable(cmdLineConfig.getOptionValue(additionalTlmSrcOption.cliOption.getOpt()))
+            ));
+        }
+
         return new TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs(
                 TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE,
                 Optional.of(cmdLineConfig.getStartTime()),
@@ -63,7 +74,10 @@ public class TimeCorrelationCliInputConfig implements TimeCorrelationRunConfigIn
                 cmdLineConfig.getAdditionalSmoothingRecordInsertionOverride(),
                 cmdLineConfig.isContactFilterDisabled(),
                 cmdLineConfig.isGenerateCmdFile(),
-                dryRunConfig
+                dryRunConfig,
+                parsedAdditionalOptions
         );
     }
+
+
 }

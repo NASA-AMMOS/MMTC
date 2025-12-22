@@ -168,8 +168,7 @@ public class CorrelationCommandLineConfig implements IConfiguration {
                 help.printHelp("mmtc correlation [options] <start-time> <stop-time>", opts);
                 return false;
             }
-        }
-        catch (DateTimeParseException ex) {
+        } catch (DateTimeParseException ex) {
             String msg = "Error parsing command line arguments - Invalid start/stop time value(s). Valid formats are yyyy-DDDTHH:mm:ss.SSS or yyyy-mm-ddTHH:mm:ss.SSS.";
             System.out.println(msg);
             logger.error(msg, ex);
@@ -184,6 +183,10 @@ public class CorrelationCommandLineConfig implements IConfiguration {
         }
 
         return true;
+    }
+
+    public Collection<Option> getParsedOptions() {
+        return Arrays.asList(cmdLine.getOptions());
     }
 
     @Override

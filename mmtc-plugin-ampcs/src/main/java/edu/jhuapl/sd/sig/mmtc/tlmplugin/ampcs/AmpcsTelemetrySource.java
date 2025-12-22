@@ -83,7 +83,6 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     public void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException {
         this.config = config;
         this.ampcsConfig = new AmpcsTelemetrySourceConfig(config);
-        setSessionId(ampcsConfig.getSessionId());
         this.connectionParms = ampcsConfig.getConnectionParms();
         setChillTimeout(ampcsConfig.getChillTimeoutSec());
 
@@ -92,27 +91,48 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<AdditionalOption> getAdditionalOptions() {
+    public List<AdditionalOption> getAdditionalOptions() {
+        Option ampcsSessionIdOpt = new Option(
+                "K",
+                "ampcs-session-id",
+                true,
+                "Specifies the session ID when using an AMPCS telemetry source."
+        );
+
+        Option connectionParmsOpt = new Option(
+                "n",
+                "connection-parms",
+                true,
+                "Provides any additional CLI parameters that will be passed down to the AMPCS CLI tools."
+        );
+
         return Arrays.asList(
                 new AdditionalOption(
-                        new Option(
-                                "K",
-                                "ampcs-session-id",
-                                true,
-                                "Specifies the session ID when using an AMPCS telemetry source."
-                        ),
-                        AMPCS_SESSION_ID_OPT
+                        AMPCS_SESSION_ID_OPT,
+                        ampcsSessionIdOpt
                 ),
                 new AdditionalOption(
-                    new Option(
-                            "n",
-                            "connection-parms",
-                            true,
-                            "Provides any additional CLI parameters that will be passed down to the AMPCS CLI tools."
-                    ),
-                        ADDITIONAL_AMPCS_CLI_ARGS_OPT
+                        ADDITIONAL_AMPCS_CLI_ARGS_OPT,
+                        connectionParmsOpt
                 )
         );
+    }
+
+    @Override
+    public void applyOption(String name, String value) throws MmtcException {
+        switch(name) {
+            case AMPCS_SESSION_ID_OPT: {
+                setSessionId(value);
+                break;
+            }
+            case ADDITIONAL_AMPCS_CLI_ARGS_OPT: {
+                this.connectionParms = value;
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unrecognized option name: " + name);
+            }
+        }
     }
 
     @Override

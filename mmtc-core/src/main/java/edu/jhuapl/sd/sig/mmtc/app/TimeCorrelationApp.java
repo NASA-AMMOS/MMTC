@@ -232,7 +232,7 @@ public class TimeCorrelationApp {
         newRunHistoryFileRecord.setValue(RunHistoryFile.MMTC_BUILT_IN_OUTPUT_PRODUCT_VERSION,   mmtcVersion);
         newRunHistoryFileRecord.setValue(RunHistoryFile.ROLLEDBACK,                             "false");
         newRunHistoryFileRecord.setValue(RunHistoryFile.RUN_USER,                               System.getProperty("user.name"));
-        newRunHistoryFileRecord.setValue(RunHistoryFile.INVOC_ARGS,                             config.getInvocationStringRepresentation()); // todo pick up here with restoring invoc args and rerunning NH test to ensure
+        newRunHistoryFileRecord.setValue(RunHistoryFile.INVOC_ARGS,                             config.getInvocationStringRepresentation());
 
         // Output products
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {

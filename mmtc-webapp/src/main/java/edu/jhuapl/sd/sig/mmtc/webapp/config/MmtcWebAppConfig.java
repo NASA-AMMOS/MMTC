@@ -20,11 +20,6 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
         logger.debug(toString());
     }
 
-    @Override
-    public String getAdditionalOptionValue(String optionName) {
-        return null; // todo should return ampcs connection args and session ID from config here
-    }
-
     public enum AuthMode {
         NONE,
         AUTOGEN_BASIC_HTTP_AUTH

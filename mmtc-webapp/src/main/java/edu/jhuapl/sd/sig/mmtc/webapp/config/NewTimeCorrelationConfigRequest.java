@@ -5,6 +5,8 @@ import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfigInputSupplier;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,7 +47,7 @@ public class NewTimeCorrelationConfigRequest implements TimeCorrelationRunConfig
 
 
     @Override
-    public TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs getRunConfigInputs(Map<String, TelemetrySource.AdditionalOption> additionalTlmSrcOptionsByName) throws Exception {
+    public TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs getRunConfigInputs(List<TelemetrySource.AdditionalOption> additionalTlmSrcOptionsByName) throws Exception {
         return new TimeCorrelationRunConfig.TimeCorrelationRunConfigInputs(
                 targetSampleInputErtMode,
                 Optional.ofNullable(targetSampleRangeStartErt),
@@ -60,7 +62,8 @@ public class NewTimeCorrelationConfigRequest implements TimeCorrelationRunConfig
                 Optional.of(additionalSmoothingRecordConfigOverride),
                 isDisableContactFilter,
                 isCreateUplinkCmdFile,
-                dryRunConfig
+                dryRunConfig,
+                Collections.emptyList() // fixme
         );
     }
 

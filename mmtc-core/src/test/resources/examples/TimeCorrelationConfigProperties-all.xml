@@ -111,6 +111,7 @@
 
     <!-- AMPCS configuration keys -->
     <entry key="telemetry.source.plugin.ampcs.chillTimeoutSec"></entry>
+    <entry key="telemetry.source.plugin.ampcs.additionalChillCliParms"></entry>
     <entry key="telemetry.source.plugin.ampcs.tkPacket.tkPacketHeaderFineSclkModulus"></entry>
 
     <!-- timekeeping packet configuration -->

@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -42,7 +43,9 @@ public interface TelemetrySource {
      *
      * @return additional options to add to the MMTC CLI
      */
-    Collection<AdditionalOption> getAdditionalOptions();
+    List<AdditionalOption> getAdditionalOptions();
+
+    void applyOption(String name, String value) throws MmtcException;
 
     void checkCorrelationConfiguration(TimeCorrelationRunConfig config) throws MmtcException;
 
@@ -209,12 +212,38 @@ public interface TelemetrySource {
     }
 
     final class AdditionalOption {
-        public final Option cliOption;
         public final String name;
+        public final Option cliOption;
 
-        public AdditionalOption(Option cliOption, String name) {
-            this.cliOption = cliOption;
+        public AdditionalOption(String name, Option cliOption) {
             this.name = name;
+            this.cliOption = cliOption;
+        }
+
+        @Override
+        public String toString() {
+            return "AdditionalOption{" +
+                    "name='" + name + '\'' +
+                    ", cliOption=" + cliOption +
+                    '}';
+        }
+    }
+
+    final class ParsedAdditionalOption {
+        public final String name;
+        public final Optional<String> value;
+
+        public ParsedAdditionalOption(String name, Optional<String> value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return "ParsedAdditionalOption{" +
+                    "name='" + name + '\'' +
+                    ", value=" + value +
+                    '}';
         }
     }
 }
