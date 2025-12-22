@@ -32,8 +32,13 @@ public class CachingTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<AdditionalOption> getAdditionalOptions() {
+    public List<AdditionalOption> getAdditionalOptions() {
         return underlyingTelemetrySource.getAdditionalOptions();
+    }
+
+    @Override
+    public void applyOption(String name, String value) throws MmtcException {
+        underlyingTelemetrySource.applyOption(name, value);
     }
 
     @Override

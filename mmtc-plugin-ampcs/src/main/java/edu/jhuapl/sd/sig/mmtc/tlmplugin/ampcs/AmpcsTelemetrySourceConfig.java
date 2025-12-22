@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 
 import java.nio.file.Path;
@@ -32,12 +33,8 @@ public class AmpcsTelemetrySourceConfig {
         }
     }
 
-    String getSessionId() {
-        return this.timeCorrelationAppConfig.getAdditionalOptionValue(AmpcsTelemetrySource.AMPCS_SESSION_ID_OPT);
-    };
-
     String getConnectionParms() {
-        return this.timeCorrelationAppConfig.getAdditionalOptionValue(AmpcsTelemetrySource.ADDITIONAL_AMPCS_CLI_ARGS_OPT);
+        return timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.additionalChillCliParms");
     };
 
     /**

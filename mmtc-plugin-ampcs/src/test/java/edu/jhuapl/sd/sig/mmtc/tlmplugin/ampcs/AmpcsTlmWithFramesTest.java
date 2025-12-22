@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliAppConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.*;
 import org.junit.jupiter.api.Test;
 
@@ -16,17 +16,17 @@ public class AmpcsTlmWithFramesTest {
     @Test
     void testUseUnallowableFilters() throws Exception {
         final Map<String, TimeCorrelationFilter> disallowedFilters = new HashMap<>();
-        disallowedFilters.put(TimeCorrelationCliAppConfig.ERT_FILTER, new ErtFilter());
-        disallowedFilters.put(TimeCorrelationCliAppConfig.SCLK_FILTER, new SclkFilter());
-        disallowedFilters.put(TimeCorrelationCliAppConfig.VCID_FILTER, new VcidFilter());
-        disallowedFilters.put(TimeCorrelationCliAppConfig.CONSEC_FRAMES_FILTER, new ConsecutiveFrameFilter());
-        disallowedFilters.put(TimeCorrelationCliAppConfig.CONSEC_MC_FRAME_FILTER, new ConsecutiveMasterChannelFrameFilter());
+        disallowedFilters.put(TimeCorrelationRunConfig.ERT_FILTER, new ErtFilter());
+        disallowedFilters.put(TimeCorrelationRunConfig.SCLK_FILTER, new SclkFilter());
+        disallowedFilters.put(TimeCorrelationRunConfig.VCID_FILTER, new VcidFilter());
+        disallowedFilters.put(TimeCorrelationRunConfig.CONSEC_FRAMES_FILTER, new ConsecutiveFrameFilter());
+        disallowedFilters.put(TimeCorrelationRunConfig.CONSEC_MC_FRAME_FILTER, new ConsecutiveMasterChannelFrameFilter());
 
         for (Map.Entry<String, TimeCorrelationFilter> disallowedFilter : disallowedFilters.entrySet()) {
             final String disallowedFilterName = disallowedFilter.getKey();
             final TimeCorrelationFilter filter = disallowedFilter.getValue();
 
-            TimeCorrelationCliAppConfig mockedConfig = mock(TimeCorrelationCliAppConfig.class);
+            TimeCorrelationRunConfig mockedConfig = mock(TimeCorrelationRunConfig.class);
             Map<String, TimeCorrelationFilter> enabledFilters = new HashMap<>();
             enabledFilters.put(disallowedFilterName, filter);
             when(mockedConfig.getFilters()).thenReturn(enabledFilters);

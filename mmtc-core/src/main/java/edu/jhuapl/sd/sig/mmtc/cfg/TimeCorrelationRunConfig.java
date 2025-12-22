@@ -2,7 +2,9 @@ package edu.jhuapl.sd.sig.mmtc.cfg;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
+import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.OffsetDateTimeRange;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -103,6 +105,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         final Optional<AdditionalSmoothingRecordConfig> additionalSmoothingRecordConfigOverride;
         final boolean isDisableContactFilter;
         final boolean isCreateUplinkCmdFile;
+        final List<TelemetrySource.ParsedAdditionalOption> additionalTlmSourceOptions;
 
         public TimeCorrelationRunConfigInputs(
                 TargetSampleInputErtMode targetSampleInputErtMode,
@@ -118,7 +121,8 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
                 Optional<AdditionalSmoothingRecordConfig> additionalSmoothingRecordConfigOverride,
                 boolean isDisableContactFilter,
                 boolean isCreateUplinkCmdFile,
-                DryRunConfig dryRunConfig
+                DryRunConfig dryRunConfig,
+                List<TelemetrySource.ParsedAdditionalOption> additionalTlmSourceOptions
         ) {
             this.targetSampleInputErtMode = targetSampleInputErtMode;
             this.targetSampleRangeStartErt = targetSampleRangeStartErt;
@@ -134,19 +138,31 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
             this.isDisableContactFilter = isDisableContactFilter;
             this.isCreateUplinkCmdFile = isCreateUplinkCmdFile;
             this.dryRunConfig = dryRunConfig;
+            this.additionalTlmSourceOptions = additionalTlmSourceOptions;
         }
     }
 
     public TimeCorrelationRunConfig(TimeCorrelationRunConfigInputSupplier runConfigInputSupplier) throws Exception {
         super();
-        this.runConfigInputs = runConfigInputSupplier.getRunConfigInputs(this.additionalTlmSrcOptionsByName);
+        this.runConfigInputs = runConfigInputSupplier.getRunConfigInputs(this.getTelemetrySource().getAdditionalOptions());
         resolveCalculatedRunConfigInputs();
+        this.telemetrySource.applyConfiguration(this);
+        for (TelemetrySource.ParsedAdditionalOption opt : this.runConfigInputs.additionalTlmSourceOptions) {
+            if (opt.value.isPresent()) {
+                this.telemetrySource.applyOption(opt.name, opt.value.get());
+            }
+        }
     }
 
     public TimeCorrelationRunConfig(TimeCorrelationRunConfigInputSupplier runConfigInputSupplier, MmtcConfigWithTlmSource config) throws Exception {
         super(config);
-        this.runConfigInputs = runConfigInputSupplier.getRunConfigInputs(this.additionalTlmSrcOptionsByName);
+        this.runConfigInputs = runConfigInputSupplier.getRunConfigInputs(this.getTelemetrySource().getAdditionalOptions());
         resolveCalculatedRunConfigInputs();
+        for (TelemetrySource.ParsedAdditionalOption opt : this.runConfigInputs.additionalTlmSourceOptions) {
+            if (opt.value.isPresent()) {
+                this.telemetrySource.applyOption(opt.name, opt.value.get());
+            }
+        }
     }
 
     private void resolveCalculatedRunConfigInputs() throws MmtcException {
@@ -405,11 +421,6 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         return resolvedClockChangeRateMode;
     }
 
-    @Override
-    public String getAdditionalOptionValue(String optionName) {
-        return this.additionalTlmSrcOptionsByName.get(optionName).cliOption.getValue();
-    }
-
     public Optional<OffsetDateTimeRange> getResolvedTargetSampleRange() {
         return resolvedTargetSampleRange;
     }
@@ -426,33 +437,15 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         return TargetSampleInputErtMode.EXACT;
     }
 
-
-    /*
-        final Optional<OffsetDateTime> targetSampleRangeStartErt;
-        final Optional<OffsetDateTime> targetSampleRangeStopErt;
-        final Optional<OffsetDateTime> targetSampleExactErt;
-        final Optional<OffsetDateTime> priorCorrelationExactTdt;
-        final boolean testModeOwltEnabled;
-        final Optional<Double> testModeOwltSec;
-        final Optional<Double> clockChangeRateAssignedValue;
-        final Optional<String> clockChangeRateAssignedKey;
-        private final boolean isDryRun;
-
-        // inputs that can override those specified in configuration files
-        final Optional<ClockChangeRateMode> clockChangeRateModeOverride;
-        final Optional<AdditionalSmoothingRecordConfig> additionalSmoothingRecordConfigOverride;
-        final boolean isDisableContactFilter;
-        final boolean isCreateUplinkCmdFile;
-     */
     public String getInvocationStringRepresentation() throws MmtcException {
         // return runConfigInputs.toLoggableString();
         List<String> elts = new ArrayList<>();
 
         if (getTargetSampleInputErtMode().equals(TargetSampleInputErtMode.RANGE)) {
             OffsetDateTimeRange resolvedRange = getResolvedTargetSampleRange().get();
-            elts.add(String.format("Input ERT range = %s to %s", resolvedRange.getStart(), resolvedRange.getStop()));
+            elts.add(String.format("Input ERT range = %s to %s", TimeConvert.timeToIsoUtcString(resolvedRange.getStart(), 3), TimeConvert.timeToIsoUtcString(resolvedRange.getStop(), 3)));
         } else if (getTargetSampleInputErtMode().equals(TargetSampleInputErtMode.EXACT)) {
-            elts.add(String.format("Input ERT = %s", getResolvedTargetSampleExactErt().get()));
+            elts.add(String.format("Input ERT = %s", TimeConvert.timeToIsoUtcString(getResolvedTargetSampleExactErt().get(), 3)));
         } else {
             throw new IllegalStateException("Unknown mode: " + getTargetSampleInputErtMode());
         }
@@ -484,7 +477,6 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
             elts.add(runConfigInputs.additionalSmoothingRecordConfigOverride.get().toLogString());
         }
 
-        // todo add additional CLI options here?
         if (runConfigInputs.isDisableContactFilter) {
             elts.add("Contact filter = disabled");
         }
@@ -492,6 +484,12 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         if (runConfigInputs.isCreateUplinkCmdFile) {
             elts.add("Uplink cmd file creation = enabled");
         }
+
+        runConfigInputs.additionalTlmSourceOptions.forEach(parsedAdditionalOption -> {
+            if (parsedAdditionalOption.value.isPresent()) {
+                elts.add(String.format("%s = %s", parsedAdditionalOption.name, parsedAdditionalOption.value.get()));
+            }
+        });
 
         return String.join(" | ", elts);
     }

@@ -75,8 +75,13 @@ public class RawTelemetryTableTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<AdditionalOption> getAdditionalOptions() {
+    public List<AdditionalOption> getAdditionalOptions() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public void applyOption(String name, String value) {
+        throw new IllegalStateException("This telemetry source does not provide any additional dynamic configuration");
     }
 
     @Override
