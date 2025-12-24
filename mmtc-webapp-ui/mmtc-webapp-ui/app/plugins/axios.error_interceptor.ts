@@ -5,7 +5,6 @@ export default defineNuxtPlugin(() => {
 
   axios.interceptors.response.use(
     (response) => {
-      // console.log('intercepted successful response');
       return response;
     },
     (error: AxiosError) => {

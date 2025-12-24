@@ -18,6 +18,7 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
     public MmtcWebAppConfig() throws Exception {
         super();
         logger.debug(toString());
+        this.telemetrySource.applyConfiguration(this);
     }
 
     public enum AuthMode {

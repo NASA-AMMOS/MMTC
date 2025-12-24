@@ -295,7 +295,7 @@ watch(() => props.chartData, (newChartData, oldChartData) => {
     symbol: 'circle',
     symbolSize: 6,
     lineStyle: {color: '#75EDAE'}, // this is --color-green-300 from main.css
-    itemStyle: { color: '#0A5331'},  // this is --color-green-900 from main.css
+    itemStyle: { color: '#00A155'},  // this is --color-green-600 from main.css
     data: telemetrySeriesData,
     cursor: 'default',
     tooltip: {

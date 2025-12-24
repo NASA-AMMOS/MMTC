@@ -49,7 +49,6 @@ public interface TelemetrySource {
 
     void checkCorrelationConfiguration(TimeCorrelationRunConfig config) throws MmtcException;
 
-
     /**
      * This method is called when MMTC configuration has been fully initialized and validated, and provides a chance for
      * TelemetrySource implementations to save a reference to the entire MMTC edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource instance or parts

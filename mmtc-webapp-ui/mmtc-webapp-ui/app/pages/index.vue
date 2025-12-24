@@ -64,27 +64,45 @@ function closeCorrelation() {
 
 function updateDateRange(newDateRange) {
   dateRange.value = newDateRange;
+  console.log("setting currentRangeStartScetDateUtcCldDate");
+  console.log(newDateRange.beginCalendarDate);
+  currentRangeStartScetDateUtcCldDate = newDateRange.beginCalendarDate;
   rangeIsInitialized.value = true;
 }
 
-async function setDefaultDateRange() {
+let currentRangeStartScetDateUtcCldDate = undefined;
+async function setDefaultDateRange(keepStartDate = false) {
   rangeIsInitialized.value = false;
   const allTimeCorrelations: TimeCorrelationTriplet[] = await getAllTimeCorrelations(sclkKernelSelectionChoice.value);
 
-  // prefer going two correlations back, minus 24h, as the default chart start time
-  let rangeStartScetUtcStr;
-  if (allTimeCorrelations.length == 1) {
-    rangeStartScetUtcStr = allTimeCorrelations[0].scetUtc
-  } else {
-    rangeStartScetUtcStr = allTimeCorrelations[allTimeCorrelations.length - 1].scetUtc
-  }
+  let rangeStartScetDateUtcCldDate;
+  if (! keepStartDate) {
+    // prefer going two correlations back, minus 24h, as the default chart start time
+    let rangeStartScetUtcStr;
+    if (allTimeCorrelations.length == 1) {
+      rangeStartScetUtcStr = allTimeCorrelations[0].scetUtc
+    } else {
+      rangeStartScetUtcStr = allTimeCorrelations[allTimeCorrelations.length - 1].scetUtc
+    }
 
-  const rangeStartScetUtc = parseISO(rangeStartScetUtcStr + 'Z');
-  const rangeStartScetDateUtcCldDate = new CalendarDate(rangeStartScetUtc.getUTCFullYear(), rangeStartScetUtc.getUTCMonth() + 1, rangeStartScetUtc.getUTCDate()).subtract({days: 1});
+    const rangeStartScetUtc = parseISO(rangeStartScetUtcStr + 'Z');
+    rangeStartScetDateUtcCldDate = new CalendarDate(rangeStartScetUtc.getUTCFullYear(), rangeStartScetUtc.getUTCMonth() + 1, rangeStartScetUtc.getUTCDate()).subtract({days: 1});
+    console.log("setting currentRangeStartScetDateUtcCldDate");
+    console.log(rangeStartScetDateUtcCldDate)
+    currentRangeStartScetDateUtcCldDate = rangeStartScetDateUtcCldDate;
+  } else {
+    rangeStartScetDateUtcCldDate = currentRangeStartScetDateUtcCldDate;
+  }
 
   doyDateRangePicker.value.setInitialCalendarDates(rangeStartScetDateUtcCldDate, addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 14}));
 
   const quickSelectOptions = [];
+
+  quickSelectOptions.push({
+    startCalDate: rangeStartScetDateUtcCldDate,
+    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
+    displayText: "Last corr til now"
+  });
 
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
@@ -106,8 +124,8 @@ async function setDefaultDateRange() {
 
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
-    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
-    displayText: "Last corr til now"
+    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 30}),
+    displayText: "Last corr +120d"
   });
 
   quickSelectOptions.push({
@@ -137,13 +155,7 @@ async function setDefaultDateRange() {
   quickSelectOptions.push({
     startCalDate: (new UnifiedCalendarDateRange()).endCalendarDate.subtract({days: 90}),
     endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
-    displayText: "Past 90 days"
-  });
-
-  quickSelectOptions.push({
-    startCalDate: (new UnifiedCalendarDateRange()).endCalendarDate.subtract({days: 365}),
-    endCalDate: (new UnifiedCalendarDateRange()).endCalendarDate,
-    displayText: "Past year"
+    displayText: "Past 120 days"
   });
 
   doyDateRangePicker.value.setQuickSelectOptions(quickSelectOptions);
@@ -177,6 +189,13 @@ async function refreshAll() {
   await setSclkKernelToLatest();
   await runHistory.value.refresh();
   await setDefaultDateRange();
+  await updateChartData();
+}
+
+async function refreshPostCorrelation() {
+  await setSclkKernelToLatest();
+  await runHistory.value.refresh();
+  await setDefaultDateRange(true);
   await updateChartData();
 }
 
@@ -259,7 +278,7 @@ function chartClearCorrelationPreview() {
 
             <div>
               <p class="text-xs text-gray-500 text-center">
-                Telemetry range (ERT)
+                Telemetry range (ERT (UTC))
               </p>
             </div>
             <div>
@@ -298,6 +317,10 @@ function chartClearCorrelationPreview() {
             :range="dateRange"
             @time-selection="handleIncomingTimeSelection"
           />
+          <RunHistory
+            ref="runHistory"
+            @refresh-dashboard="refreshAll"
+          />
         </div>
         <div class="col-span-1" v-if="mode === 'correlate'">
           <UCard ref="cardRef" :ui="{ root: 'overflow-visible', body: 'ml-5 !px-0 !pt-0 !pb-3' }">
@@ -308,15 +331,11 @@ function chartClearCorrelationPreview() {
               @close-correlation="closeCorrelation"
               @chart-show-correlation-preview="chartShowCorrelationPreview"
               @chart-clear-correlation-preview="chartClearCorrelationPreview"
-              @refresh-dashboard="refreshAll"
+              @refresh-dashboard="refreshPostCorrelation"
               />
           </UCard>
         </div>
       </div>
-      <RunHistory
-        ref="runHistory"
-        @refresh-dashboard="refreshAll"
-      />
     </template>
   </UDashboardPanel>
 </template>
