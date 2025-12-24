@@ -454,80 +454,100 @@ onMounted(async () => {
   <!-- @submit="onSubmit" -->
   <div v-if="timeCorrelationConfigState === 'composing'"  class="pr-5 pt-5">
     <p class="text-xl font-bold text-center text-primary">New Correlation Configuration</p>
-    <UForm ref="form" :schema="schema" :state="state" :validate-on="['input','change','blur']" class="space-y-4 pt-5" style="min-height: 600px;">
-      <UFormField v-if="targetSampleInputErtModeChoices.length > 1" label="Target sample selection type" name="targetSampleInputErtMode" size="sm">
-        <USelect v-model="state.targetSampleInputErtMode" :items="targetSampleInputErtModeChoices" class="w-full"/>
-      </UFormField>
+    <UForm ref="form" :schema="schema" :state="state" :validate-on="['input','change','blur']" class="pt-5" style="min-height: 600px;">
+      <fieldset class="border border-gray-200 pr-2 pl-2 pb-4 rounded-lg -ml-2 -mr-2 space-y-4">
+        <legend class="px-2 text-sm font-semibold text-gray-700">
+          Telemetry Selection
+        </legend>
 
-      <UFormField label="Target sample (ERT)" name="targetSampleExactErt" size="sm" v-if="state.targetSampleInputErtMode === 'EXACT'">
-        <div class="grid grid-cols-4 gap-x-2">
-          <div class="col-span-3">
-          <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
-          </div>
-          <div class="col-span-1">
-            <UButton @click="toggleChoosingTargetSampleExactErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-exact-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-exact-ert'].includes(timeSelectionCfg.selectionDestination))"/>
-          </div>
-        </div>
-      </UFormField>
-
-      <UFormField label="Target sample range begin (ERT)" name="targetSampleRangeStartErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
-        <div class="grid grid-cols-4 gap-x-2">
-          <div class="col-span-3">
-            <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
-          </div>
-          <div class="col-span-1">
-            <UTooltip text="Click to select a point from the chart">
-              <UButton @click="toggleChoosingTargetSampleRangeStartErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-range-start-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-start-ert'].includes(timeSelectionCfg.selectionDestination))"/>
-            </UTooltip>
-          </div>
-        </div>
-      </UFormField>
-
-      <UFormField label="Target sample range end (ERT)" name="targetSampleRangeStopErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
-        <div class="grid grid-cols-4 gap-x-2">
-          <div class="col-span-3">
-            <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
-          </div>
-          <div class="col-span-1">
-            <UTooltip text="Click to select a point from the chart">
-              <UButton @click="toggleChoosingTargetSampleRangeStopErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-range-stop-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-stop-ert'].includes(timeSelectionCfg.selectionDestination))"/>
-            </UTooltip>
-          </div>
-        </div>
-      </UFormField>
-
-      <UFormField label="Prior correlation for basis (TDT)" name="priorCorrelationExactTdt"  size="sm">
-        <div class="grid grid-cols-4 gap-x-2">
-          <div class="col-span-3">
-            <UInput v-model="state.priorCorrelationExactTdt" :placeholder="priorCorrelationTdtPlaceholder" class="w-full" :disabled="(!ertInputsAreComplete) || (timeSelectionCfg.selectionDestination != 'none')"/>
-          </div>
-          <div class="col-span-1">
-            <UTooltip text="Click to select a point from the chart">
-              <UButton @click="toggleChoosingPriorCorrelationTdt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'prior-correlation-exact-tdt' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="(!ertInputsAreComplete) || (! (['none', 'prior-correlation-exact-tdt'].includes(timeSelectionCfg.selectionDestination)))"/>
-            </UTooltip>
-          </div>
-        </div>
-      </UFormField>
-
-      <div class="flex gap-4 items-end">
-        <UFormField label="Clock change rate mode" name="clockChangeRateConfig.clockChangeRateModeOverride" size="sm">
-          <USelect v-model="state.clockChangeRateConfig.clockChangeRateModeOverride" :items="clockChangeRateModeChoices" class="w-full"/>
+        <UFormField v-if="targetSampleInputErtModeChoices.length > 1" label="Target sample selection type" name="targetSampleInputErtMode" size="sm">
+          <USelect v-model="state.targetSampleInputErtMode" :items="targetSampleInputErtModeChoices" class="w-full"/>
         </UFormField>
 
-        <UFormField label="Clock rate" style="max-width: 100px;" name="clockChangeRateConfig.specifiedClockChangeRateToAssign" v-if="state.clockChangeRateConfig.clockChangeRateModeOverride === 'ASSIGN'" size="sm">
-          <UInput v-model="state.clockChangeRateConfig.specifiedClockChangeRateToAssign" type="number" class="w-full" placeholder="Rate"/>
+        <UFormField label="Target sample (ERT)" name="targetSampleExactErt" size="sm" v-if="state.targetSampleInputErtMode === 'EXACT'">
+          <div class="grid grid-cols-4 gap-x-2">
+            <div class="col-span-3">
+            <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
+            </div>
+            <div class="col-span-1">
+              <UButton @click="toggleChoosingTargetSampleExactErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-exact-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-exact-ert'].includes(timeSelectionCfg.selectionDestination))"/>
+            </div>
+          </div>
         </UFormField>
-      </div>
 
-      <UCheckboxGroup v-model="additionalCorrelationOptionsModel" :items="additionalCorrelationOptionItems" size="sm" />
+        <UFormField label="Target sample range begin (ERT)" name="targetSampleRangeStartErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
+          <div class="grid grid-cols-4 gap-x-2">
+            <div class="col-span-3">
+              <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
+            </div>
+            <div class="col-span-1">
+              <UTooltip text="Click to select a point from the chart">
+                <UButton @click="toggleChoosingTargetSampleRangeStartErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-range-start-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-start-ert'].includes(timeSelectionCfg.selectionDestination))"/>
+              </UTooltip>
+            </div>
+          </div>
+        </UFormField>
 
-      <UFormField label="Smoothing record duration (SCLK ticks)" name="additionalSmoothingRecordConfigOverride.coarseSclkTickDuration" :style="{visibility: additionalCorrelationOptionsModel.includes('insertAdditionalSmoothingRecord') ? 'visible' : 'hidden'}" size="sm">
-        <UInput v-model="state.additionalSmoothingRecordConfigOverride.coarseSclkTickDuration" type="number" class="w-full"/>
-      </UFormField>
+        <UFormField label="Target sample range end (ERT)" name="targetSampleRangeStopErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
+          <div class="grid grid-cols-4 gap-x-2">
+            <div class="col-span-3">
+              <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
+            </div>
+            <div class="col-span-1">
+              <UTooltip text="Click to select a point from the chart">
+                <UButton @click="toggleChoosingTargetSampleRangeStopErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-range-stop-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-range-stop-ert'].includes(timeSelectionCfg.selectionDestination))"/>
+              </UTooltip>
+            </div>
+          </div>
+        </UFormField>
 
-      <UFormField label="Test OWLT (sec)" name="testModeOwltSec" :style="{visibility: additionalCorrelationOptionsModel.includes('testModeOwltEnabled') ? 'visible' : 'hidden'}" size="sm">
-        <UInput v-model="state.testModeOwltSec" type="number" class="w-full"/>
-      </UFormField>
+        <UFormField label="Prior correlation for basis (TDT)" name="priorCorrelationExactTdt"  size="sm">
+          <div class="grid grid-cols-4 gap-x-2">
+            <div class="col-span-3">
+              <UInput v-model="state.priorCorrelationExactTdt" :placeholder="priorCorrelationTdtPlaceholder" class="w-full" :disabled="(!ertInputsAreComplete) || (timeSelectionCfg.selectionDestination != 'none')"/>
+            </div>
+            <div class="col-span-1">
+              <UTooltip text="Click to select a point from the chart">
+                <UButton @click="toggleChoosingPriorCorrelationTdt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'prior-correlation-exact-tdt' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="(!ertInputsAreComplete) || (! (['none', 'prior-correlation-exact-tdt'].includes(timeSelectionCfg.selectionDestination)))"/>
+              </UTooltip>
+            </div>
+          </div>
+        </UFormField>
+        <UAlert
+          icon="i-lucide-info"
+          color="neutral"
+          variant="subtle"
+          size="2xl"
+          class="py-3"
+          :ui="{description: 'text-xs italic', icon: 'size-4'}"
+          :description="`Prior SCLK triplet lookback range is ${newCorrelationMinLookbackHours} - ${newCorrelationMaxLookbackHours} hours`"
+        />
+      </fieldset>
+
+      <fieldset class="border border-gray-200 pr-2 pl-2 pb-4 mt-4 rounded-lg -ml-2 -mr-2 space-y-4">
+        <legend class="px-2 text-sm font-semibold text-gray-700">
+          Correlation Options
+        </legend>
+        <div class="flex gap-4 items-end">
+          <UFormField label="Clock change rate mode" name="clockChangeRateConfig.clockChangeRateModeOverride" size="sm">
+            <USelect v-model="state.clockChangeRateConfig.clockChangeRateModeOverride" :items="clockChangeRateModeChoices" class="w-full"/>
+          </UFormField>
+
+          <UFormField label="Clock rate" style="max-width: 100px;" name="clockChangeRateConfig.specifiedClockChangeRateToAssign" v-if="state.clockChangeRateConfig.clockChangeRateModeOverride === 'ASSIGN'" size="sm">
+            <UInput v-model="state.clockChangeRateConfig.specifiedClockChangeRateToAssign" type="number" class="w-full" placeholder="Rate"/>
+          </UFormField>
+        </div>
+
+        <UCheckboxGroup v-model="additionalCorrelationOptionsModel" :items="additionalCorrelationOptionItems" size="sm" />
+
+        <UFormField label="Smoothing record duration (SCLK ticks)" name="additionalSmoothingRecordConfigOverride.coarseSclkTickDuration" :style="{visibility: additionalCorrelationOptionsModel.includes('insertAdditionalSmoothingRecord') ? 'visible' : 'hidden'}" size="sm">
+          <UInput v-model="state.additionalSmoothingRecordConfigOverride.coarseSclkTickDuration" type="number" class="w-full"/>
+        </UFormField>
+
+        <UFormField label="Test OWLT (sec)" name="testModeOwltSec" :style="{visibility: additionalCorrelationOptionsModel.includes('testModeOwltEnabled') ? 'visible' : 'hidden'}" size="sm">
+          <UInput v-model="state.testModeOwltSec" type="number" class="w-full"/>
+        </UFormField>
+      </fieldset>
 
       <div class="pt-5">
         <UTooltip text="Cancel correlation configuration">

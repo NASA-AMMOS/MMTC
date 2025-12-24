@@ -38,10 +38,12 @@ onMounted(async () => {
   title.value = `MMTC - ${mmtcInfo.missionName}`;
 })
 
+const toaster = { position: 'top-right' }
+
 </script>
 
 <template>
-  <UApp>
+  <UApp :toaster="toaster">
     <NuxtLoadingIndicator />
     <NuxtLayout>
       <NuxtPage />

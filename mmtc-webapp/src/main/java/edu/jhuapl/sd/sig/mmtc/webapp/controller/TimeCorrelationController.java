@@ -89,7 +89,7 @@ public class TimeCorrelationController extends BaseController {
         });
 
         javalinApp.get("/api/v1/correlation/defaultConfig", ctx -> {
-            ctx.json(getDefaultCorrelationConfig());
+            ctx.json(getNewCorrelationConfig());
         });
 
         javalinApp.get("/api/v1/correlation/range", ctx -> {
@@ -182,13 +182,13 @@ public class TimeCorrelationController extends BaseController {
         }
     }
 
-    public static class DefaultTimeCorrelationConfigRequest extends NewTimeCorrelationConfigRequest {
+    public static class NewTimeCorrelationConfigRequestTemplate extends NewTimeCorrelationConfigRequest {
         public final int samplesPerSet;
         public final Double newCorrelationMinTdt;
         public final Double predictedClkRateMinLookbackHours;
         public final Double predictedClkRateMaxLookbackHours;
 
-        public DefaultTimeCorrelationConfigRequest(NewTimeCorrelationConfigRequest corrConfig, int samplesPerSet, Double newCorrelationMinTdt, Double predictedClkRateMinLookbackHours, Double predictedClkRateMaxLookbackHours) {
+        public NewTimeCorrelationConfigRequestTemplate(NewTimeCorrelationConfigRequest corrConfig, int samplesPerSet, Double newCorrelationMinTdt, Double predictedClkRateMinLookbackHours, Double predictedClkRateMaxLookbackHours) {
             super(corrConfig);
             this.samplesPerSet = samplesPerSet;
             this.newCorrelationMinTdt = newCorrelationMinTdt;
@@ -197,17 +197,16 @@ public class TimeCorrelationController extends BaseController {
         }
     }
 
-    private NewTimeCorrelationConfigRequest getDefaultCorrelationConfig() throws MmtcException, IOException, TimeConvertException {
+    private NewTimeCorrelationConfigRequest getNewCorrelationConfig() throws MmtcException, IOException, TimeConvertException {
         final List<TimeCorrelationTriplet> allTimeCorrelationTriplets = getAllTimeCorrelationTriplets(outputProductService.getLatestFilenameForDef(outputProductService.getSclkKernelOutputProductDef()).get());
         final TimeCorrelationTriplet latestTimeCorrelationTriplet = allTimeCorrelationTriplets.get(allTimeCorrelationTriplets.size() - 1);
 
         // next correlation's min TDT is that of the last current triplet, plus 1ms
-
         final Double newCorrelationMinTdt = config.withSpiceMutexAndDefaultKernels(
                 () -> TimeConvert.tdtCalStrToTdt(latestTimeCorrelationTriplet.tdtG.replace("@", "")) + .001
         );
 
-        final DefaultTimeCorrelationConfigRequest defaultCorrConfig = new DefaultTimeCorrelationConfigRequest(
+        final NewTimeCorrelationConfigRequestTemplate defaultCorrConfig = new NewTimeCorrelationConfigRequestTemplate(
                 new NewTimeCorrelationConfigRequest(),
                 config.getSamplesPerSet(),
                 newCorrelationMinTdt,
