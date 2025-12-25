@@ -144,4 +144,5 @@
     <entry key="telemetry.source.plugin.ampcs.frame.vcidFieldName"></entry>
     <entry key="telemetry.source.plugin.ampcs.frame.vcfcFieldName"></entry>
     <entry key="telemetry.source.plugin.ampcs.frame.maxTkpacketFrameSeparation"></entry>
+    <entry key="telemetry.source.plugin.ampcs.chill_get_frames.batching"></entry>
 </properties>

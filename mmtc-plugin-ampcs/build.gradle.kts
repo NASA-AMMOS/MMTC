@@ -22,6 +22,8 @@ dependencies {
 
     compileOnly(project(":mmtc-core"))
 
+    implementation("com.google.guava:guava:33.4.8-jre")
+
     // provides javax.xml.bind classes
     implementation(libs.jakarta.xml)
     implementation(libs.jaxb.impl)
