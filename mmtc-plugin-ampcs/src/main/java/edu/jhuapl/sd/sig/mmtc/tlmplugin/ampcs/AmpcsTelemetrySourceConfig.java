@@ -333,4 +333,12 @@ public class AmpcsTelemetrySourceConfig {
             return "-";
         }
     }
+
+    public boolean isAmpcsTlmWithFramesBatchingEnabled() {
+        if (timeCorrelationAppConfig.containsNonEmptyKey("telemetry.source.plugin.ampcs.chill_get_frames.batching")) {
+            return timeCorrelationAppConfig.getBoolean("telemetry.source.plugin.ampcs.chill_get_frames.batching");
+        } else {
+            return true;
+        }
+    }
 }

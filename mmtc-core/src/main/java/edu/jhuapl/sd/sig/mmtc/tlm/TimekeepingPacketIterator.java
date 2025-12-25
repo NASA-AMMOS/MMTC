@@ -49,6 +49,10 @@ public class TimekeepingPacketIterator implements Iterator<TimekeepingRecord> {
         }
     }
 
+    public void reset() {
+        this.currentOffset = 0;
+    }
+
     /**
      * Indicates whether there are remaining bytes to be parsed.
      *

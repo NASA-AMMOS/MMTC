@@ -2,6 +2,8 @@ package edu.jhuapl.sd.sig.mmtc.util;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +34,11 @@ public class IsolatingUrlClassLoader extends URLClassLoader {
     // Java extensions (and this classloader) were removed in Java 9+; remove this if/when MMTC is migrated to Java 9+
     private static final ClassLoader EXTENSION_CLASSLOADER = ClassLoader.getSystemClassLoader().getParent();
 
+    // These are libraries that mmtc-core uses that are valuable to expose to plugins, via the original classloader, to allow plugins
+    // to interface with the mmtc-core code (while avoiding loading two different copies of the same class, which prevents the types from being treated as identical)
+    // e.g., this allows us to handle the fact that the TelemetrySource interface uses Commons CLI's Option class, so we need to load it once and then share
+    private static final List<String> THIRD_PARTY_PACKAGES_TO_ALLOW_PASSTHROUGH = Arrays.asList("org.apache.commons.cli", "com.google.common.collect");
+
     private static final Logger logger = LogManager.getLogger();
 
     public IsolatingUrlClassLoader(URL[] urls) {
@@ -49,8 +56,7 @@ public class IsolatingUrlClassLoader extends URLClassLoader {
         // if not loaded, try to load it
         if (loadedClass == null) {
 
-            // the TelemetrySource interface mostly uses primitives and builtin classes, but it also uses Commons CLI Option, so we need to load it once and then share
-            if (! name.startsWith("org.apache.commons.cli")) {
+            if (! allowThirdPartyPassthrough(name)) {
                 try {
                     // Ignore parent delegation and just try to load locally
                     loadedClass = findClass(name);
@@ -63,7 +69,7 @@ public class IsolatingUrlClassLoader extends URLClassLoader {
 
             // If not found locally, delegate to an appropriate classloader
             if (loadedClass == null) {
-                if (name.startsWith("edu.jhuapl.sd.sig.mmtc") || name.startsWith("org.apache.commons.cli")) {
+                if (name.startsWith("edu.jhuapl.sd.sig.mmtc") || allowThirdPartyPassthrough(name)) {
                     // If requesting an MMTC class (e.g. API or utility class), delegate to super.loadClass, which can access MMTC packages
                     log(name, String.format("calling super.loadClass"));
                     // the following call throws ClassNotFoundException if not found in delegation hierarchy at all
@@ -88,5 +94,15 @@ public class IsolatingUrlClassLoader extends URLClassLoader {
 
     private static void log(String className, String message) {
         logger.trace(String.format("IsolatingClassLoader: [%s]\t%s\t\t%s", Thread.currentThread().getId(), className, message));
+    }
+
+    private static boolean allowThirdPartyPassthrough(String classname) {
+        for (String allowedPackage : THIRD_PARTY_PACKAGES_TO_ALLOW_PASSTHROUGH) {
+            if (classname.startsWith(allowedPackage)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
