@@ -96,7 +96,15 @@ public class MmtcWebApp {
         javalinApp.exception(Exception.class, (e, ctx) -> {
             logger.error("Server error", e);
             ctx.status(500);
-            ctx.result(Optional.ofNullable(e.getMessage()).orElse("An error occurred."));
+
+            String errorMessage = Optional.ofNullable(e.getMessage()).orElse("An error occurred.").trim();
+
+            if (! errorMessage.endsWith(".")) {
+                errorMessage += ".";
+            }
+            errorMessage += " Please see the MMTC log for details.";
+
+            ctx.result(errorMessage);
         });
     }
 

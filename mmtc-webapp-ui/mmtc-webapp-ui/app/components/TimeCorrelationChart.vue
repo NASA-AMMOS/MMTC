@@ -129,7 +129,7 @@ function buildTooltipContentForCorrelation(paramName, param) {
   const attributes = [];
 
   attributes.push({key: 'Encoded SCLK', val: `${param.data.originalTriplet.encSclk}`});
-  attributes.push({key: 'TDT(G)', val: `${param.data.originalTriplet.tdtG}`});
+  attributes.push({key: 'TDT(G)', val: `${param.data.originalTriplet.tdtGCalStr}`});
   attributes.push({key: 'Clock rate', val: `${param.data.originalTriplet.clkchgrate}`});
 
   tooltipSectionForParam += getAttrTableHtmlFor(attributes);
@@ -224,7 +224,7 @@ const option = ref({
     {
       type: 'value',
       gridIndex: 0,
-      name: 'Recon. SCET Error (ms)',
+      name: 'SCET Error (ms)',
       nameGap: 20
     },
     {
@@ -436,26 +436,6 @@ function configSeriesForSelection(seriesId, originalDataObjKey, isSelecting) {
       }
     }
   })
-
-  /*
-  if (currentZoom) {
-    option.value.dataZoom = currentZoom;
-    //chart.setOption({ dataZoom: currentZoom }, false);
-  }
-
-   */
-
-  /*
-  timeCorrChart.value.setOption({
-    series: [
-      {
-        id: seriesId,
-        cursor: cursorAppearance
-      }
-    ]
-  });
-
-   */
 }
 
 watch(() => props.chartTimeSelectionCfg, (newVal, oldVal) => {
