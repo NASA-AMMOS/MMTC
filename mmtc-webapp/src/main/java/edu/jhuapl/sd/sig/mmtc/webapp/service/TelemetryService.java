@@ -11,9 +11,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TelemetryService {
 
@@ -35,12 +33,7 @@ public class TelemetryService {
     public synchronized List<TimekeepingTelemetryPoint> getTelemetryPoints(OffsetDateTime beginTimeErt, OffsetDateTime endTimeErt, Path sclkKernelPath) throws Exception {
         final List<FrameSample> frameSamples = config.getTelemetrySource().getSamplesInRange(beginTimeErt, endTimeErt);
 
-        final Map<String, String> sclkKernelToLoad = new HashMap<>();
-        sclkKernelToLoad.put(sclkKernelPath.toAbsolutePath().toString(), "sclk");
-
-        return config.withSpiceMutexAndDefaultKernels(() -> {
-            // load specified sclkKernel atop already-specified SCLK kernel
-            TimeConvert.loadSpiceKernels(sclkKernelToLoad);
+        return config.withSpiceKernels(sclkKernelPath, () -> {
             return enrichFrameSamples(frameSamples);
         });
     }
@@ -62,15 +55,14 @@ public class TelemetryService {
                 return config.getNaifSpacecraftId();
             }
 
-            // todo should we be carrying forward the input test mode situation here?  i don't think so, because we don't want to apply an even one to all points
             @Override
             public boolean isTestMode() {
-                return false;
+                return config.isChartTlmTestModeEnabled();
             }
 
             @Override
             public double getTestModeOwlt() {
-                return 0;
+                return config.getChartTlmTestModeOwltSec();
             }
 
             @Override

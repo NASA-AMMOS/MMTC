@@ -26,15 +26,10 @@ public class TelemetryController extends BaseController {
             OffsetDateTime endTimeErt = TimeConvert.parseIsoDoyUtcStr(ctx.queryParam("endTimeErt"));
 
             String sclkKernelName = ctx.queryParam("sclkKernelName");
-
-            final Path sclkKernelPath;
-
             if (sclkKernelName == null || sclkKernelName.isEmpty()) {
                 throw new IllegalArgumentException("Must provide SCLK kernel name");
             }
-
-            EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) config.getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
-            sclkKernelPath = sclkKernelDef.resolveLocation(config).findMatchingFilename(sclkKernelName);
+            Path sclkKernelPath = config.getSclkKernelPathFor(sclkKernelName);
 
             ctx.json(telemetryService.getTelemetryPoints(beginTimeErt, endTimeErt, sclkKernelPath));
         });

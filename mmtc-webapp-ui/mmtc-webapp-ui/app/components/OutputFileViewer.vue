@@ -6,7 +6,14 @@ import { retrieveOutputProductDefs, retrieveOutputProductFileContents, retrieveO
 const props = defineProps(['outputProductDefName'])
 
 const allOutputProductDefs = ref([])
-const outputProductDef = ref({})
+const outputProductDef = ref({
+  name: '',
+  builtIn: false,
+  simpleClassName: '',
+  type: '',
+  singleFile: false,
+  filenames: []
+})
 const outputProductDefDisplayName = ref('')
 
 const fileSelectionOptions = ref([])
@@ -95,8 +102,17 @@ async function downloadFile() {
     <template #header>
       <UHeader :title="outputProductDefDisplayName" class="mt-2">
         <template #right>
-          <USelect v-model="fileSelectionChoice" :items="fileSelectionOptions"/>
-          <UButton color="secondary" @click="downloadFile" data-testid="output-product-download">
+          <USelect
+            v-model="fileSelectionChoice"
+            :items="fileSelectionOptions"
+            :disabled="outputProductDef.filenames.length == 0"
+          />
+          <UButton
+            color="secondary"
+            @click="downloadFile"
+            data-testid="output-product-download"
+            :disabled="outputProductDef.filenames.length == 0"
+          >
             Download
           </UButton>
         </template>

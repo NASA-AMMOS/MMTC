@@ -739,10 +739,7 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
         }
 
         public Results execute(Function<String, CSVParser> subprocessRunner) {
-            // todo join up ranges that are within a certain range of each other?
-            // int batchingThresholdMin = 5;
-
-            Results results = new Results(this.ampcsConfig);
+            final Results results = new Results(this.ampcsConfig);
 
             for (Integer vcid : queryRangesByVcid.keySet()) {
                 List<OffsetDateTimeRange> rangesToRunOver = queryRangesByVcid.get(vcid).asRanges()

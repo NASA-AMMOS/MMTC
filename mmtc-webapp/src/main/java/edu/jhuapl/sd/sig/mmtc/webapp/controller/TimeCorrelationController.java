@@ -144,14 +144,13 @@ public class TimeCorrelationController extends BaseController {
                 tmpSclkKernelPath
         ));
 
+        // have this preview endpoint calculate and return the graph data, among other stats about the new correlation run
         try {
-            // have the preview endpoint calculate and return the graph data, among other stats about the new correlation run
-
             final TimeCorrelationContext ctxResult = runNewCorrelation(correlationConfigPreview);
             final List<TelemetryService.TimekeepingTelemetryPoint> tlmPoints = telemetryService.getTelemetryPoints(correlationConfigPreview.beginTimeErt, correlationConfigPreview.endTimeErt, tmpSclkKernelPath);
 
             final List<TimeCorrelationTriplet> updatedTriplets = new ArrayList<>();
-            config.withSpiceMutexAndDefaultKernels(() -> {
+            config.withSpiceKernels(tmpSclkKernelPath, () -> {
                 if (ctxResult.correlation.updatedInterpolatedTriplet.isSet()) {
                     updatedTriplets.add(convertTriplet(ctxResult.correlation.updatedInterpolatedTriplet.get()));
                 }
@@ -197,12 +196,14 @@ public class TimeCorrelationController extends BaseController {
         }
     }
 
-    private NewTimeCorrelationConfigRequest getNewCorrelationConfig() throws MmtcException, IOException, TimeConvertException {
-        final List<TimeCorrelationTriplet> allTimeCorrelationTriplets = getAllTimeCorrelationTriplets(outputProductService.getLatestFilenameForDef(outputProductService.getSclkKernelOutputProductDef()).get());
+    private NewTimeCorrelationConfigRequest getNewCorrelationConfig() throws MmtcException, IOException {
+        String sclkKernelFilename = outputProductService.getLatestFilenameForDef(outputProductService.getSclkKernelOutputProductDef()).get();
+        final List<TimeCorrelationTriplet> allTimeCorrelationTriplets = getAllTimeCorrelationTriplets(sclkKernelFilename);
         final TimeCorrelationTriplet latestTimeCorrelationTriplet = allTimeCorrelationTriplets.get(allTimeCorrelationTriplets.size() - 1);
 
         // next correlation's min TDT is that of the last current triplet, plus 1ms
-        final Double newCorrelationMinTdt = config.withSpiceMutexAndDefaultKernels(
+        final Double newCorrelationMinTdt = config.withSpiceKernels(
+                config.getInputSclkKernelPath(),
                 () -> TimeConvert.tdtCalStrToTdt(latestTimeCorrelationTriplet.tdtG.replace("@", "")) + .001
         );
 
@@ -231,17 +232,13 @@ public class TimeCorrelationController extends BaseController {
         return defaultCorrConfig;
     }
 
+    private CorrelationResults createNewCorrelation(NewTimeCorrelationConfigRequest newCorrConfig) throws Exception {
+        return CorrelationResults.from(runNewCorrelation(newCorrConfig));
+    }
+
     private TimeCorrelationContext runNewCorrelation(NewTimeCorrelationConfigRequest newCorrConfig) throws Exception {
         try {
             return new TimeCorrelationApp(new TimeCorrelationRunConfig(newCorrConfig, config)).run();
-        } finally {
-            TimeConvert.unloadSpiceKernels();
-        }
-    }
-
-    private CorrelationResults createNewCorrelation(NewTimeCorrelationConfigRequest newCorrConfig) throws Exception {
-        try {
-            return CorrelationResults.from(runNewCorrelation(newCorrConfig));
         } finally {
             TimeConvert.unloadSpiceKernels();
         }
@@ -281,15 +278,13 @@ public class TimeCorrelationController extends BaseController {
         );
     }
 
-    private List<TimeCorrelationTriplet> getAllTimeCorrelationTriplets(String sclkKernelFilename) throws MmtcException {
-        return config.withSpiceMutexAndDefaultKernels(() -> {
-            EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) config.getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
-            Path sclkKernelPath = sclkKernelDef.resolveLocation(config).findMatchingFilename(sclkKernelFilename);
+    private List<TimeCorrelationTriplet> getAllTimeCorrelationTriplets(String sclkKernelFilename) throws MmtcException, IOException {
+        final Path sclkKernelPath = config.getSclkKernelPathFor(sclkKernelFilename);
 
+        return config.withSpiceKernels(sclkKernelPath, () -> {
             SclkKernel sclkKernel = new SclkKernel(sclkKernelPath.toAbsolutePath().toString());
             sclkKernel.readSourceProduct();
 
-            // todo check that this is correct
             List<String[]> parsedRecords = sclkKernel.getParsedRecords();
 
             List<TimeCorrelationTriplet> results = new ArrayList<>();

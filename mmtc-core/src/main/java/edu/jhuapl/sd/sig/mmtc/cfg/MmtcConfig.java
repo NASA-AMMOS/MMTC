@@ -460,11 +460,21 @@ public abstract class MmtcConfig {
     }
 
     /**
-     * Creates a container in the form of a map that holds the SPICE kernels to load.
+     * Creates a container in the form of a map that holds the SPICE kernels to load, including the input SCLK kernel.
      * @return a map containing the types and paths of each SPICE kernel
      * @throws MmtcException if the list of kernels to load could not be obtained from configuration data
      */
     public Map<String, String> getKernelsToLoad() throws MmtcException {
+        return getKernelsToLoad(true);
+    }
+
+    /**
+     * Creates a container in the form of a map that holds the SPICE kernels to load.
+     * @param includeSclkKernel whether to also include the input SCLK kernel or not
+     * @return a map containing the types and paths of each SPICE kernel
+     * @throws MmtcException if the list of kernels to load could not be obtained from configuration data
+     */
+    public Map<String, String> getKernelsToLoad(boolean includeSclkKernel) throws MmtcException {
         // the fact that this is a LinkedHashMap is important, as it means iteration over the map will proceed in insertion-order
         Map<String, String> kernels = new LinkedHashMap<>();
 
@@ -976,6 +986,25 @@ public abstract class MmtcConfig {
         }
     }
 
+    /**
+     * Only used when a specific frame's target ERT is selected.  This represents the 'grace' period around the
+     * target frame that will be included in the query to the configured telemetry source so that it can gather
+     * sufficient data to match up the target frame's ERT and the supplemental frame's packet from a telemetry source-
+     * agnostic position.
+     * @return the additional query window in minutes
+     */
+    public int getTargetSampleExactErtSupplementalQueryWindowMin() {
+        return timeCorrelationConfig.getConfig().getInt("telemetry.exactTargetSampleSelection.targetToSupplementalQueryWindowMin", 5);
+    }
+
+    /*
+     * Utility method to get the Path to a specific SCLK kernel, uniquely identified by filename
+     */
+    public Path getSclkKernelPathFor(String sclkKernelFilename) throws MmtcException, IOException {
+        EntireFileOutputProductDefinition sclkKernelDef = (EntireFileOutputProductDefinition) getOutputProductDefByName(SclkKernelProductDefinition.PRODUCT_NAME);
+        return sclkKernelDef.resolveLocation(this).findMatchingFilename(sclkKernelFilename);
+    }
+
     public enum SclkScetFileLeapSecondSclkRate {
         ONE,
         PRIOR_RATE,
@@ -1187,6 +1216,18 @@ public abstract class MmtcConfig {
         return timeCorrelationConfig.getConfig().getBoolean(key);
     }
 
+    public Boolean getBoolean(String key, boolean defaultVal) {
+        return timeCorrelationConfig.getConfig().getBoolean(key, defaultVal);
+    }
+
+    public Double getDouble(String key) {
+        return timeCorrelationConfig.getConfig().getDouble(key);
+    }
+
+    public Double getDouble(String key, double defaultValue) {
+        return timeCorrelationConfig.getConfig().getDouble(key, defaultValue);
+    }
+
     public List<String> getKeysWithPrefix(String keyPrefix) {
         final List<String> keys = new ArrayList<>();
 
@@ -1201,6 +1242,10 @@ public abstract class MmtcConfig {
 
     public int getInt(String key) {
         return timeCorrelationConfig.getConfig().getInt(key);
+    }
+
+    public int getInt(String key, int defaultVal) {
+        return timeCorrelationConfig.getConfig().getInt(key, defaultVal);
     }
 
     public String[] getStringArray(String key) {

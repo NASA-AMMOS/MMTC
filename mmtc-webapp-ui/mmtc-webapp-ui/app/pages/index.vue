@@ -64,8 +64,6 @@ function closeCorrelation() {
 
 function updateDateRange(newDateRange) {
   dateRange.value = newDateRange;
-  console.log("setting currentRangeStartScetDateUtcCldDate");
-  console.log(newDateRange.beginCalendarDate);
   currentRangeStartScetDateUtcCldDate = newDateRange.beginCalendarDate;
   rangeIsInitialized.value = true;
 }
@@ -87,8 +85,6 @@ async function setDefaultDateRange(keepStartDate = false) {
 
     const rangeStartScetUtc = parseISO(rangeStartScetUtcStr + 'Z');
     rangeStartScetDateUtcCldDate = new CalendarDate(rangeStartScetUtc.getUTCFullYear(), rangeStartScetUtc.getUTCMonth() + 1, rangeStartScetUtc.getUTCDate()).subtract({days: 1});
-    console.log("setting currentRangeStartScetDateUtcCldDate");
-    console.log(rangeStartScetDateUtcCldDate)
     currentRangeStartScetDateUtcCldDate = rangeStartScetDateUtcCldDate;
   } else {
     rangeStartScetDateUtcCldDate = currentRangeStartScetDateUtcCldDate;
@@ -124,7 +120,7 @@ async function setDefaultDateRange(keepStartDate = false) {
 
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
-    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 30}),
+    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 120}),
     displayText: "Last corr +120d"
   });
 
