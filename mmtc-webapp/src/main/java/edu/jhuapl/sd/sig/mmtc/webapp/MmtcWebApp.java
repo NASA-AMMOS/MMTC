@@ -11,7 +11,6 @@ import edu.jhuapl.sd.sig.mmtc.webapp.service.OutputProductService;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.TelemetryService;
 import edu.jhuapl.sd.sig.mmtc.webapp.util.MmtcObjectMapper;
 import io.javalin.Javalin;
-import io.javalin.http.UnauthorizedResponse;
 import io.javalin.json.JavalinJackson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,13 +74,11 @@ public class MmtcWebApp {
         // set up auth
         final AuthorizationService authService = switch(config.getAuthMode()) {
             case NONE                    -> new NoopAuthorizationService();
-            case AUTOGEN_BASIC_HTTP_AUTH -> new AutoGenBasicHttpAuthorizationService();
+            case AUTOGEN_BASIC_HTTP_AUTH -> new AutoGenBasicHttpAuthorizationService(config);
         };
 
-        javalinApp.beforeMatched(ctx -> {
-            if (! authService.isAuthorized(ctx)) {
-                throw new UnauthorizedResponse();
-            }
+        javalinApp.before(ctx -> {
+            authService.ensureAuthorized(ctx);
         });
         logger.info("Auth service: " + authService.getClass().getSimpleName());
 

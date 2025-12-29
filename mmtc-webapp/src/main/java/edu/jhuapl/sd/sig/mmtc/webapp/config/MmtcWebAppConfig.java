@@ -3,11 +3,12 @@ package edu.jhuapl.sd.sig.mmtc.webapp.config;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
-import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.lang.reflect.Executable;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
@@ -26,7 +27,6 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
         AUTOGEN_BASIC_HTTP_AUTH
     }
 
-    // todo enable using defaults for these if unspecified
     public AuthMode getAuthMode() {
         return AuthMode.valueOf(getString("webapp.auth.mode").toUpperCase());
     }
@@ -43,28 +43,32 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
         return getBoolean("webapp.serve.tls.enabled");
     }
 
+    public int getAuthTimeoutHours() {
+        return getInt("webapp.auth.timeout", 4);
+    }
+
     public int getTlsServerPort() {
         return getInt("webapp.serve.tls.port");
     }
 
-    public <T> T withSpiceMutex(Callable<T> callable) throws MmtcException {
-        synchronized (spiceLoadedKernelMutex) {
-            try {
-                TimeConvert.loadSpiceLib();
-                return callable.call();
-            } catch (Exception e) {
-                throw new MmtcException(e);
-            } finally {
-                TimeConvert.unloadSpiceKernels();
-            }
-        }
+    public boolean isChartTlmTestModeEnabled() {
+        return getBoolean("webapp.telemetrychart.testmode.enabled", false);
     }
 
-    public <T> T withSpiceMutexAndDefaultKernels(Callable<T> callable) throws MmtcException {
+    public double getChartTlmTestModeOwltSec() {
+        return getDouble("webapp.telemetrychart.testmode.owltSec", 0.0);
+    }
+
+    public <T> T withSpiceKernels(Path sclkKernelPath, Callable<T> callable) throws MmtcException {
         synchronized (spiceLoadedKernelMutex) {
             try {
                 TimeConvert.loadSpiceLib();
-                TimeConvert.loadSpiceKernels(getKernelsToLoad());
+                TimeConvert.loadSpiceKernels(getKernelsToLoad(false));
+
+                final Map<String, String> sclkKernelToLoad = new HashMap<>();
+                sclkKernelToLoad.put(sclkKernelPath.toAbsolutePath().toString(), "sclk");
+                TimeConvert.loadSpiceKernels(sclkKernelToLoad);
+
                 return callable.call();
             } catch (Exception e) {
                 throw new MmtcException(e);

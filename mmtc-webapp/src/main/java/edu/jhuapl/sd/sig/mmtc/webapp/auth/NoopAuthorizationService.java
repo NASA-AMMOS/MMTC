@@ -4,7 +4,7 @@ import io.javalin.http.Context;
 
 public class NoopAuthorizationService implements AuthorizationService {
     @Override
-    public boolean isAuthorized(Context ctx) {
+    public boolean ensureAuthorized(Context ctx) {
         return true;
     }
 }

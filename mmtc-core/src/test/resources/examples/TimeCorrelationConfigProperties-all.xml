@@ -41,6 +41,8 @@
 
     <entry key="telemetry.tkParmWindowSec"></entry>
 
+    <entry key="telemetry.exactTargetSampleSelection.targetToSupplementalQueryWindowMin"></entry>
+
     <entry key="spice.naifSpacecraftId"></entry>
 
     <entry key="spice.kernel.sclk.kerneldir"></entry>

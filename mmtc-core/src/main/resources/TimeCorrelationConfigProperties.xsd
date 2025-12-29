@@ -58,6 +58,8 @@
       <!-- The window in +/- seconds surrounding an ERT for which G&C or temperature parameters are valid. -->
       <xs:enumeration value="telemetry.tkParmWindowSec"/>
 
+      <xs:enumeration value="telemetry.targetSampleExactErtToSupplementalQueryWindowMin"/>
+
       <!-- SPICE kernels -->
       <xs:enumeration value="spice.naifSpacecraftId"/>
 

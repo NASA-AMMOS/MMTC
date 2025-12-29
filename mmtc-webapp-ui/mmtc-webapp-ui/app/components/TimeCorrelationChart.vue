@@ -36,7 +36,7 @@ import type {
   TooltipComponentOption,
   LegendComponentOption,
 } from 'echarts/components'
-import {toYyyyDddHhMm, toYyyyDd, toHhMm} from "@/services/utils";
+import {toYyyyDddHhMm, toYyyyDddHhMmssSSS, toYyyyDd, toHhMm} from "@/services/utils";
 import {TimeCorrelationTriplet} from "../services/mmtc-api";
 import {UnifiedCalendarDateRange} from "../services/utils";
 
@@ -158,7 +158,7 @@ const option = ref({
       show: true,
       trigger: 'axis',
       formatter: (params) => {
-        let htmlContents = 'SCET: ' + toYyyyDddHhMm(new Date(params[0].axisValue)) + '<hr/>';
+        let htmlContents = 'SCET: ' + toYyyyDddHhMmssSSS(new Date(params[0].axisValue)) + '<hr/>';
 
         params.forEach(p => {
           htmlContents += buildTooltipContent(p) + "<br/>";
@@ -197,8 +197,8 @@ const option = ref({
       gridIndex: 0,
       boundaryGap: false,
       axisLabel: {
-        showMinLabel: true,
-        showMaxLabel: true,
+        // showMinLabel: true, // enabling this and showMaxLabel compress this axis' range in a way that misaligns it with the second x-axis below
+        // showMaxLabel: true,
         hideOverlap: true,
         rich: {
           bold: {
@@ -206,9 +206,7 @@ const option = ref({
           }
         },
         formatter: (value, index, extra) => {
-          // return toYyyyDddHhMm(new Date(value));
           const d = new Date(value);
-          // return `<strong>${toYyyyDd(d)}</strong> ${toHhMm(d)}`
           return '{bold|' + toYyyyDd(d) + '} ' + toHhMm(d);
         }
       },
@@ -317,7 +315,7 @@ watch(() => props.chartData, (newChartData, oldChartData) => {
 
   option.value.series[1] = {
     id: 'timeCorrRecords',
-    name: 'Time Correlation Records',
+    name: 'SCLK Kernel Records',
     type: 'scatter',
     xAxisIndex: 1,
     yAxisIndex: 1,
@@ -372,7 +370,7 @@ watch(() => props.chartData, (newChartData, oldChartData) => {
 
     option.value.series[3] = {
       id: 'timeCorrRecordsPreview',
-      name: 'Preview Time Correlation Records',
+      name: 'Preview SCLK Kernel Records',
       type: 'scatter',
       xAxisIndex: 1,
       yAxisIndex: 1,

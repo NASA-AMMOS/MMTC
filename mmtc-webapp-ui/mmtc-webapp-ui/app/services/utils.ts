@@ -31,14 +31,14 @@ export class UnifiedCalendarDateRange {
     this.beginCalendarDate = newBegin;
     this.beginDate = new Date(newBegin.year, newBegin.month - 1, newBegin.day, 0, 0, 0, 0); // newBegin.toDate('UTC');
     this.beginYear = newBegin.year;
-    this.beginDoy = toDoy(this.beginDate);
+    this.beginDoy = parseInt(toDoy(this.beginDate));
   }
 
   updateEndWithCalendarDate(newEnd: CalendarDate) {
     this.endCalendarDate = newEnd;
     this.endDate = new Date(newEnd.year, newEnd.month - 1, newEnd.day, 0, 0, 0, 0);
     this.endYear = newEnd.year;
-    this.endDoy = toDoy(this.endDate);
+    this.endDoy = parseInt(toDoy(this.endDate));
   }
 
   updateBeginWithDate(newBegin: Date) {
@@ -93,6 +93,10 @@ export function toYyyyDd(date: Date) {
 
 export function toHhMm(date: Date) {
   return format(date, "HH:mm", { useAdditionalDayOfYearTokens: true });
+}
+
+export function toYyyyDddHhMmssSSS(date: Date) {
+  return format(date, "yyyy-DDD HH:mm:ss.SSS", { useAdditionalDayOfYearTokens: true });
 }
 
 // todo rename this

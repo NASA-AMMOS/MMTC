@@ -7,6 +7,8 @@ import {toDoy, UnifiedCalendarDateRange, toYyyyDd, calendarDateToDoy} from '../s
 import { parseISO, isBefore } from 'date-fns'
 
 const range = ref<UnifiedCalendarDateRange>(new UnifiedCalendarDateRange());
+const rangeStartIsUndefined = ref(false);
+const rangeEndIsUndefined = ref(false);
 
 defineExpose({ setInitialCalendarDates, setQuickSelectOptions });
 
@@ -40,9 +42,10 @@ function quickSelect(quickSelectOption) {
 watch(
   range,
   (newVal, oldVal) => {
-    if (isBefore(range.value.beginDate, range.value.endDate)) {
-      // todo improve this to not emit if both start and end aren't populated in the model
-      emit('update-date-range', range.value.getCopy());
+    if (rangeStartIsUndefined.value == false && rangeEndIsUndefined.value == false) {
+      if (isBefore(range.value.beginDate, range.value.endDate)) {
+        emit('update-date-range', range.value.getCopy());
+      }
     }
   },
   { deep: true }
@@ -56,10 +59,17 @@ const modelValue = shallowRef({
 watch(
   () => modelValue,
   (newVal, oldVal) => {
-    if (modelValue.value.start != undefined) {
+    if (modelValue.value.start == undefined) {
+      rangeStartIsUndefined.value = true;
+    } else {
+      rangeStartIsUndefined.value = false;
       range.value.updateBeginWithCalendarDate(modelValue.value.start);
     }
-    if (modelValue.value.end != undefined) {
+
+    if (modelValue.value.end == undefined) {
+      rangeEndIsUndefined.value = true;
+    } else {
+      rangeEndIsUndefined.value = false;
       range.value.updateEndWithCalendarDate(modelValue.value.end);
     }
   },
@@ -68,74 +78,85 @@ watch(
 
 </script>
 <template>
-  <!--{{ range.beginYear }} / {{ range.beginDoy }} - {{ range.endYear }} / {{ range.endDoy }}-->
-  <UPopover>
-    <UButton color="neutral" variant="outline" icon="i-lucide-calendar">
-      <template v-if="modelValue.start">
-        <template v-if="modelValue.end">
-          {{ range.beginYear }}-{{ range.beginDoy }} to {{ range.endYear }}-{{ range.endDoy }}
-        </template>
+  <span :class="{ 'doyDatePickerDisabled': disabled }">
+    <UPopover :class="{ 'doyDatePickerDisablePointerEventsNone': disabled }">
+      <UButton color="neutral" variant="outline" icon="i-lucide-calendar">
+        <template v-if="modelValue.start">
+          <template v-if="modelValue.end">
+            {{ range.beginYear }}-{{ range.beginDoy }} to {{ range.endYear }}-{{ range.endDoy }}
+          </template>
 
+          <template v-else>
+            {{ range.beginYear }}-{{ range.beginDoy }}
+          </template>
+        </template>
         <template v-else>
-          {{ range.beginYear }}-{{ range.beginDoy }}
+          Pick a date range
         </template>
-      </template>
-      <template v-else>
-        Pick a date range
-      </template>
-    </UButton>
+      </UButton>
 
-    <template #content>
-      <div class="grid grid-cols-5 gap-3 ml-3 mr-3 pt-2">
-        <div class="col-span-5">
-          Quick select
-        </div>
+      <template #content>
+        <div class="grid grid-cols-5 gap-3 ml-3 mr-3 pt-2">
+          <div class="col-span-5">
+            Quick select
+          </div>
 
 
-        <div class="col-span-1" v-for="quickSelectOption in tenQuickSelectOptions">
-          <UButton @click="quickSelect(quickSelectOption)" :disabled="props.disabled" color="primary" variant="subtle" size="sm" class="text-[var(--ui-fg)]" style="width: 120px;">
-            {{ quickSelectOption.displayText }}
-          </UButton>
+          <div class="col-span-1" v-for="quickSelectOption in tenQuickSelectOptions">
+            <UButton @click="quickSelect(quickSelectOption)" :disabled="props.disabled" color="primary" variant="subtle" size="sm" class="text-[var(--ui-fg)]" style="width: 120px;">
+              {{ quickSelectOption.displayText }}
+            </UButton>
+          </div>
+          <div class="col-span-5">
+          <USeparator/>
+          </div>
+          <div class="col-span-5">
+            Calendar select
+          </div>
         </div>
-        <div class="col-span-5">
-        <USeparator/>
-        </div>
-        <div class="col-span-5">
-          Calendar select
-        </div>
-      </div>
-      <div class="grid grid-cols-5 gap-3">
-        <div class="col-span-5">
-          <UCalendar
-            v-model="modelValue"
-            class="p-2"
-            :number-of-months="2"
-            range
-            :disabled="props.disabled"
-            :readonly="props.disabled"
-            :disable-days-outside-current-view="true"
-          >
-            <template #day="{ day }">
-              <!-- Don't render anything for days outside the current month,
-                   but keep the grid cell so alignment stays -->
-              <div>
-                <div class="text-xs">
-                  <strong>
-                    {{ calendarDateToDoy(day) }}
-                  </strong>
+        <div class="grid grid-cols-5 gap-3">
+          <div class="col-span-5">
+            <UCalendar
+              v-model="modelValue"
+              class="p-2"
+              :number-of-months="2"
+              range
+              :disabled="props.disabled"
+              :readonly="props.disabled"
+              :disable-days-outside-current-view="true"
+            >
+              <template #day="{ day }">
+                <!-- Don't render anything for days outside the current month,
+                     but keep the grid cell so alignment stays -->
+                <div>
+                  <div class="text-xs" style="font-size: 11px">
+                    <strong>
+                      {{ calendarDateToDoy(day) }}
+                    </strong>
+                  </div>
+                  <div style="font-size: 9px;">
+                    {{ day.day }}
+                  </div>
                 </div>
-                <div style="font-size: 9px;">
-                  {{ day.day }}
-                </div>
-              </div>
 
 
-              <!-- For outside days, render an empty placeholder of same size -->
+                <!-- For outside days, render an empty placeholder of same size -->
 
-            </template>
-          </UCalendar>
+              </template>
+            </UCalendar>
+          </div>
         </div>
-      </div>
-    </template>
-  </UPopover>
+      </template>
+    </UPopover>
+  </span>
 </template>
+
+<style scoped>
+  .doyDatePickerDisabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+  }
+  .doyDatePickerDisablePointerEventsNone {
+    pointer-events: none;
+  }
+</style>

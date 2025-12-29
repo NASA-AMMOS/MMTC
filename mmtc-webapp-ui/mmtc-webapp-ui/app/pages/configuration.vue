@@ -12,7 +12,6 @@ const configFileContentsToDisplay = ref('```\n```')
 watch(fileSelectionChoice, async (newFileSelectionChoice, oldFileSelectionChoice) => {
   if (fileSelectionChoice.value !== '') {
     configurationFileContents.value.forEach((configFile) => {
-      console.log(configFile)
       if (configFile.filename === fileSelectionChoice.value) {
         configFileContentsToDisplay.value = configFile.contents;
       }
@@ -21,7 +20,6 @@ watch(fileSelectionChoice, async (newFileSelectionChoice, oldFileSelectionChoice
 })
 
 onMounted(async () => {
-  console.log("onmounted - configuration")
   configurationFileContents.value = await retrieveConfigurationContent();
   fileSelectionOptions.value = configurationFileContents.value.map(obj => obj.filename) as string[];
   fileSelectionChoice.value = fileSelectionOptions.value[0];
