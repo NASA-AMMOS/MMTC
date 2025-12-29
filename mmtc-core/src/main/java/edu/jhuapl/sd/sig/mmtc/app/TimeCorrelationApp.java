@@ -314,7 +314,11 @@ public class TimeCorrelationApp {
 
         for (String[] record : priorRecsWithinLookbackWindow) {
             if (desiredPriorCorrelationTdt.isPresent()) {
-                if (TimeConvert.tdtCalStrToTdt(record[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1)).equals(desiredPriorCorrelationTdt.get())) {
+                final double desired = desiredPriorCorrelationTdt.get();
+                final double candidate = TimeConvert.tdtCalStrToTdt(record[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
+                double diff = candidate - desired;
+                logger.info(String.format("Desired %f, candidate %f, diff %f", desired, candidate, diff));
+                if (desired == candidate) {
                     return record;
                 }
             } else {
@@ -323,7 +327,7 @@ public class TimeCorrelationApp {
         }
 
         if (desiredPriorCorrelationTdt.isPresent()) {
-            throw new MmtcException("Could not find the specified triplet to use as the lookback record with TDT: " + config.getPriorCorrelationTdt().get());
+            throw new MmtcException("The specified triplet was not found within the configured lookback period");
         } else {
             final String[] mostRecentLookbackRecMeetingMinimumOnly = ctx.currentSclkKernel.get().getPriorRec(tdtGOfNewTriplet, config.getPredictedClkRateLookBackHours(), runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
             Double lookbackRecTdtG        = TimeConvert.tdtCalStrToTdt(mostRecentLookbackRecMeetingMinimumOnly[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));

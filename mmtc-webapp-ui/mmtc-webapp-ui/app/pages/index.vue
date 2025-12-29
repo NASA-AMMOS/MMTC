@@ -108,20 +108,20 @@ async function setDefaultDateRange(keepStartDate = false) {
 
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
-    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 14}),
-    displayText: "Last corr +14d"
-  });
-
-  quickSelectOptions.push({
-    startCalDate: rangeStartScetDateUtcCldDate,
     endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 30}),
     displayText: "Last corr +30d"
   });
 
   quickSelectOptions.push({
     startCalDate: rangeStartScetDateUtcCldDate,
-    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 120}),
-    displayText: "Last corr +120d"
+    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 90}),
+    displayText: "Last corr +90d"
+  });
+
+  quickSelectOptions.push({
+    startCalDate: rangeStartScetDateUtcCldDate,
+    endCalDate: addToCalDateUpTilToday(rangeStartScetDateUtcCldDate, {days: 180}),
+    displayText: "Last corr +180d"
   });
 
   quickSelectOptions.push({
@@ -269,7 +269,7 @@ function chartClearCorrelationPreview() {
 
             <div v-if="!loading" />
             <div v-if="loading">
-              <UProgress animation="elastic" class="pt-6" color="secondary"/>
+              <UProgress animation="carousel" class="pt-6" color="secondary"/>
             </div>
 
             <div>

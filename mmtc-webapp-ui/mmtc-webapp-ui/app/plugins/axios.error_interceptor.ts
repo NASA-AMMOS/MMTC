@@ -14,8 +14,6 @@ export default defineNuxtPlugin(() => {
         error.message ||
         "An error occurred.";
 
-      message += "  Please see MMTC log for details."
-
       toast.add({
         title: 'Error',
         description: message,

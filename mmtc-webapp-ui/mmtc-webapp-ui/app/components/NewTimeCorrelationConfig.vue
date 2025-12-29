@@ -41,7 +41,7 @@ const schema = z.object({
   targetSampleRangeStartErt: z.string().optional(),  // the ERT inputs are handled in a superRefine below
   targetSampleRangeStopErt: z.string().optional(),
   targetSampleExactErt: z.string().optional(),
-  priorCorrelationExactTdt: z.string().optional(),
+  priorCorrelationExactTdt: z.union([z.string(), z.number()]).optional(),
   testModeOwltEnabled: z.boolean(),
   testModeOwltSec: z.number().optional(),     // handled in a superRefine below
   clockChangeRateConfig: z.object({
@@ -221,19 +221,19 @@ const defaultCorrelationConfig = ref({})
 
 const correlationPreviewResults = ref({})
 
-// keep prior lookback range up to date
+// don't restrict lookback tdt ranges for now
 watch(targetSampleExactTdt, () => {
-  priorLookbackMinTdt.value = targetSampleExactTdt.value - newCorrelationMaxLookbackHours.value;
-  priorLookbackMaxTdt.value = targetSampleExactTdt.value - newCorrelationMinLookbackHours.value;
+  // priorLookbackMinTdt.value = targetSampleExactTdt.value - newCorrelationMaxLookbackHours.value;
+  // priorLookbackMaxTdt.value = targetSampleExactTdt.value - newCorrelationMinLookbackHours.value;
 })
 
 watch(targetSampleRangeStartTdt, () => {
-  // nothing?
+
 })
 
 watch(targetSampleRangeStopTdt, () => {
-  priorLookbackMinTdt.value = targetSampleRangeStartTdt.value - newCorrelationMaxLookbackHours.value;
-  priorLookbackMaxTdt.value = targetSampleRangeStopTdt.value - newCorrelationMinLookbackHours.value;
+  // priorLookbackMinTdt.value = targetSampleRangeStartTdt.value - newCorrelationMaxLookbackHours.value;
+  // priorLookbackMaxTdt.value = targetSampleRangeStopTdt.value - newCorrelationMinLookbackHours.value;
 })
 
 const toast = useToast()
@@ -284,16 +284,20 @@ function cancelCorrelation() {
 
 async function previewCorrelation() {
   previewOrCommitIsRunning.value = true;
-  state['beginTimeErt'] = toUtcIso8601WithDiscardedTimezone(props.range.beginDate)
-  state['endTimeErt'] = toUtcIso8601WithDiscardedTimezone(props.range.endDate)
-  const previewResults: TimeCorrelationPreviewResults = await runCorrelationPreview(state);
-  delete state['beginTimeErt']
-  delete state['endTimeErt']
 
-  correlationPreviewResults.value = previewResults.correlationResults;
-  emit('chart-show-correlation-preview', previewResults);
-  timeCorrelationConfigState.value = 'previewing'
-  previewOrCommitIsRunning.value = false;
+  try {
+    state['beginTimeErt'] = toUtcIso8601WithDiscardedTimezone(props.range.beginDate)
+    state['endTimeErt'] = toUtcIso8601WithDiscardedTimezone(props.range.endDate)
+    const previewResults: TimeCorrelationPreviewResults = await runCorrelationPreview(state);
+    delete state['beginTimeErt']
+    delete state['endTimeErt']
+
+    correlationPreviewResults.value = previewResults.correlationResults;
+    emit('chart-show-correlation-preview', previewResults);
+    timeCorrelationConfigState.value = 'previewing'
+  } finally {
+    previewOrCommitIsRunning.value = false;
+  }
 }
 
 function goBackToComposing() {
@@ -313,11 +317,15 @@ watch(additionalCorrelationOptionsModel, () => {
 
 async function commitCorrelation() {
   previewOrCommitIsRunning.value = true;
-  const results: TimeCorrelationResults = await createCorrelation(state);
-  emit('close-correlation');
-  emit('chart-clear-correlation-preview')
-  emit('refresh-dashboard')
-  previewOrCommitIsRunning.value = false;
+
+  try {
+    const results: TimeCorrelationResults = await createCorrelation(state);
+    emit('close-correlation');
+    emit('chart-clear-correlation-preview')
+    emit('refresh-dashboard')
+  } finally {
+    previewOrCommitIsRunning.value = false;
+  }
 }
 
 function resetTimeSelectionCfg () {
@@ -366,7 +374,7 @@ function toggleChoosingTargetSampleRangeStopErt() {
     timeSelectionCfg.value = {
       selectFrom: 'timeCorrTlm',
       selectionDestination: 'target-sample-range-stop-ert',
-      minTdt: targetSampleRangeStartTdt.value,
+      minTdt: newCorrelationMinTdt.value, // this could eventually be targetSampleRangeStartTdt.value but that field isn't yet updated if a start ERT range is entered manually (vs selected from the chart)
       maxTdt: Infinity
     }
 
@@ -453,7 +461,7 @@ onMounted(async () => {
 <template>
   <!-- @submit="onSubmit" -->
   <div v-if="timeCorrelationConfigState === 'composing'"  class="pr-5 pt-5">
-    <p class="text-xl font-bold text-center text-primary">New Correlation Configuration</p>
+    <p class="text-xl font-bold text-center text-primary">New Correlation</p>
     <UForm ref="form" :schema="schema" :state="state" :validate-on="['input','change','blur']" class="pt-5" style="min-height: 600px;">
       <fieldset class="border border-gray-200 pr-2 pl-2 pb-4 rounded-lg -ml-2 -mr-2 space-y-4">
         <legend class="px-2 text-sm font-semibold text-gray-700">
@@ -464,7 +472,7 @@ onMounted(async () => {
           <USelect v-model="state.targetSampleInputErtMode" :items="targetSampleInputErtModeChoices" class="w-full"/>
         </UFormField>
 
-        <UFormField label="Target sample (ERT)" name="targetSampleExactErt" size="sm" v-if="state.targetSampleInputErtMode === 'EXACT'">
+        <UFormField label="Target sample (ERT (UTC))" name="targetSampleExactErt" size="sm" v-if="state.targetSampleInputErtMode === 'EXACT'">
           <div class="grid grid-cols-4 gap-x-2">
             <div class="col-span-3">
             <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
@@ -475,7 +483,7 @@ onMounted(async () => {
           </div>
         </UFormField>
 
-        <UFormField label="Target sample range begin (ERT)" name="targetSampleRangeStartErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
+        <UFormField label="Target sample range begin (ERT (UTC))" name="targetSampleRangeStartErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
           <div class="grid grid-cols-4 gap-x-2">
             <div class="col-span-3">
               <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
@@ -488,7 +496,7 @@ onMounted(async () => {
           </div>
         </UFormField>
 
-        <UFormField label="Target sample range end (ERT)" name="targetSampleRangeStopErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
+        <UFormField label="Target sample range end (ERT (UTC))" name="targetSampleRangeStopErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
           <div class="grid grid-cols-4 gap-x-2">
             <div class="col-span-3">
               <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
@@ -501,7 +509,7 @@ onMounted(async () => {
           </div>
         </UFormField>
 
-        <UFormField label="Prior correlation for basis (TDT)" name="priorCorrelationExactTdt"  size="sm">
+        <UFormField label="Prior SCLK kernel record for basis (TDT)" name="priorCorrelationExactTdt"  size="sm">
           <div class="grid grid-cols-4 gap-x-2">
             <div class="col-span-3">
               <UInput v-model="state.priorCorrelationExactTdt" :placeholder="priorCorrelationTdtPlaceholder" class="w-full" :disabled="(!ertInputsAreComplete) || (timeSelectionCfg.selectionDestination != 'none')"/>
@@ -520,7 +528,7 @@ onMounted(async () => {
           size="2xl"
           class="py-3"
           :ui="{description: 'text-xs italic', icon: 'size-4'}"
-          :description="`Prior SCLK triplet lookback range is ${newCorrelationMinLookbackHours} - ${newCorrelationMaxLookbackHours} hours`"
+          :description="`The prior SCLK kernel record must be within ${newCorrelationMinLookbackHours} - ${newCorrelationMaxLookbackHours} hours of the new target sample, as specified via the lookback range.`"
         />
       </fieldset>
 

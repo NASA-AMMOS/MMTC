@@ -10,7 +10,7 @@ const tripletHtml = computed(() => {
   const attributes = [];
 
   attributes.push({key: 'Encoded SCLK', val: props.triplet.encSclk });
-  attributes.push({key: 'TDT(G)', val: props.triplet.tdtStr });
+  attributes.push({key: 'TDT(G) Cal', val: props.triplet.tdtStr });
   attributes.push({key: 'Clock rate', val: props.triplet.clkChgRate });
 
   return getAttrTableHtmlFor(attributes);

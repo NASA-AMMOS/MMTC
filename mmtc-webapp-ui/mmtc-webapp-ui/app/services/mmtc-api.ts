@@ -1,8 +1,10 @@
 import axios from 'axios';
 
-// const baseUrl = 'http://localhost:8080/backend-api'
-// const baseUrl = 'http://localhost:3000/backend-api'
+// prod
 const baseUrl = '/api'
+
+// dev
+// const baseUrl = '/backend-api'
 
 export interface TdtRange{
   minTdt: number,
@@ -31,6 +33,7 @@ export interface OutputProductDef {
   simpleClassName: string,
   type: string,
   singleFile: boolean,
+  filenames: string[]
 }
 
 export interface TimekeepingTelemetryPoint {
@@ -43,7 +46,8 @@ export interface TimekeepingTelemetryPoint {
 
 export interface TimeCorrelationTriplet {
   encSclk: string,
-  tdtG: string,
+  tdtG: number,
+  tdtGCalStr: string,
   clkchgrate: string,
   scetUtc: string
 }
@@ -66,7 +70,7 @@ export interface DefaultTimeCorrelationConfig {
   targetSampleRangeStartErt: string,
   targetSampleRangeStopErt: string,
   targetSampleExactErt: string,
-  priorCorrelationExactTdt: string,
+  priorCorrelationExactTdt: number,
   testModeOwltEnabled: boolean,
   testModeOwltSec: number,
   clockChangeRateConfig: ClockChangeRateConfig,

@@ -204,7 +204,7 @@ public class TimeCorrelationController extends BaseController {
         // next correlation's min TDT is that of the last current triplet, plus 1ms
         final Double newCorrelationMinTdt = config.withSpiceKernels(
                 config.getInputSclkKernelPath(),
-                () -> TimeConvert.tdtCalStrToTdt(latestTimeCorrelationTriplet.tdtG.replace("@", "")) + .001
+                () -> latestTimeCorrelationTriplet.tdtG + .001
         );
 
         final NewTimeCorrelationConfigRequestTemplate defaultCorrConfig = new NewTimeCorrelationConfigRequestTemplate(
@@ -264,7 +264,8 @@ public class TimeCorrelationController extends BaseController {
 
     private record TimeCorrelationTriplet (
          String encSclk,
-         String tdtG,
+         double tdtG,
+         String tdtGCalStr,
          String clkchgrate,
          String scetUtc
     ) { }
@@ -272,6 +273,7 @@ public class TimeCorrelationController extends BaseController {
     private TimeCorrelationTriplet convertTriplet(SclkKernel.CorrelationTriplet t) throws TimeConvertException {
         return new TimeCorrelationTriplet(
                 Double.toString(t.encSclk),
+                TimeConvert.tdtCalStrToTdt(t.tdtStr),
                 t.tdtStr,
                 Double.toString(t.clkChgRate),
                 TimeConvert.tdtCalStrToUtc(t.tdtStr, 6)
@@ -293,6 +295,7 @@ public class TimeCorrelationController extends BaseController {
                 results.add(
                         new TimeCorrelationTriplet(
                                 rec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX],
+                                TimeConvert.tdtCalStrToTdt(rec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX]),
                                 rec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX],
                                 rec[SclkKernel.TRIPLET_CLKCHGRATE_FIELD_INDEX],
                                 TimeConvert.tdtCalStrToUtc(rec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX], 6)
