@@ -13,13 +13,14 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // uncomment routeRules when working with a separate backend during development
   // routeRules: {
   //   '/api/**': {
   //     cors: true,
   //   },
   //   '/backend-api/**': {
   //     cors: true,
-  //     proxy: { to: "http://localhost:9090/api/**"}
+  //     proxy: { to: "http://localhost:8080/api/**"}
   //   }
   // },
 
