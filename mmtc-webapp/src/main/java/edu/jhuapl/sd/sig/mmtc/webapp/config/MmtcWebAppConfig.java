@@ -43,6 +43,14 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
         return getBoolean("webapp.serve.tls.enabled");
     }
 
+    public String getTlsKeystoreLocation() {
+        return getString("webapp.serve.tls.keystore.location");
+    }
+
+    public String getTlsKeystorePassword() {
+        return getString("webapp.serve.tls.keystore.password");
+    }
+
     public int getAuthTimeoutHours() {
         return getInt("webapp.auth.timeout", 4);
     }
@@ -51,15 +59,27 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
         return getInt("webapp.serve.tls.port");
     }
 
-    public boolean isChartTlmTestModeEnabled() {
-        return getBoolean("webapp.telemetrychart.testmode.enabled", false);
+    public boolean isTestModeOwltEnabled() {
+        return getBoolean("webapp.testmode.enabled", false);
     }
 
-    public double getChartTlmTestModeOwltSec() {
-        return getDouble("webapp.telemetrychart.testmode.owltSec", 0.0);
+    public double getTestModeOwltSec() {
+        return getDouble("webapp.testmode.owltSec", 0.0);
     }
 
-    public <T> T withSpiceKernels(Path sclkKernelPath, Callable<T> callable) throws MmtcException {
+    public <T> T withSpiceMutex(Callable<T> callable) throws MmtcException {
+        synchronized (spiceLoadedKernelMutex) {
+            try {
+                return callable.call();
+            } catch (Exception e) {
+                throw new MmtcException(e);
+            } finally {
+                TimeConvert.unloadSpiceKernels();
+            }
+        }
+    }
+
+    public <T> T withSpiceMutexAndKernels(Path sclkKernelPath, Callable<T> callable) throws MmtcException {
         synchronized (spiceLoadedKernelMutex) {
             try {
                 TimeConvert.loadSpiceLib();

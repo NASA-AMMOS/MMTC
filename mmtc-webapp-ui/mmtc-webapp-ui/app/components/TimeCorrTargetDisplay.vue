@@ -21,5 +21,5 @@ const html = computed(() => {
 </script>
 
 <template>
-  <div v-html="html"/>
+  <div v-html="html" data-testid="time-corr-target-display"/>
 </template>

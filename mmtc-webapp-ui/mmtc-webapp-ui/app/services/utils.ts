@@ -71,8 +71,8 @@ export class UnifiedCalendarDateRange {
 
 // just drop the timezone suffix
 export function toUtcIso8601WithDiscardedTimezone(date: Date) {
-  return formatInTimeZone(date, 'UTC', "yyyy-DDD'T'HH:mm:ss.SSSSSS", { useAdditionalDayOfYearTokens: true });
-  // return format(date, "yyyy-DDD'T'HH:mm:ss.SSSSSS", { useAdditionalDayOfYearTokens: true });
+  // return formatInTimeZone(date, 'UTC', "yyyy-DDD'T'HH:mm:ss.SSSSSS", { useAdditionalDayOfYearTokens: true });
+  return format(date, "yyyy-DDD'T'HH:mm:ss.SSSSSS", { useAdditionalDayOfYearTokens: true });
 }
 
 export function calendarDateToDoy(date: CalendarDate) {

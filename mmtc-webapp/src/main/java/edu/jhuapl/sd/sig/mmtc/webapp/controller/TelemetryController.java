@@ -10,6 +10,7 @@ import io.javalin.Javalin;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 public class TelemetryController extends BaseController {
     private final TelemetryService telemetryService;
@@ -31,8 +32,7 @@ public class TelemetryController extends BaseController {
             }
             Path sclkKernelPath = config.getSclkKernelPathFor(sclkKernelName);
 
-            ctx.json(telemetryService.getTelemetryPoints(beginTimeErt, endTimeErt, sclkKernelPath));
+            ctx.json(executeSingleThreaded(() -> telemetryService.getTelemetryPoints(beginTimeErt, endTimeErt, sclkKernelPath)));
         });
     }
-
 }

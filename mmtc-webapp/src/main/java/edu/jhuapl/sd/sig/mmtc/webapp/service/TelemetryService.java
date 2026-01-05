@@ -33,7 +33,7 @@ public class TelemetryService {
     public synchronized List<TimekeepingTelemetryPoint> getTelemetryPoints(OffsetDateTime beginTimeErt, OffsetDateTime endTimeErt, Path sclkKernelPath) throws Exception {
         final List<FrameSample> frameSamples = config.getTelemetrySource().getSamplesInRange(beginTimeErt, endTimeErt);
 
-        return config.withSpiceKernels(sclkKernelPath, () -> {
+        return config.withSpiceMutexAndKernels(sclkKernelPath, () -> {
             return enrichFrameSamples(frameSamples);
         });
     }
@@ -57,12 +57,12 @@ public class TelemetryService {
 
             @Override
             public boolean isTestMode() {
-                return config.isChartTlmTestModeEnabled();
+                return config.isTestModeOwltEnabled();
             }
 
             @Override
             public double getTestModeOwlt() {
-                return config.getChartTlmTestModeOwltSec();
+                return config.getTestModeOwltSec();
             }
 
             @Override

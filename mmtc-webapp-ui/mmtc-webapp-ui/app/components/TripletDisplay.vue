@@ -23,6 +23,6 @@ const tripletHtml = computed(() => {
     <p class="font-semibold text-xs">
       {{props.title}}
     </p>
-    <div v-html="tripletHtml"/>
+    <div v-html="tripletHtml" :data-testid="`triplet-display-${props.title}`"/>
   </div>
 </template>
