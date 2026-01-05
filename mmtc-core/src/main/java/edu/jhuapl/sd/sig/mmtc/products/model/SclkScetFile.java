@@ -158,7 +158,7 @@ public class SclkScetFile extends TextProduct {
      *
      * @throws TextProductException if the product cannot be created
      */
-    public void createNewProduct() throws TextProductException, TimeConvertException {
+    public void createNewProduct(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException {
 
         productCreationTime = getProductDateTimeIsoUtc();
 
@@ -167,7 +167,7 @@ public class SclkScetFile extends TextProduct {
         }
 
         /* Find the last data (quadruplet) record in the SCLK/SCET data. A data record should contain
-         * contain 4 fields and the second (index 1) field should contain a "T" character as part
+         * 4 fields and the second (index 1) field should contain a "T" character as part
          * of the ISO time string format.
          */
         endDataNum = lastDataRecNum(sourceProductLines);
@@ -626,9 +626,9 @@ public class SclkScetFile extends TextProduct {
      * @throws TimeConvertException if a computational error occurs
      * @return the Path representing the location where the new file was written
      */
-    public Path createNewSclkScetFile(String originalFilespec) throws TextProductException, TimeConvertException {
+    public Path createNewSclkScetFile(TimeCorrelationContext ctx, String originalFilespec) throws TextProductException, TimeConvertException {
         setSourceFilespec(originalFilespec);
-        return createFile();
+        return createFile(ctx);
     }
 
     public static SclkScetFile calculateNewProduct(TimeCorrelationContext ctx) {
@@ -659,13 +659,13 @@ public class SclkScetFile extends TextProduct {
      * @throws MmtcException if the SCLK-SCET File cannot be written
      * @return a ProductWriteResult describing the updated product
      */
-    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+    public static ProductWriteResult writeNewProductFromDef(TimeCorrelationContext ctx) throws MmtcException {
 
         try {
             final SclkScetFile scetFile = calculateNewProduct(ctx);
 
             return new ProductWriteResult(
-                    scetFile.createNewSclkScetFile(ctx.newSclkKernelPath.get().toString()),
+                    scetFile.createNewSclkScetFile(ctx, ctx.newSclkKernelPath.get().toString()),
                     ctx.newSclkVersionString.get()
             );
         } catch (TimeConvertException | TextProductException ex) {
