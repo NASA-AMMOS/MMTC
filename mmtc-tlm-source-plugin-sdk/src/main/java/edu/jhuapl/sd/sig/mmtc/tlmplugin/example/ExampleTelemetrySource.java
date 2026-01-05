@@ -23,6 +23,8 @@ public class ExampleTelemetrySource implements TelemetrySource {
     // a typical implementation of a telemetry source will not need to know such values, as they should be read directly from the underlying source
     final int MAX_VCFC = 2048;
 
+    int maxNumFramesToGenerate = 2000;
+
     private MmtcConfigWithTlmSource config;
 
     @Override
@@ -35,7 +37,7 @@ public class ExampleTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public Collection<AdditionalOption> getAdditionalOptions() {
+    public List<AdditionalOption> getAdditionalOptions() {
         /*
          * This is the second call that MMTC makes to the configured TelemetrySource during a correlation run.
          * It gives the TelemetrySource a chance to add additional CLI options/arguments to correlation runs.
@@ -47,15 +49,28 @@ public class ExampleTelemetrySource implements TelemetrySource {
 
         return Arrays.asList(
                 new AdditionalOption(
+            "Number of frames to generate",
                     new Option(
                             "b",
                             "number-of-frames-to-generate",
                             true,
                             "Specifies the number of fake FrameSamples to generate"
-                    ),
-            "Number of frames to generate"
+                    )
                 )
         );
+    }
+
+    @Override
+    public void applyOption(String name, String value) throws MmtcException {
+        switch(name) {
+            case "Number of frames to generate": {
+                this.maxNumFramesToGenerate = Integer.parseInt(value);
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unrecognized option: " + name);
+            }
+        }
     }
 
     @Override
@@ -150,15 +165,7 @@ public class ExampleTelemetrySource implements TelemetrySource {
 
         List<FrameSample> results = new ArrayList<>();
 
-        // example usage of a command-line argument
-        final int maxNumFramesToGenerate;
-
-        if (config.getAdditionalOptionValue("Number of frames to generate") != null) {
-            maxNumFramesToGenerate = Integer.parseInt(config.getAdditionalOptionValue("Number of frames to generate"));
-        } else {
-            maxNumFramesToGenerate = 2000;
-        }
-
+        // maxNumFramesToGenerate is an example use of a commnad-line argument
         while (! currentErt.isAfter(stop) && results.size() < maxNumFramesToGenerate) {
             FrameSample frameSample = new FrameSample();
 

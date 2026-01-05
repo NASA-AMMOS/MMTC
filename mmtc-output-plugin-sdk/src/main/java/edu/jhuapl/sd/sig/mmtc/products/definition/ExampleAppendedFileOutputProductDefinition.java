@@ -77,4 +77,9 @@ public class ExampleAppendedFileOutputProductDefinition extends AppendedFileOutp
     public Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputPath) {
         return Collections.emptyMap();
     }
+
+    @Override
+    public String getDisplayName() {
+        return "Example Appended File";
+    }
 }

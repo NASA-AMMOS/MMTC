@@ -87,4 +87,9 @@ public class ExampleEntireFileOutputProductDefinition extends EntireFileOutputPr
     public Map<String, String> getSandboxConfigUpdates(MmtcConfig originalConfig, Path newProductOutputDir) {
         return Collections.emptyMap();
     }
+
+    @Override
+    public String getDisplayName() {
+        return "Example Entire File";
+    }
 }

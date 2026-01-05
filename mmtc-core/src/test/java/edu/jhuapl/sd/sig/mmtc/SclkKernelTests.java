@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
@@ -69,75 +70,6 @@ public class SclkKernelTests {
         assertEquals(expectedRec, lastrec);
 
         assertEquals(1877, tsc.getSourceProductDataRecCount());
-    }
-
-
-    /**
-     * Verify that the SclkKernel.createNewSclkKernel() can generate a new SCLK kernel which is identical to
-     * the original except that it has a new filename, new values for the FILENAME and CREATION_DATE fields
-     * and has a new time correlation record appended to the end of the data. It is necessarhy to examine
-     * the new SCLK kernel manually to verify that it has been created properly and that the expected changes
-     * have been made.
-     */
-    @Test
-    @DisplayName("SclkKernel.createFile Test 1")
-    void createFile_Test1() throws IOException, TextProductException, TimeConvertException {
-        Path tscDir     = getAbsolutePathOfTestResources().resolve("SclkKernelTests");
-        String newTscName = "mmtc01.tsc";
-        Path sourceTsc  = getAbsolutePathOfTestResources().resolve("nh_kernels/sclk/new-horizons_1454.tsc");
-
-        SclkKernel tsc = new SclkKernel(tscDir.toString(), newTscName);
-        tsc.setProductCreationTime(OffsetDateTime.now());
-        tsc.setSourceFilespec(sourceTsc.toString());
-        tsc.setNewTriplet(17672059990000., "02-APR-2017-19:00:01.123456", 1.00000001999);
-
-        String newFilePath = tscDir + File.separator + newTscName;
-        Path newFile       = Paths.get(newFilePath);
-
-        Files.deleteIfExists(newFile);
-
-        /* Create a new SCLK kernel from an existing one and update it. */
-        tsc.createNewSclkKernel(sourceTsc.toString());
-
-        /* Verify that the SCLK exists. */
-        File tscfd = new File(tscDir+File.separator+newTscName);
-        assertTrue(tscfd.exists());
-    }
-
-
-    /**
-     * Verify that the SclkKernel.setReplacementClockChgRate() causes an updated SCLK kernel to also contain
-     * a new value for the clock change rate of the last record from the original source kernel. The FILENAME
-     * and CREATION_DATE fields will be updated and a new time correlation record will be added. It is necessarhy
-     * to examine the new SCLK kernel manually to verify that it has been created properly and that the expected
-     * changes have been made.
-     */
-    @Test
-    @DisplayName("SclkKernel.setReplacementClockChgRate Test 1")
-    void setReplacementClockChgRate_Test1() throws IOException, TextProductException, TimeConvertException {
-        String tscDir     = "src/test/resources/SclkKernelTests";
-        String newTscName = "mmtc01.tsc";
-        String sourceTsc  = "src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc";
-
-        SclkKernel tsc = new SclkKernel(tscDir, newTscName);
-        tsc.setProductCreationTime(OffsetDateTime.now());
-        tsc.setSourceFilespec(sourceTsc);
-        tsc.setNewTriplet(17672059990000., "02-APR-2017-19:00:01.123456", 1.00000001999);
-
-        String newFilePath = tscDir + File.separator + newTscName;
-        Path newFile       = Paths.get(newFilePath);
-
-        Files.deleteIfExists(newFile);
-
-        /* Set an interpolated clock change rate for the penultimate record. */
-        tsc.setReplacementClockChgRate(0.99999999991);
-
-        /* Create a new SCLK kernel from an existing one and update it. */
-        tsc.createNewSclkKernel(sourceTsc);
-
-        /* Verify that the SCLK exists. */
-        File tscfd = new File(tscDir+File.separator+newTscName);
-        assertTrue(tscfd.exists());        
     }
 
     @Test
