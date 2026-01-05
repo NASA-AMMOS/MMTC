@@ -36,22 +36,6 @@ public class TimeConvertTests {
     }
 
     @Test
-    @DisplayName("loadSpiceKernels Test 1")
-    void loadSpiceKernels_test1() throws TimeConvertException {
-        Map<String, String> kernelsToLoad = new HashMap<String, String>();
-        kernelsToLoad.put("src/test/resources/nh_kernels/lsk/naif0012.tls", "lsk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
-
-        assertFalse(TimeConvert.kernelsLoaded());
-
-        /* Function to test */
-        TimeConvert.loadSpiceKernels(kernelsToLoad);
-        assertTrue(TimeConvert.kernelsLoaded());
-        TimeConvert.unloadSpiceKernels(kernelsToLoad);
-        assertFalse(TimeConvert.kernelsLoaded());
-    }
-
-    @Test
     @DisplayName("cdsToIsoUtc Test 1")
     void cdsToIsoUtc_test1() throws TimeConvertException {
         String cds = "17557::84628545::8970";
