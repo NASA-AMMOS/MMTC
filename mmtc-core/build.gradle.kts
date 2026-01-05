@@ -1,5 +1,8 @@
-import java.io.ByteArrayOutputStream
+import com.google.common.collect.Lists
+import org.gradle.internal.impldep.org.eclipse.jgit.util.Paths
+import java.lang.ProcessBuilder
 import java.time.Instant
+import java.nio.file.Files
 
 plugins {
     id("mmtc.java-conventions")
@@ -103,7 +106,13 @@ val uberJar = tasks.register<Jar>("uberJar") {
 
 
 fun getCurrentCommitShortHash(): String {
-    val process = Runtime.getRuntime().exec("git rev-parse --short HEAD")
+    var workDir: File
+    if (Files.exists(project.projectDir.parentFile.resolve("mmtc-open-source").toPath())) {
+        workDir = project.projectDir.parentFile.resolve("mmtc-open-source")
+    } else {
+        workDir = project.projectDir
+    }
+    val process = Runtime.getRuntime().exec("git rev-parse --short HEAD", arrayOf(), workDir)
     val output = process.inputStream.bufferedReader().readText()
     process.waitFor()
     return output.trim()
