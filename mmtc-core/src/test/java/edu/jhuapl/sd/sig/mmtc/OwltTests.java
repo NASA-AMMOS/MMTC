@@ -31,22 +31,16 @@ public class OwltTests {
         TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
 
         Map<String, String> kernelsToLoad = new HashMap<>();
-
-        if (!Owlt.isInitialized()) {
-            kernelsToLoad.put("src/test/resources/nh_kernels/mk/nh_tk_meta_mmtc_test.tm", "mk");
-            kernelsToLoad.put("src/test/resources/nh_kernels/lsk/naif0012.tls", "lsk");
-            kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
-            kernelsToLoad.put("src/test/resources/nh_kernels/spk/nh_pred_alleph_od124.bsp", "spk");
-            Owlt.initialize(kernelsToLoad);
-        }
-
-        assertTrue(Owlt.isInitialized());
+        kernelsToLoad.put("src/test/resources/nh_kernels/mk/nh_tk_meta_mmtc_test.tm", "mk");
+        kernelsToLoad.put("src/test/resources/nh_kernels/lsk/naif0012.tls", "lsk");
+        kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
+        kernelsToLoad.put("src/test/resources/nh_kernels/spk/nh_pred_alleph_od124.bsp", "spk");
+        TimeConvert.loadSpiceKernels(kernelsToLoad);
     }
 
     @AfterAll
     static void teardown() {
         TimeConvert.unloadSpiceKernels();
-        assertFalse(Owlt.isInitialized());
     }
 
     /**

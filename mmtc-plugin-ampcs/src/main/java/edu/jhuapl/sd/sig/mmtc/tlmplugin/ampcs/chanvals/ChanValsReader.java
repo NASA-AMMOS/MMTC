@@ -62,7 +62,7 @@ public class ChanValsReader {
         Map<String, Double> results = new HashMap<>();
 
         if (! closestCommonScet.isPresent()) {
-            logger.warn("No common SCET was found for " + channelIds);
+            logger.warn("No common SCET was found for " + Arrays.toString(channelIds));
             for (String channelId : channelIds) {
                 results.put(channelId, Double.NaN);
             }

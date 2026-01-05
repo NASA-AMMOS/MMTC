@@ -1,9 +1,13 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.util.Properties;
 
 public class BuildInfo {
+    public static final String MMTC_TITLE = "Multi-Mission Time Correlation (MMTC)";
+
     public static final String UNKNOWN_VALUE = "unknown";
 
     private static final String VERSION_KEY = "version";
@@ -34,5 +38,11 @@ public class BuildInfo {
 
     public String toString() {
         return String.format("Version: %s\nBuild date: %s\nCommit: %s", version, buildDate, commit);
+    }
+
+    public static void log(Logger logger) {
+        BuildInfo bi = new BuildInfo();
+        logger.info(String.format("************ %s version %s ************", MMTC_TITLE, bi.version));
+        logger.info(String.format("Commit %s built at %s", bi.commit, bi.buildDate));
     }
 }

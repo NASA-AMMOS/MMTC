@@ -38,34 +38,6 @@ import java.util.Map;
  * </ul>
  */
 public class Owlt {
-
-    /**
-     * Indicates if the SPICE library and the kernels have been loaded.
-     * @return true if the SPICE library has already been loaded
-     */
-    public static boolean isInitialized() {
-        return TimeConvert.spiceLibLoaded() && TimeConvert.kernelsLoaded();
-    }
-
-
-    /**
-     * Load the SPICE library and the indicated SPICE kernels.
-     *
-     * @param kernelsToLoad  IN a Map of strings that contain the names of SPICE kernels to load
-     * @throws TimeConvertException when KernelDatabase.load() fails
-     */
-    public static void initialize(Map<String, String> kernelsToLoad) throws TimeConvertException {
-
-        if (!TimeConvert.spiceLibLoaded()) {
-            TimeConvert.loadSpiceLib();
-        }
-
-        if (!TimeConvert.kernelsLoaded()) {
-            TimeConvert.loadSpiceKernels(kernelsToLoad);
-        }
-    }
-
-
     /**
      * Computes the downlink one-way light travel time (OWLT) between a spacecraft and an
      * Earth ground station in seconds. This value is computed for the given ground time

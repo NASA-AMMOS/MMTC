@@ -87,29 +87,23 @@ public class TimeCorrelationAncillaryOperations {
         final TelemetrySource tlmSource = ctx.telemetrySource;
         final FrameSample targetSample = ctx.correlation.target.get().getTargetSample();
 
-        try {
-            tlmSource.connect();
+        final String oscillatorId = tlmSource.getActiveOscillatorId(targetSample);
+        ctx.ancillary.oscillator_id.set(oscillatorId);
 
-            final String oscillatorId = tlmSource.getActiveOscillatorId(targetSample);
-            ctx.ancillary.oscillator_id.set(oscillatorId);
-
-            final double oscillatorTemperature;
-            if (! oscillatorId.equals("-")) {
-                oscillatorTemperature = tlmSource.getOscillatorTemperature(
-                        ctx.correlation.equivalent_scet_utc_for_tdt_g.get(),
-                        oscillatorId
-                );
-            } else {
-                oscillatorTemperature = Double.NaN;
-            }
-
-            ctx.ancillary.oscillator_temperature_deg_c.set(oscillatorTemperature);
-            ctx.ancillary.active_radio_id.set(
-                tlmSource.getActiveRadioId(targetSample)
+        final double oscillatorTemperature;
+        if (! oscillatorId.equals("-")) {
+            oscillatorTemperature = tlmSource.getOscillatorTemperature(
+                    ctx.correlation.equivalent_scet_utc_for_tdt_g.get(),
+                    oscillatorId
             );
-        } finally {
-            tlmSource.disconnect();
+        } else {
+            oscillatorTemperature = Double.NaN;
         }
+
+        ctx.ancillary.oscillator_temperature_deg_c.set(oscillatorTemperature);
+        ctx.ancillary.active_radio_id.set(
+            tlmSource.getActiveRadioId(targetSample)
+        );
     }
 
     private void retrieveAndComputeGncParams() throws MmtcException, TimeConvertException {
@@ -121,13 +115,7 @@ public class TimeCorrelationAncillaryOperations {
         // final FrameSample targetSample = ctx.correlation.target.get().getTargetSample();
         final TimeCorrelationTarget tcTarget = ctx.correlation.target.get();
 
-        final TelemetrySource.GncParms gncParms;
-        tlmSource.connect();
-        try {
-            gncParms = tlmSource.getGncTkParms(ctx.correlation.equivalent_scet_utc_for_tdt_g.get(), tcTarget.getTargetSampleTdtG());
-        } finally {
-            tlmSource.disconnect();
-        }
+        final TelemetrySource.GncParms gncParms = tlmSource.getGncTkParms(ctx.correlation.equivalent_scet_utc_for_tdt_g.get(), tcTarget.getTargetSampleTdtG());
 
         ctx.ancillary.gnc.sclk_1.set(gncParms.getSclk1());
         ctx.ancillary.gnc.tdt_1.set(gncParms.getTdt1());

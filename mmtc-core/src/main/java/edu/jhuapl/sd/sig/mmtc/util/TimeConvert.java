@@ -20,6 +20,8 @@ import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationMetricsConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.apache.commons.lang3.StringUtils;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import spice.basic.*;
 
 /**
@@ -47,7 +49,9 @@ import spice.basic.*;
  *     <li> NAIF Generic Leap Seconds kernel (*.tls)
  *     <li> Mission-Specific Spacecraft SCLK kernel (*.tsc)
  * </ul>
- */public class TimeConvert {
+ */
+public class TimeConvert {
+    private static final Logger logger = LogManager.getLogger();
 
     /* Container for a leap second date pair. The date (leapSecOccurrence) is the datetime (in UTC) when the leap
      * second became (or becomes) effective.  The new value is the delta in ET from that day forward.
@@ -84,10 +88,6 @@ import spice.basic.*;
 
     /* Indicates if the SPICE library has been loaded. */
     private static boolean spiceLibIsLoaded = false;
-
-    /* Indicates if the SPICE kernels have already been loaded. */
-    private static boolean kernelsAreLoaded = false;
-
 
      /**
      * Converts an ISO DOY format calendar string (yyyy-doyThh:mm:ss.ssssss) to a Java OffsetDateTime object.
@@ -152,7 +152,6 @@ import spice.basic.*;
         }
     }
 
-
     /**
      * Indicates if the SPICE library has been loaded.
      * @return true if the SPICE library has already been loaded
@@ -163,25 +162,13 @@ import spice.basic.*;
 
 
     /**
-     * Indicates if the SPICE kernels have been loaded. Returns true if and only
-     * if the SPICE kernels have already been loaded by <code>loadSpiceKernels()</code>.
-     * @return true if the SPICE kernels have been loaded, otherwise false.
-     */
-    public static boolean kernelsLoaded() {
-        return kernelsAreLoaded;
-    }
-
-
-    /**
      * Load the indicated SPICE kernels.
      *
      * @param kernelsToLoad  IN a Map of strings that contain the names of SPICE kernels to load
      * @throws TimeConvertException when KernelDatabase.load() fails
      */
     public static void loadSpiceKernels(Map<String, String> kernelsToLoad) throws TimeConvertException {
-
         try {
-
             for (Map.Entry<String, String> entry : kernelsToLoad.entrySet()) {
                 if (entry.getKey().length() > MAX_SPICE_FILENAME_LEN) {
                     String kernelFilespecMsg = "Kernel file specification '" + entry.getKey() +
@@ -192,10 +179,7 @@ import spice.basic.*;
 
                 KernelDatabase.load(entry.getKey());
             }
-
-            kernelsAreLoaded = true;
-        }
-        catch (SpiceErrorException e) {
+        } catch (SpiceErrorException e) {
             throw new TimeConvertException("Unable to load SPICE kernels " + e.getMessage(), e);
         }
     }
@@ -208,11 +192,9 @@ import spice.basic.*;
      * @throws TimeConvertException if the kernel could not be loaded
      */
     public static void loadSpiceKernel(String path) throws TimeConvertException {
-
         try {
             KernelDatabase.load(path);
-        }
-        catch (SpiceErrorException e) {
+        } catch (SpiceErrorException e) {
             throw new TimeConvertException("Unable to load SPICE kernel: " + path + " : " + e.getMessage(), e);
         }
     }
@@ -229,27 +211,21 @@ import spice.basic.*;
             for (Map.Entry<String, String> entry : kernelsToUnload.entrySet()) {
                 KernelDatabase.unload(entry.getKey());
             }
-
-            kernelsAreLoaded = false;
-        }
-        catch (SpiceErrorException e) {
+        } catch (SpiceErrorException e) {
             throw new TimeConvertException("Unable to unload SPICE kernels: " + e.getMessage(), e);
         }
     }
-
 
     /**
      * Unload all SPICE kernels.
      */
     public static void unloadSpiceKernels() {
         KernelDatabase.clear();
-        kernelsAreLoaded = false;
     }
-
 
     /**
      * Converts a CCSDS Day Segmented Time (CDS) code formatted time value
-     * to an ISO UTC calender string. CDS is the time format used by the
+     * to an ISO UTC calendar string. CDS is the time format used by the
      * NASA Deep Space Network (DSN) to indicate Earth Received Time (ERT) in
      * the Ground Receipt Header (GRH) that it attaches to all received
      * telemetry frames.

@@ -161,42 +161,45 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     public void connect() throws MmtcException {
         // No connection activity is needed for AMPCS, but execute a chill
         // command to verify that it is available on the system.
+
+        logger.info("Connecting...");
         
         try {
-                chillGdsPath = Environment.getEnvironmentVariable("CHILL_GDS");
-                if (chillGdsPath == null) {
-                    throw new MmtcException("Environment variable $CHILL_GDS is not set.");
-                }
+            chillGdsPath = Environment.getEnvironmentVariable("CHILL_GDS");
+            if (chillGdsPath == null) {
+                throw new MmtcException("Environment variable $CHILL_GDS is not set.");
+            }
 
-                executorService = Executors.newCachedThreadPool();
-                // run a command through runSubprocess to test if we're connected to AMPCS.
-                // however, runSubprocess refuses to run unless we *are* connected to AMPCS, so
-                // temporarily set the connectedToAmpcs flag to true
+            executorService = Executors.newCachedThreadPool();
+            // run a command through runSubprocess to test if we're connected to AMPCS.
+            // however, runSubprocess refuses to run unless we *are* connected to AMPCS, so
+            // temporarily set the connectedToAmpcs flag to true
+            connectedToAmpcs = true;
+            String stdout = runSubprocessIgnoreExitCode(chillGdsPath + "/bin/chill_get_packets -v");
+            // now reset the connection flag and then check the output of runSubprocess to
+            // determine whether or not we're really connected.
+            connectedToAmpcs = false; // now reset the flag
+
+            if (stdout.contains("AMPCS")) {
+                logger.debug("Verified that MMTC is able to call AMPCS chill_get_packets.");
+                if (this.sessionId != null) {
+                    logger.debug(String.format("Calls to AMPCS will use session ID %s.", this.sessionId));
+                } else {
+                    logger.debug("Calls to AMPCS will not use a session ID.");
+                }
                 connectedToAmpcs = true;
-                String stdout = runSubprocessIgnoreExitCode(chillGdsPath + "/bin/chill_get_packets -v");
-                // now reset the connection flag and then check the output of runSubprocess to
-                // determine whether or not we're really connected.
-                connectedToAmpcs = false; // now reset the flag
-
-                if (stdout.contains("AMPCS")) {
-                    logger.debug("Verified that MMTC is able to call AMPCS chill_get_packets.");
-                    if (this.sessionId != null) {
-                        logger.debug(String.format("Calls to AMPCS will use session ID %s.", this.sessionId));
-                    } else {
-                        logger.debug("Calls to AMPCS will not use a session ID.");
-                    }
-                    connectedToAmpcs = true;
-                }
-
-                if (!connectedToAmpcs){
-                    executorService.shutdownNow();
-                    throw new MmtcException("Unable to connect to AMPCS.");
-                }
             }
-            catch (IOException e) {
+
+            if (!connectedToAmpcs) {
                 executorService.shutdownNow();
-                throw new MmtcException("Unable to execute subprocess.", e);
+                throw new MmtcException("Unable to connect to AMPCS.");
             }
+        } catch (IOException e) {
+            executorService.shutdownNow();
+            throw new MmtcException("Unable to execute subprocess.", e);
+        }
+
+        logger.info("Connected.");
     }
 
     private void setSessionId(String sessionId) throws MmtcException {
@@ -225,10 +228,12 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
      * AMPCS requires no 'disconnect' action; we're just shutting down the execution service.
      */
     public void disconnect() {
+        logger.info("Disconnecting...");
         if (connectedToAmpcs) {
             connectedToAmpcs = false;
             executorService.shutdownNow();
         }
+        logger.info("Disconnected.");
     }
 
     protected boolean packetsHaveDownlinkDataRate() throws MmtcException {

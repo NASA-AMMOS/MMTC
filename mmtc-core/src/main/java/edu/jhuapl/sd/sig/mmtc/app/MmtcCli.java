@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
+import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.sandbox.MmtcSandboxCreator;
@@ -16,9 +17,6 @@ import java.util.Optional;
 
 public class MmtcCli {
     public static final Marker USER_NOTICE = MarkerManager.getMarker("USER_NOTICE");
-
-    public static final String MMTC_TITLE = "Multi-Mission Time Correlation (MMTC)";
-    public static final BuildInfo BUILD_INFO = new BuildInfo();
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -43,7 +41,7 @@ public class MmtcCli {
 
     private static ApplicationInvocation determineApplicationCommand(String... cliArgs) {
         if (Arrays.asList("-v", "--version").contains(cliArgs[0])) {
-            System.out.println(MmtcCli.BUILD_INFO);
+            System.out.println(new BuildInfo());
             System.exit(0);
         }
 
@@ -98,11 +96,21 @@ public class MmtcCli {
      *
      * @param args command line arguments
      */
-    public static void main(String[] args) {
-        logger.info(String.format("************ %s version %s ************", MMTC_TITLE, BUILD_INFO.version));
-        logger.info(String.format("Commit %s built at %s", BUILD_INFO.commit, BUILD_INFO.buildDate));
+    public static void main(String[] args) throws Exception {
+        BuildInfo.log(logger);
 
         final ApplicationInvocation appInvoc = determineApplicationCommand(args);
+
+        final MmtcConfig cfg;
+
+        try {
+            cfg = new MmtcConfig();
+        } catch (Exception e) {
+            throw new MmtcException("MMTC correlation initialization failed.", e);
+        }
+
+        cfg.acquireLockFile();
+        boolean failed = false;
 
         switch (appInvoc.command) {
             case CORRELATION: {
@@ -110,7 +118,7 @@ public class MmtcCli {
                     new TimeCorrelationApp(appInvoc.args).run();
                 } catch (Exception ex) {
                     logger.fatal("MMTC correlation run failed.", ex);
-                    System.exit(1);
+                    failed = true;
                 }
                 break;
             }
@@ -119,7 +127,7 @@ public class MmtcCli {
                     new TimeCorrelationRollback(appInvoc.args).rollback(Optional.empty());
                 } catch (Exception e) {
                     logger.fatal("Rollback failed.", e);
-                    System.exit(1);
+                    failed = true;
                 }
                 break;
             }
@@ -128,7 +136,7 @@ public class MmtcCli {
                     new MmtcSandboxCreator(appInvoc.args).create();
                 } catch (Exception e) {
                     logger.fatal("Sandbox creation failed.", e);
-                    System.exit(1);
+                    failed = true;
                 }
                 break;
             }
@@ -137,7 +145,7 @@ public class MmtcCli {
                     new BuiltInOutputProductMigrationManager(appInvoc.args).migrate();
                 } catch (Exception e) {
                     logger.fatal("Output product migration failed.", e);
-                    System.exit(1);
+                    failed = true;
                 }
                 break;
             }
@@ -146,7 +154,7 @@ public class MmtcCli {
                     TelemetryCacheUserOperations.precache(appInvoc.args);
                 } catch (Exception e) {
                     logger.fatal("Precaching failed.", e);
-                    System.exit(1);
+                    failed = true;
                 }
                 break;
             }
@@ -155,14 +163,20 @@ public class MmtcCli {
                     TelemetryCacheUserOperations.logCacheStatistics(appInvoc.args);
                 } catch (Exception e) {
                     logger.fatal("Failed to calculate cache statistics.", e);
-                    System.exit(1);
+                    failed = true;
                 }
                 break;
             }
             default: {
                 logger.fatal("Unrecognized command: " + appInvoc.command);
-                System.exit(1);
+                failed = true;
             }
+        }
+
+        cfg.releaseLockFile();
+
+        if (failed) {
+            System.exit(1);
         }
     }
 }
