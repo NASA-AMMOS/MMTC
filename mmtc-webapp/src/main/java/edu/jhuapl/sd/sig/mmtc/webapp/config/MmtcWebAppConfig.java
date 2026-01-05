@@ -43,6 +43,10 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
         return getBoolean("webapp.serve.tls.enabled");
     }
 
+    public int getTlsServerPort() {
+        return getInt("webapp.serve.tls.port");
+    }
+
     public String getTlsKeystoreLocation() {
         return getString("webapp.serve.tls.keystore.location");
     }
@@ -53,10 +57,6 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
 
     public int getAuthTimeoutHours() {
         return getInt("webapp.auth.timeout", 4);
-    }
-
-    public int getTlsServerPort() {
-        return getInt("webapp.serve.tls.port");
     }
 
     public boolean isTestModeOwltEnabled() {

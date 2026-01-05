@@ -1,7 +1,7 @@
 = Multi-Mission Time Correlation User's Guide
 :authors: Robert Seng <robert.seng@jhuapl.edu>, John Lage <john.lage@jhuapl.edu>
-:revdate: TBD 2025
-:revnumber: 1.6.0-SNAPSHOT
+:revdate: January 8, 2026
+:revnumber: 1.6.0
 :revremark: Rev G
 :imagesdir: ./images/
 :toc: macro
@@ -89,6 +89,11 @@ Added information on new feature to choose sample set building strategy.
 |Dec 5, 2024
 |Multiple
 |Clarified and corrected information related to TDT(S) Error and Ep(ms) calculations.  Clarified and corrected information related to leap second inclusion in SCLK-SCET files.  Added new entries for new SCLK-SCET configuration keys.
+
+|Rev G for Rel 1.6.0.
+|Jan 8, 2026
+|Multiple
+|Updates for enhancements to MMTC for 1.6.0, including the new UI.
 |===
 
 
@@ -1137,6 +1142,11 @@ source.name is not set to rawTlmTable.
 |INT
 |The maximum number of seconds after the time correlation target frame SCET for which to query GNC telemetry (SCLK/TDT(S)) values. This allows for the SCET of the queried channel to be approximate. The GNC TDT(S) and SCLK (for TDT(S)) values) are expected to have an identical SCET and the TDT(S) value is expected to be at or after the time correlation target frame's TDT(G).  If not set, a default value of 600 seconds (10 minutes) is used.
 
+|telemetry.exactTargetSampleSelection.targetToSupplementalQueryWindowMin
+|OPTIONAL
+|INT
+|Only used when a specific frame's target ERT is selected.  This represents the 'grace' period around the target frame that will be included in the query to the configured telemetry source so that it can gather sufficient data to match up the target frame's ERT and the supplemental frame's packet from a telemetry source-agnostic position.  Defaults to 5 minuteus.
+
 |compute.clkchgrate.mode
 |OPTIONAL
 |STR
@@ -1166,6 +1176,11 @@ source.name is not set to rawTlmTable.
 |OPTIONAL
 |DBL
 |The threshold in milliseconds above which a computed error in TDT(S) calculations will indicate a warning as recorded in the Time History File.  If not set, the TDT(S) error will not be evaluated against a threshold and no related warning will be written to the Time History File.
+
+|lockfile.path
+|OPTIONAL
+|String
+|The path where an executing instance of MMTC will maintain a lock file to avoid multiple copies of MMTC interfering with each other.  If not set, defaults to a dotfile in the same directory as the Run History File.
 
 4+^|*The following parameters relate to SPICE kernels*
 
@@ -1993,6 +2008,16 @@ Prior runs that were rolled back are not deleted from the Run History File but a
 
 Insufficient system permissions to remove relevant files can be a source of rollback failures, so it is recommended that users verify that they have the requisite permissions to modify MMTC output products prior to initiating rollback.
 
+== Sandbox Creation
+
+MMTC offers a built-in feature to create an independent copy of itself at another location.  To invoke this functionality, run the following:
+
+```
+bin/mmmtc create-sandbox <path-to-new-mmtc-location>
+```
+
+Afterwards, you may switch directories to the new path and use that independent copy of MMTC for testing configuration changes, anomaly resolution, etc.
+
 == Telemetry Caching
 
 MMTC supports optional telemetry caching.  This is helpful when rerunning MMTC over the same time period of telemetry, especially in the following cases:
@@ -2095,6 +2120,119 @@ The MMTC writes processing status messages to a log file, nominally named mmtc.l
 The *log4j2.properties* file, which is specified in an option to the MMTC Java invocation (see <<Invoking MMTC>>), configures logging. MMTC ships with a log4j2.properties file that sets the log level to DEBUG; in normal operational venues, missions may wish to change this by setting the *rootLogger.level* property to “info” or higher since the DEBUG log level may produce excessive output. The log4j2.properties file that MMTC ships with also causes log messages to be appended to mmtc.log each time the MMTC is executed, to “roll over” the log file to a new file when it reaches 100MB in size or when a week has elapsed since the log file was started, and to delete the oldest files when there are 5 or more rollover files. For more information about how to customize this rollover behavior and other aspects of logging, consult the Apache Log4j 2 documentation (https://logging.apache.org/log4j/2.x/).
 
 NOTE: [.red]#Log messages may contain information that missions or users consider sensitive, such as hostnames, filesystem paths, even database credentials passed through to telemetry sources using the --connection-parms command line option, etc.# If log files are being submitted for MMTC troubleshooting, be sure to first remove any sensitive information before sending to others.
+
+== Web application & graphical user interface
+
+MMTC 1.6.0 introduces a web application that is packaged separately alongside the traditional MMTC CLI application.  It can be used to:
+
+* Plot time correlation telemetry (including their SCET error) and correlation triplets (SCLK kernel records) over time 
+
+* Create new correlations manually, choosing exactly which telemetry points and prior correlation records to use, along with MMTC's standard correlation options
+
+* View and download MMTC output products
+
+
+This web application is currently intended for use by a single user at a time, to be started when it is needed, and exited when the user's tasks are complete.
+
+=== Configuring the MMTC web application
+
+The MMTC web application reads the same TimeCorrelationConfigProperties.xml file as the rest of the MMTC codebase, though it includes a few additional keys:
+
+.MMTC Web Application Configuration Parameters
+[[table8, Table 8: Configuration Parameters]]
+[%autowidth]
+|===
+|Name |Required |Type |Description
+
+|webapp.auth.mode
+|REQUIRED
+|STR
+|Either 'NONE' or 'AUTOGEN_BASIC_HTTP_AUTH'.  'NONE' provides no authentication and should be used with care.  'AUTOGEN_BASIC_HTTP_AUTH' protects access to a local running will create a unique passcode at each startup, printed to the console, to be used in combination with the username 'mmtc' when accessing the web application.
+
+|webapp.serve.plaintext.enabled
+|REQUIRED
+|STR
+|Whether to serve the application on a TCP port in plaintext.  Either 'true' or 'false'.
+
+|webapp.serve.plaintext.port
+|OPTIONAL
+|INT
+|If webapp.serve.plaintext.enabled is set to 'true', this is the port at which the MMTC web app will be served.
+
+|webapp.serve.tls.enabled
+|REQUIRED
+|STR
+|Whether to serve the application on a TCP port via TLS.  Either 'true' or 'false'.
+
+|webapp.serve.tls.port
+|OPTIONAL
+|INT
+|If webapp.serve.tls.enabled is set to 'true', this is the port at which the MMTC web app will be served.
+
+|webapp.serve.tls.keystore.location
+|OPTIONAL
+|STR
+|If webapp.serve.tls.enabled is set to 'true', this is the path that will be used ƒor the server cert.  Must be PKCS12 format.
+
+|webapp.serve.tls.keystore.password
+|OPTIONAL
+|STR
+|If webapp.serve.tls.enabled is set to 'true', this is the passphrase that will be used to access the aforementioned server cert.
+
+|webapp.auth.timeout
+|OPTIONAL
+|INT
+|The number of hours after which an MMTC login session will time out.
+
+|webapp.testmode.enabled
+|OPTIONAL
+|STR
+|If set to 'true', then MMTC will use no ephemerides for OWLT calculations.
+
+|webapp.testmode.owltSec
+|OPTIONAL
+|INT
+|If webapp.testmode.enabled is set to 'true', this is the value in seconds that will be used by default for OWLT calculations in place of calculating using ephemerides.
+|===
+
+It is also heavily recommended that telemetry caching is enabled when using the web application, which can dramatically improve performance.  Please see the documentation for the key `telemetry.cacheFilePath` for more information.
+
+=== Starting and accessing the MMTC web application
+
+To start the web application, ensure you've installed or unpacked the appropriate MMTC RPM or zip distribution, and run:
+
+```
+bin/mmtc-webapp
+```
+
+Open a browser, and visit an appropriate URL that corresponds to your chosen configuration, e.g.:
+
+* for a plaintext configuration, a typical URL may be http://localhost:8080
+
+* for a TLS configuration, a typical URL may be https://localhost:8443
+
+If necessary, log in with the generated basic HTTP auth credentials.
+
+=== Using the MMTC web application
+
+To use the application:
+
+* Navigate the areas of the application using the sidebar on the left
+* The chart on the main page displays retrieved time correlation telemetry points
+** The range (in ERT) can be adjusted using the calendar controls on the top left
+** The SCLK kernel used to calculate SCET Error values and to display the correlation triplets can also be chosen from the top left
+** Use the bar to pan & zoom the chart within the queried time range
+** Hover over any point on the chart for more details about the data point
+* To create a new correlation:
+** Click the 'New correlation' button
+** Configure the inputs as desired
+** Click 'Preview' to preview the effect of the new correlation run without impacting any files
+*** If you'd like to make revisions, click 'Back'
+*** If you'd like to commit the correlation to the output products, click 'Commit'
+* To roll back the state of MMTC's output products to a prior state:
+** Navigate the table below the chart and use the arrow buttons to choose which state you'd like to restore
+
+To exit the application, send a SIGINT (e.g., via Ctrl+C in a shell environment) to gracefully shut down the application.
 
 == Operating Environment
 
@@ -2204,7 +2342,7 @@ An example of an Uplink Command File as described in <<Uplink Command File>> cre
 [[appendix_E, Appendix E: Time History File]]
 
 .Time History File Fields
-[[table8, Table 8: Time History File Fields]]
+[[table9, Table 9: Time History File Fields]]
 [%autowidth]
 |===
 | Name | Typical Value | Remarks
@@ -2392,7 +2530,7 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 [[appendix_F, Appendix F: Raw Telemetry Table]]
 
 .Raw Telemetry Table Fields
-[[table9, Table 9: Raw Telemetry Table Fields]]
+[[table10, Table 10: Raw Telemetry Table Fields]]
 [%autowidth]
 |===
 | Name | Typical Value | Remarks
