@@ -35,4 +35,5 @@ java -jar $JACOCO_CLI \
 report $OUT_DIR/merged.exec \
 --classfiles=mmtc-core/build/classes/java/main \
 --classfiles=mmtc-plugin-ampcs/build/classes/java/main \
+--classfiles=mmtc-webapp-ampcs/build/classes/java/main \
 --html $OUT_DIR/jacoco-out
