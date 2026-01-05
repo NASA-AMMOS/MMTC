@@ -126,8 +126,11 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
             if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
                 final OffsetDateTime desiredTargetFrameErt = config.getResolvedTargetSampleExactErt().get();
 
-                if (!TimeConvert.parseIsoDoyUtcStr(tcTarget.getTargetSample().getErtStr()).equals(desiredTargetFrameErt)) {
-                    logger.warn("Discarding the candidate sample set because it does not match the desired ERT");
+                if (TimeConvert.parseIsoDoyUtcStr(tcTarget.getTargetSample().getErtStr()).equals(desiredTargetFrameErt)) {
+                    logger.info("The candidate sample matches the desired ERT");
+                } else {
+                    logger.info("Discarding the candidate sample set because it does not match the desired ERT");
+                    continue;
                 }
             }
 

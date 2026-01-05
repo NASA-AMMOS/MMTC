@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.rollback;
 
+import edu.jhuapl.sd.sig.mmtc.app.BuildInfo;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
@@ -89,7 +90,7 @@ public class TimeCorrelationRollback {
             throw new MmtcException("Cannot execute a rollback, as there are no available correlation runs to roll back to.  Please reference the Run History File for more details.");
         }
 
-        logger.info(USER_NOTICE, String.format("...MMTC v.%s...\n", MmtcCli.BUILD_INFO.version));
+        logger.info(USER_NOTICE, String.format("...MMTC v.%s...\n", new BuildInfo().version));
         System.out.printf("Initiating rollback. %d most recent runs: \n", ROLLBACK_WINDOW_SIZE);
         for (int i = runHistoryRecords.size() - 1; i >= Math.max(runHistoryRecords.size() - ROLLBACK_WINDOW_SIZE, 0); i--) {
             TableRecord currentRecord = runHistoryRecords.get(i);

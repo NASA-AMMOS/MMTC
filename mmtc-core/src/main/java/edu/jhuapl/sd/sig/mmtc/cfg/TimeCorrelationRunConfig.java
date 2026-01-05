@@ -61,6 +61,18 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
                 return "Additional smoothing record insertion = disabled";
             }
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            AdditionalSmoothingRecordConfig that = (AdditionalSmoothingRecordConfig) o;
+            return enabled == that.enabled && coarseSclkTickDuration == that.coarseSclkTickDuration;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(enabled, coarseSclkTickDuration);
+        }
     }
 
     public enum DryRunMode {
@@ -281,11 +293,16 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
             return;
         }
 
-        this.resolvedAdditionalSmoothingRecordConfig = new AdditionalSmoothingRecordConfig(
+        this.resolvedAdditionalSmoothingRecordConfig = getAdditionalSmoothingRecordConfigFromFile();
+    }
+
+    private AdditionalSmoothingRecordConfig getAdditionalSmoothingRecordConfigFromFile() throws MmtcException {
+        return new AdditionalSmoothingRecordConfig(
                 isAdditionalSmoothingCorrelationRecordInsertionEnabled(),
                 getAdditionalSmoothingCorrelationRecordInsertionCoarseSclkTickDuration()
         );
     }
+
 
     public AdditionalSmoothingRecordConfig getAdditionalSmoothingRecordConfig() {
         return this.resolvedAdditionalSmoothingRecordConfig;
@@ -438,7 +455,6 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
     }
 
     public String getInvocationStringRepresentation() throws MmtcException {
-        // return runConfigInputs.toLoggableString();
         List<String> elts = new ArrayList<>();
 
         if (getTargetSampleInputErtMode().equals(TargetSampleInputErtMode.RANGE)) {
@@ -463,18 +479,22 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
         }
 
         if (runConfigInputs.clockChangeRateModeOverride.isPresent()) {
-            elts.add(String.format("Clock change rate mode = %s", runConfigInputs.clockChangeRateModeOverride.get()));
+            if (! runConfigInputs.clockChangeRateModeOverride.get().equals(getConfiguredClockChangeRateMode())) {
+                elts.add(String.format("Clock change rate mode = %s", runConfigInputs.clockChangeRateModeOverride.get()));
 
-            ClockChangeRateMode overrideMode = runConfigInputs.clockChangeRateModeOverride.get();
-            if (overrideMode.equals(ClockChangeRateMode.ASSIGN_KEY)) {
-                elts.add(String.format("Clock change rate assign key = %s", runConfigInputs.clockChangeRateAssignedKey.get()));
-            } else if (overrideMode.equals(ClockChangeRateMode.ASSIGN)) {
-                elts.add(String.format("Clock change rate assign = %s", runConfigInputs.clockChangeRateAssignedValue.get()));
+                ClockChangeRateMode overrideMode = runConfigInputs.clockChangeRateModeOverride.get();
+                if (overrideMode.equals(ClockChangeRateMode.ASSIGN_KEY)) {
+                    elts.add(String.format("Clock change rate assign key = %s", runConfigInputs.clockChangeRateAssignedKey.get()));
+                } else if (overrideMode.equals(ClockChangeRateMode.ASSIGN)) {
+                    elts.add(String.format("Clock change rate assign = %s", runConfigInputs.clockChangeRateAssignedValue.get()));
+                }
             }
         }
 
         if (runConfigInputs.additionalSmoothingRecordConfigOverride.isPresent()) {
-            elts.add(runConfigInputs.additionalSmoothingRecordConfigOverride.get().toLogString());
+            if (! runConfigInputs.additionalSmoothingRecordConfigOverride.get().equals(getAdditionalSmoothingRecordConfigFromFile())) {
+                elts.add(runConfigInputs.additionalSmoothingRecordConfigOverride.get().toLogString());
+            }
         }
 
         if (runConfigInputs.isDisableContactFilter) {

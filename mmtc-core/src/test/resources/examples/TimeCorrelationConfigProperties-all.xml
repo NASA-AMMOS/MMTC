@@ -19,6 +19,8 @@
     <entry key="groundStationMap.path"></entry>
     <entry key="sclkPartitionMap.path"></entry>
 
+    <entry key="lockfile.path"></entry>
+
     <entry key="telemetry.sampleSetBuildingStrategy"></entry>
     <entry key="telemetry.samplesPerSet"></entry>
     <entry key="telemetry.supplementalSampleOffset"></entry>

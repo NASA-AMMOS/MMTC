@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -46,13 +47,14 @@ import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
  * Functions in this class provide access to each item in the TimeCorrelationConfigProperties.xml
  * configuration parameters file.
  */
-public abstract class MmtcConfig {
+public class MmtcConfig {
     private static final String BASE_CONFIG_FILENAME = "TimeCorrelationConfigProperties-base.xml";
-
     private static final Set<String> BUILT_IN_TLM_SOURCES = new HashSet<>(Collections.singletonList("rawTlmTable"));
 
     public static final List<ClockChangeRateMode> CLOCK_CHANGE_RATE_ASSIGN_MODES = Arrays.asList(ClockChangeRateMode.ASSIGN, ClockChangeRateMode.ASSIGN_KEY);
     public static final ClockChangeRateMode DEFAULT_CLOCK_CHANGE_RATE_MODE = ClockChangeRateMode.COMPUTE_INTERPOLATE;
+
+    private static final String LOCKFILE_COOKIE = "mmtc-" + UUID.randomUUID().toString();
 
     protected final Path mmtcHome;
     protected final TimeCorrelationConfig timeCorrelationConfig;
@@ -986,6 +988,53 @@ public abstract class MmtcConfig {
         }
     }
 
+    public Path getLockFileLocation() {
+        if (containsKey("lockfile.path")) {
+            return Paths.get(getString("lockfile.path"));
+        } else {
+            return getRunHistoryFilePath().getParent().resolve(".mmtc_lock");
+        }
+    }
+
+    // todo upgrade this to use Linux's file locking facilities to provide an actual guarantee
+    public synchronized void acquireLockFile() throws MmtcException {
+        final Path lockFile = getLockFileLocation();
+
+        if (Files.exists(lockFile)) {
+            String errorMessage = "Lock file already exists. Is another copy of MMTC running?";
+            logger.fatal(errorMessage);
+            throw new MmtcException(errorMessage);
+        }
+
+        try {
+            Files.write(lockFile, LOCKFILE_COOKIE.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new MmtcException(e);
+        }
+
+        logger.info(String.format("Acquired lockfile at %s.", lockFile.toAbsolutePath()));
+    }
+
+    public synchronized void releaseLockFile() throws MmtcException {
+        final Path lockFile = getLockFileLocation();
+
+        if (! Files.exists(lockFile)) {
+            throw new MmtcException("Attempt to release non-existent lockfile");
+        }
+
+        try {
+            if (! Files.readAllLines(lockFile).get(0).equals(LOCKFILE_COOKIE)) {
+                throw new MmtcException("Attempt to release a lockfile with a mismatching cookie");
+            }
+
+            Files.delete(lockFile);
+        } catch (IOException e) {
+            throw new MmtcException(e);
+        }
+
+        logger.info(String.format("Released lockfile at %s.", lockFile.toAbsolutePath()));
+    }
+
     /**
      * Only used when a specific frame's target ERT is selected.  This represents the 'grace' period around the
      * target frame that will be included in the query to the configured telemetry source so that it can gather
@@ -1252,6 +1301,10 @@ public abstract class MmtcConfig {
         return timeCorrelationConfig.getConfig().getStringArray(key);
     }
 
+    public Integer getTkSclkFineTickModulus() throws TimeConvertException {
+        return getTkSclkFineTickModulus(false);
+    }
+
     /**
      * Returns the number of ticks per second measured by the onboard Spacecraft Clock (SCLK). This is
      * also called the "subseconds modulus", "SCLK modulus", or the "tick rate". In most missions,
@@ -1268,14 +1321,18 @@ public abstract class MmtcConfig {
      * @return the subseconds modulus in ticks per second for the configured NAIF spacecraft ID
      * @throws TimeConvertException if the value could not be obtained from the SCLK Kernel
      */
-    public Integer getTkSclkFineTickModulus() throws TimeConvertException {
+    public Integer getTkSclkFineTickModulus(boolean logSource) throws TimeConvertException {
         int tk_sclk_fine_tick_modulus = getSclkModulusOverride();
 
         if (tk_sclk_fine_tick_modulus == -1) {
             tk_sclk_fine_tick_modulus = TimeConvert.getSclkKernelTickRate(getNaifSpacecraftId());
-            logger.info("Read TF Offset SCLK subseconds modulus of " + tk_sclk_fine_tick_modulus + " from SCLK Kernel.");
+            if (logSource) {
+                logger.info("Read TF Offset SCLK subseconds modulus of " + tk_sclk_fine_tick_modulus + " from SCLK Kernel.");
+            }
         } else {
-            logger.info("Read TF Offset SCLK subseconds modulus of " + tk_sclk_fine_tick_modulus + " from configuration parameters.");
+            if (logSource) {
+                logger.info("Read TF Offset SCLK subseconds modulus of " + tk_sclk_fine_tick_modulus + " from configuration parameters.");
+            }
         }
 
         return tk_sclk_fine_tick_modulus;

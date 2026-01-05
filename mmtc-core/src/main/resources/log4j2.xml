@@ -17,7 +17,7 @@
             </Filters>
         </Console>
         <RollingFile name="mmtcLogFile" fileName="${env:MMTC_HOME}/log/mmtc.log" filePattern="${env:MMTC_HOME}/log/mmtc-%d{MM-dd-yy}-%i.log.gz">
-            <PatternLayout pattern="%d{ISO8601}{UTC}Z %p [%c{1}] %m%n"/>
+            <PatternLayout pattern="%d{ISO8601}{UTC}Z [%pid | %tid] %p [%c{1}] %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy interval="7" modulate="true"/>
                 <SizeBasedTriggeringPolicy size="100MB"/>

@@ -43,6 +43,7 @@ public class TimeCorrelationApp {
 
     private final TimeCorrelationRunConfig config;
     private final TimeCorrelationContext ctx;
+    private final boolean managingTlmSourceConnection;
 
     private RunHistoryFile runHistoryFile;
     private TableRecord newRunHistoryFileRecord;
@@ -60,6 +61,9 @@ public class TimeCorrelationApp {
             this.config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(args));
             this.ctx = new TimeCorrelationContext(config);
             init();
+
+            this.managingTlmSourceConnection = true;
+            this.config.getTelemetrySource().connect();
         } catch (Exception e) {
             throw new MmtcException("MMTC correlation initialization failed.", e);
         }
@@ -70,6 +74,8 @@ public class TimeCorrelationApp {
             this.config = config;
             this.ctx = new TimeCorrelationContext(config);
             init();
+
+            this.managingTlmSourceConnection = false;
         } catch (Exception e) {
             throw new MmtcException("MMTC correlation initialization failed.", e);
         }
@@ -113,7 +119,7 @@ public class TimeCorrelationApp {
             recordRunHistoryFilePreRunValues();
         }
 
-        tk_sclk_fine_tick_modulus = config.getTkSclkFineTickModulus();
+        tk_sclk_fine_tick_modulus = config.getTkSclkFineTickModulus(true);
         logger.info("tk_sclk_fine_tick_modulus set to: " + tk_sclk_fine_tick_modulus);
         ctx.tk_sclk_fine_tick_modulus.set(tk_sclk_fine_tick_modulus);
 
@@ -140,13 +146,8 @@ public class TimeCorrelationApp {
                 throw new IllegalStateException("No such sample set building strategy: " + config.getSampleSetBuildingStrategy());
         }
 
-        tlmSource.connect();
-        try {
-            logger.info(USER_NOTICE, "Querying and filtering for valid telemetry...");
-            return tlmSelecStrat.get(this::processFilters);
-        } finally {
-            tlmSource.disconnect();
-        }
+        logger.info(USER_NOTICE, "Querying and filtering for valid telemetry...");
+        return tlmSelecStrat.get(this::processFilters);
     }
 
     /**
@@ -417,13 +418,22 @@ public class TimeCorrelationApp {
         return computeClkChgRate(sclk0, tdt_g0, sclk, tdt_g);
     }
 
+    public TimeCorrelationContext run() throws Exception {
+        try {
+            return doRun();
+        } finally {
+            if (this.managingTlmSourceConnection) {
+                this.config.getTelemetrySource().disconnect();
+            }
+        }
+    }
 
     /**
      * Perform the new time correlation run
      *
      * @throws Exception if time correlation cannot be successfully completed
      */
-    public TimeCorrelationContext run() throws Exception {
+    private TimeCorrelationContext doRun() throws Exception {
         if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
             logger.info(USER_NOTICE, String.format("Running time correlation between %s and %s",
                     config.getResolvedTargetSampleRange().get().getStart().toString(),
@@ -593,13 +603,17 @@ public class TimeCorrelationApp {
         }
 
         // Update run history file if this isn't a dry run. If it is, delete the previously created temp SCLK kernel.
-        if (!ctx.config.isDryRun()) {
+        if (! ctx.config.isDryRun()) {
             runHistoryFile.writeRecord(newRunHistoryFileRecord);
             logger.info(USER_NOTICE, "Appended a new entry to Run History File located at " + runHistoryFile.getPath());
             logger.info(String.format("Run at %s recorded to %s", ctx.appRunTime, config.getRunHistoryFilePath().toString()));
         }
 
-        logger.info(USER_NOTICE, "MMTC completed successfully.");
+        if (ctx.config.isDryRun()) {
+            logger.info(USER_NOTICE, "MMTC dry run completed successfully.");
+        } else {
+            logger.info(USER_NOTICE, "MMTC completed successfully.");
+        }
 
         return ctx;
     }
