@@ -39,7 +39,7 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
      */
     @Override
     public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
-        return SclkKernel.writeNewProduct(ctx);
+        return SclkKernel.writeNewProductFromDef(ctx);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
      */
     @Override
     public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
-        SclkKernel.writeNewProduct(ctx);
+        SclkKernel.writeNewProductFromDef(ctx);
 
         String[] newSclkEntries = ctx.newSclkKernel.get().getLastXRecords(2);
         // If an interpolated clock change rate has replaced the rate in the existing SCLK kernel record,

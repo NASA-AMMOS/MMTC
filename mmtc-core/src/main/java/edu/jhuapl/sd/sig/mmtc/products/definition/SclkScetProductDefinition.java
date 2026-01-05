@@ -55,7 +55,7 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
         SclkScetFile scetFile = SclkScetFile.calculateNewProduct(ctx);
         try {
             scetFile.setSourceFilespec(ctx.newSclkKernel.get().getPath());
-            scetFile.updateFile();
+            scetFile.updateFile(ctx);
         } catch (TextProductException | TimeConvertException | IOException e) {
             throw new MmtcException("Failed to generate SCLKSCET file");
         }
@@ -74,7 +74,7 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
      */
     @Override
     public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
-      return SclkScetFile.writeNewProduct(ctx);
+      return SclkScetFile.writeNewProductFromDef(ctx);
     }
 
     @Override

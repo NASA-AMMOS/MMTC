@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -173,8 +174,8 @@ abstract class TextProduct {
      * @throws TimeConvertException if an error occurred in a computation
      * @return the Path representing the location where the new file was written
      */
-    public Path createFile() throws TextProductException, TimeConvertException {
-        return createFile(sourceFilespec, dirname, filename);
+    public Path createFile(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException {
+        return createFile(ctx, sourceFilespec, dirname, filename);
     }
 
     /**
@@ -188,12 +189,12 @@ abstract class TextProduct {
      * @throws TimeConvertException if an error occurred in a computation
      * @return the Path representing the location where the new file was written
      */
-    public Path createFile(String path) throws TextProductException, TimeConvertException {
-        return createFile(sourceFilespec, path, filename);
+    public Path createFile(TimeCorrelationContext ctx, String path) throws TextProductException, TimeConvertException {
+        return createFile(ctx, sourceFilespec, path, filename);
     }
 
-    public Path createFile(Path path) throws TextProductException, TimeConvertException {
-        return createFile(sourceFilespec, path.getParent().toString(), path.getFileName().toString());
+    public Path createFile(TimeCorrelationContext ctx, Path path) throws TextProductException, TimeConvertException {
+        return createFile(ctx, sourceFilespec, path.getParent().toString(), path.getFileName().toString());
     }
 
     /**
@@ -209,7 +210,7 @@ abstract class TextProduct {
      * @throws TimeConvertException if an error occurred during a computation
      * @return the Path representing the location where the new file was written
      */
-    public Path createFile(String sourceFilespec, String dirname, String filename) throws TextProductException, TimeConvertException {
+    public Path createFile(TimeCorrelationContext ctx, String sourceFilespec, String dirname, String filename) throws TextProductException, TimeConvertException {
 
         this.sourceFilespec = sourceFilespec;
         this.dirname        = dirname;
@@ -217,16 +218,16 @@ abstract class TextProduct {
 
         try {
             /* Read the source file */
-            updateFile();
-            return writeNewProduct();
+            updateFile(ctx);
+            return writeNewProduct(ctx);
         } catch (IOException e) {
             throw new TextProductException("Unable to read source product \"" + sourceFilespec + "\".", e);
         }
     }
 
-    public void updateFile() throws TextProductException, IOException, TimeConvertException {
+    public void updateFile(TimeCorrelationContext ctx) throws TextProductException, IOException, TimeConvertException {
         readSourceProduct();
-        createNewProduct();   /* <-- Abstract method defined in derived class. */
+        createNewProduct(ctx);   /* <-- Abstract method defined in derived class. */
     }
 
 
@@ -355,7 +356,7 @@ abstract class TextProduct {
      * @throws TextProductException if the file could not be written to.
      * @return the Path representing the location where the new file was written
      */
-    protected Path writeNewProduct() throws TextProductException {
+    protected Path writeNewProduct(TimeCorrelationContext ctx) throws TextProductException {
 
         String newFilePath = dirname + pathSep + filename;
         Path newFile       = Paths.get(newFilePath);
@@ -475,7 +476,7 @@ abstract class TextProduct {
      * @throws TextProductException if the product could not be created
      * @throws TimeConvertException if an error occurred during a computation
      */
-    protected abstract void createNewProduct() throws TextProductException, TimeConvertException;
+    protected abstract void createNewProduct(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException;
 
 
     /**

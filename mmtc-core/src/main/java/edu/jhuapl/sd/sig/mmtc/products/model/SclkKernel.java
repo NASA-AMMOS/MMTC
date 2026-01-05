@@ -140,7 +140,7 @@ public class SclkKernel extends TextProduct {
      *
      * @throws TextProductException if the product cannot be created
      */
-    public void createNewProduct() throws TextProductException {
+    public void createNewProduct(TimeCorrelationContext ctx) throws TextProductException {
 
         /* Find the last data (triplet) record in the SCLK kernel data. A data record should contain
          * 3 fields and the second (index 1) field should contain a "@" character.
@@ -176,9 +176,12 @@ public class SclkKernel extends TextProduct {
 
         // Replace the clock change rate of the last record in the product with the new rate, if selected
         if (newClkChgRateSet) {
-            String updatedTriplet = replaceChgRate();
+            final String updatedTriplet = replaceChgRate();
             newProductLines.remove(endDataNum);
             newProductLines.add(endDataNum, updatedTriplet);
+
+            String[] updatedTripletFields = parseRecord(updatedTriplet, NUM_FIELDS_IN_TRIPLET);
+            ctx.correlation.updatedInterpolatedTriplet.set(new CorrelationTriplet(Double.parseDouble(updatedTripletFields[0]), updatedTripletFields[1].replace("@", ""), Double.parseDouble(updatedTripletFields[2])));
         }
 
         // Append the smoothing record, if selected
@@ -430,9 +433,9 @@ public class SclkKernel extends TextProduct {
      * @throws TextProductException if the SCLK kernel could not be created
      * @throws TimeConvertException if a computational error occurred
      */
-    public void createNewSclkKernel(String sourceSclkFilespec) throws TextProductException, TimeConvertException {
+    public void createNewSclkKernel(TimeCorrelationContext ctx, String sourceSclkFilespec) throws TextProductException, TimeConvertException {
         setSourceFilespec(sourceSclkFilespec);
-        createFile();
+        createFile(ctx);
     }
 
     public String[] getLastXRecords(int numRecords) {
@@ -504,7 +507,6 @@ public class SclkKernel extends TextProduct {
 
         if (ctx.correlation.interpolated_clock_change_rate.isSet()) {
             newSclkKernel.setReplacementClockChgRate(ctx.correlation.interpolated_clock_change_rate.get());
-            // ctx.correlation.updatedInterpolatedTriplet.set(newSclkKernel.getUpdatedPriorCorrelationRecord());
         }
 
         if (ctx.correlation.newSmoothingTriplet.isSet()) {
@@ -521,7 +523,7 @@ public class SclkKernel extends TextProduct {
      * @throws MmtcException if the SCLK Kernel cannot be written
      * @return the ProductWriteResult describing the newly-written product
      */
-    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+    public static ProductWriteResult writeNewProductFromDef(TimeCorrelationContext ctx) throws MmtcException {
         return writeNewProduct(ctx, null);
     }
 
@@ -547,15 +549,15 @@ public class SclkKernel extends TextProduct {
             // write it to the usual location.
             switch(ctx.config.getDryRunConfig().mode) {
                 case NOT_DRY_RUN: {
-                    ctx.newSclkKernel.get().createFile();
+                    ctx.newSclkKernel.get().createFile(ctx);
                     break;
                 }
                 case DRY_RUN_RETAIN_NO_PRODUCTS: {
-                    ctx.newSclkKernel.get().createFile("/tmp");
+                    ctx.newSclkKernel.get().createFile(ctx, "/tmp");
                     break;
                 }
                 case DRY_RUN_GENERATE_SEPARATE_SCLK_ONLY: {
-                    ctx.newSclkKernel.get().createFile(path);
+                    ctx.newSclkKernel.get().createFile(ctx, path);
                     break;
                 }
             }
