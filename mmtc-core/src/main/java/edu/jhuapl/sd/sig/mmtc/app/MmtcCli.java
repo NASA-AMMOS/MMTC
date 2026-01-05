@@ -106,6 +106,7 @@ public class MmtcCli {
         try {
             cfg = new MmtcConfig();
         } catch (Exception e) {
+            logger.fatal("MMTC correlation initialization failed.");
             throw new MmtcException("MMTC correlation initialization failed.", e);
         }
 
