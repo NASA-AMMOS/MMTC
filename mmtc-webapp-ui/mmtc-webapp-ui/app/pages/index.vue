@@ -296,7 +296,13 @@ function chartClearCorrelationPreview() {
           <div class="grid grid-cols-1">
           <div v-if="mode === 'view'">
             <UTooltip text="Start configuring a new correlation">
-              <UButton @click="newCorrelation" :disabled="loading">New correlation</UButton>
+              <UButton
+                @click="newCorrelation"
+                :disabled="loading"
+                data-testid="start-configuring-new-correlation"
+              >
+                New correlation
+              </UButton>
             </UTooltip>
           </div>
           </div>

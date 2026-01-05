@@ -106,12 +106,13 @@ async function downloadFile() {
             v-model="fileSelectionChoice"
             :items="fileSelectionOptions"
             :disabled="outputProductDef.filenames.length == 0"
+            data-testid="output-product-def-select"
           />
           <UButton
             color="secondary"
             @click="downloadFile"
-            data-testid="output-product-download"
             :disabled="outputProductDef.filenames.length == 0"
+            data-testid="output-product-download"
           >
             Download
           </UButton>
@@ -123,6 +124,7 @@ async function downloadFile() {
       <ProsePre
         v-if="viewMode === 'plaintext'"
         :code="fileContentsToDisplay"
+        data-testid="output-product-file-contents"
       >
         {{fileContentsToDisplay}}
       </ProsePre>

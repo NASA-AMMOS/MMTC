@@ -63,7 +63,7 @@ public class NewTimeCorrelationConfigRequest implements TimeCorrelationRunConfig
                 isDisableContactFilter,
                 isCreateUplinkCmdFile,
                 dryRunConfig,
-                Collections.emptyList() // fixme
+                Collections.emptyList()
         );
     }
 

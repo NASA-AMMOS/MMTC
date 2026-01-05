@@ -337,7 +337,8 @@ watch(() => props.chartData, (newChartData, oldChartData) => {
       previewTelemetrySeriesData.push({ name: toYyyyDddHhMm(pointDate), value: [pointDate.getTime(), ttp.scetErrorMs], originalTtp: ttp});
     })
 
-    option.value.series[2] = {
+    // option.value.series[2] = {
+    option.value.series.push({
       id: 'timeCorrTelemetryPreview',
       name: 'Preview Time Correlation Tlm Points',
       type: 'line',
@@ -349,7 +350,7 @@ watch(() => props.chartData, (newChartData, oldChartData) => {
       itemStyle: { color: 'indigo'},
       data: previewTelemetrySeriesData,
       cursor: 'default'
-    }
+    });
   } else {
     const indexToRemove = option.value.series.findIndex((elt) => elt['id'] === 'timeCorrTelemetryPreview')
     if (indexToRemove != -1) {
@@ -368,7 +369,8 @@ watch(() => props.chartData, (newChartData, oldChartData) => {
       previewCorrelationSeriesData.push({name: pointName, value: [pointDate.getTime(), 0.5, "foobar"], originalTriplet: triplet});
     })
 
-    option.value.series[3] = {
+    // option.value.series[3] = {
+    option.value.series.push({
       id: 'timeCorrRecordsPreview',
       name: 'Preview SCLK Kernel Records',
       type: 'scatter',
@@ -379,7 +381,7 @@ watch(() => props.chartData, (newChartData, oldChartData) => {
       itemStyle: { color: 'indigo'},
       data: previewCorrelationSeriesData,
       cursor: 'default'
-    }
+    });
   } else {
     const indexToRemove = option.value.series.findIndex((elt) => elt['id'] === 'timeCorrRecordsPreview')
     if (indexToRemove != -1) {
@@ -470,7 +472,7 @@ watch(() => props.chartTimeSelectionCfg, (newVal, oldVal) => {
 </script>
 
 <template>
-  <UCard ref="cardRef" :ui="{ root: 'overflow-visible', body: '!px-0 !pt-0 !pb-3' }">
+  <UCard ref="cardRef" :ui="{ root: 'overflow-visible', body: '!px-0 !pt-0 !pb-3' }" data-testid="scet-error-chart-container">
     <VChart
       ref="timeCorrChart"
       class="chart"

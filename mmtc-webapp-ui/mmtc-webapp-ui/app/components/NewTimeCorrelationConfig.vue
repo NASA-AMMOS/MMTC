@@ -26,7 +26,7 @@ function isDoyIsoFormatDatetime(s: string) {
     return false;
   }
 
-  // todo complete me
+  // todo improve this
   if (s.length < 17) {
     return false;
   }
@@ -256,7 +256,7 @@ const additionalCorrelationOptionItems = ref<CheckboxGroupItem[]>([
   },
   {
     label: 'Create Uplink Command File',
-    description: 'Create an Uplink Command File',
+    description: "Create an Uplink Command File, even if it's disabled in the configuration file",
     value: 'createUplinkCommandFile'
   },
   {
@@ -450,17 +450,34 @@ onMounted(async () => {
 
   state.clockChangeRateConfig.clockChangeRateModeOverride = defaultCorrelationConfig.value.clockChangeRateConfig.clockChangeRateModeOverride;
   state.additionalSmoothingRecordConfigOverride = defaultCorrelationConfig.value.additionalSmoothingRecordConfigOverride;
+  state.testModeOwltSec = defaultCorrelationConfig.value.testModeOwltSec;
 
   newCorrelationMinTdt.value = defaultCorrelationConfig.value.newCorrelationMinTdt;
   newCorrelationMinLookbackHours.value = defaultCorrelationConfig.value.predictedClkRateMinLookbackHours;
   newCorrelationMaxLookbackHours.value = defaultCorrelationConfig.value.predictedClkRateMaxLookbackHours;
+
+  // updated checkbox group model; a 'watch' above will update the time corr config state model accordingly
+  if (defaultCorrelationConfig.value.additionalSmoothingRecordConfigOverride.enabled) {
+    additionalCorrelationOptionsModel.value.push('insertAdditionalSmoothingRecord')
+  }
+
+  if (defaultCorrelationConfig.value.isDisableContactFilter) {
+    additionalCorrelationOptionsModel.value.push('disableContactFilter')
+  }
+
+  if (defaultCorrelationConfig.value.isCreateUplinkCmdFile) {
+    additionalCorrelationOptionsModel.value.push('createUplinkCommandFile')
+  }
+
+  if (defaultCorrelationConfig.value.testModeOwltEnabled) {
+    additionalCorrelationOptionsModel.value.push('testModeOwltEnabled')
+  }
 })
 
 </script>
 
 <template>
-  <!-- @submit="onSubmit" -->
-  <div v-if="timeCorrelationConfigState === 'composing'"  class="pr-5 pt-5">
+  <div v-if="timeCorrelationConfigState === 'composing'"  class="pr-5 pt-5" data-testid="new-correlation-configuration-container">
     <p class="text-xl font-bold text-center text-primary">New Correlation</p>
     <UForm ref="form" :schema="schema" :state="state" :validate-on="['input','change','blur']" class="pt-5" style="min-height: 600px;">
       <fieldset class="border border-gray-200 pr-2 pl-2 pb-4 rounded-lg -ml-2 -mr-2 space-y-4">
@@ -469,13 +486,13 @@ onMounted(async () => {
         </legend>
 
         <UFormField v-if="targetSampleInputErtModeChoices.length > 1" label="Target sample selection type" name="targetSampleInputErtMode" size="sm">
-          <USelect v-model="state.targetSampleInputErtMode" :items="targetSampleInputErtModeChoices" class="w-full"/>
+          <USelect v-model="state.targetSampleInputErtMode" :items="targetSampleInputErtModeChoices" class="w-full" data-testid="target-sample-input-ert-mode-select"/>
         </UFormField>
 
         <UFormField label="Target sample (ERT (UTC))" name="targetSampleExactErt" size="sm" v-if="state.targetSampleInputErtMode === 'EXACT'">
           <div class="grid grid-cols-4 gap-x-2">
             <div class="col-span-3">
-            <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
+            <UInput v-model="state.targetSampleExactErt" :placeholder="targetSampleExactErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'" data-testid="target-sample-exact-ert-input"/>
             </div>
             <div class="col-span-1">
               <UButton @click="toggleChoosingTargetSampleExactErt" color="neutral" variant="outline" size="sm" :icon="timeSelectionCfg.selectionDestination === 'target-sample-exact-ert' ? 'i-lucide-mouse-pointer-2-off' : 'i-lucide-mouse-pointer-click'" :disabled="! (['none', 'target-sample-exact-ert'].includes(timeSelectionCfg.selectionDestination))"/>
@@ -486,7 +503,7 @@ onMounted(async () => {
         <UFormField label="Target sample range begin (ERT (UTC))" name="targetSampleRangeStartErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
           <div class="grid grid-cols-4 gap-x-2">
             <div class="col-span-3">
-              <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
+              <UInput v-model="state.targetSampleRangeStartErt" :placeholder="targetSampleRangeStartErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'" data-testid="target-sample-start-ert-input"/>
             </div>
             <div class="col-span-1">
               <UTooltip text="Click to select a point from the chart">
@@ -499,7 +516,7 @@ onMounted(async () => {
         <UFormField label="Target sample range end (ERT (UTC))" name="targetSampleRangeStopErt" size="sm" v-if="state.targetSampleInputErtMode === 'RANGE'">
           <div class="grid grid-cols-4 gap-x-2">
             <div class="col-span-3">
-              <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'"/>
+              <UInput v-model="state.targetSampleRangeStopErt" :placeholder="targetSampleRangeStopErtPlaceholder" class="w-full" :disabled="timeSelectionCfg.selectionDestination != 'none'" data-testid="target-sample-stop-ert-input"/>
             </div>
             <div class="col-span-1">
               <UTooltip text="Click to select a point from the chart">
@@ -512,7 +529,7 @@ onMounted(async () => {
         <UFormField label="Prior SCLK kernel record for basis (TDT)" name="priorCorrelationExactTdt"  size="sm">
           <div class="grid grid-cols-4 gap-x-2">
             <div class="col-span-3">
-              <UInput v-model="state.priorCorrelationExactTdt" :placeholder="priorCorrelationTdtPlaceholder" class="w-full" :disabled="(!ertInputsAreComplete) || (timeSelectionCfg.selectionDestination != 'none')"/>
+              <UInput v-model="state.priorCorrelationExactTdt" :placeholder="priorCorrelationTdtPlaceholder" class="w-full" :disabled="(!ertInputsAreComplete) || (timeSelectionCfg.selectionDestination != 'none')" data-testid="prior-correlation-tdt-input"/>
             </div>
             <div class="col-span-1">
               <UTooltip text="Click to select a point from the chart">
@@ -538,22 +555,22 @@ onMounted(async () => {
         </legend>
         <div class="flex gap-4 items-end">
           <UFormField label="Clock change rate mode" name="clockChangeRateConfig.clockChangeRateModeOverride" size="sm">
-            <USelect v-model="state.clockChangeRateConfig.clockChangeRateModeOverride" :items="clockChangeRateModeChoices" class="w-full"/>
+            <USelect v-model="state.clockChangeRateConfig.clockChangeRateModeOverride" :items="clockChangeRateModeChoices" class="w-full" data-testid="clock-change-rate-mode-override-input"/>
           </UFormField>
 
           <UFormField label="Clock rate" style="max-width: 100px;" name="clockChangeRateConfig.specifiedClockChangeRateToAssign" v-if="state.clockChangeRateConfig.clockChangeRateModeOverride === 'ASSIGN'" size="sm">
-            <UInput v-model="state.clockChangeRateConfig.specifiedClockChangeRateToAssign" type="number" class="w-full" placeholder="Rate"/>
+            <UInput v-model="state.clockChangeRateConfig.specifiedClockChangeRateToAssign" type="number" class="w-full" placeholder="Rate" data-testid="clock-change-rate-assign-input"/>
           </UFormField>
         </div>
 
         <UCheckboxGroup v-model="additionalCorrelationOptionsModel" :items="additionalCorrelationOptionItems" size="sm" />
 
         <UFormField label="Smoothing record duration (SCLK ticks)" name="additionalSmoothingRecordConfigOverride.coarseSclkTickDuration" :style="{visibility: additionalCorrelationOptionsModel.includes('insertAdditionalSmoothingRecord') ? 'visible' : 'hidden'}" size="sm">
-          <UInput v-model="state.additionalSmoothingRecordConfigOverride.coarseSclkTickDuration" type="number" class="w-full"/>
+          <UInput v-model="state.additionalSmoothingRecordConfigOverride.coarseSclkTickDuration" type="number" class="w-full" data-testid="additional-smoothing-record-duration-input"/>
         </UFormField>
 
         <UFormField label="Test OWLT (sec)" name="testModeOwltSec" :style="{visibility: additionalCorrelationOptionsModel.includes('testModeOwltEnabled') ? 'visible' : 'hidden'}" size="sm">
-          <UInput v-model="state.testModeOwltSec" type="number" class="w-full"/>
+          <UInput v-model="state.testModeOwltSec" type="number" class="w-full" data-testid="test-owlt-input"/>
         </UFormField>
       </fieldset>
 
@@ -565,7 +582,7 @@ onMounted(async () => {
         </UTooltip>
 
         <UTooltip text="View the results of the new correlation run without committing the changes to output products">
-          <UButton @click="previewCorrelation" :disabled="!stateIsValid" class="float-right" loading-auto>
+          <UButton @click="previewCorrelation" :disabled="!stateIsValid" class="float-right" loading-auto data-testid="preview-new-correlation">
             Preview
           </UButton>
         </UTooltip>
@@ -576,7 +593,7 @@ onMounted(async () => {
     </UForm>
   </div>
 
-  <div v-if="timeCorrelationConfigState === 'previewing'" class="pr-5 pt-5">
+  <div v-if="timeCorrelationConfigState === 'previewing'" class="pr-5 pt-5" data-testid="new-correlation-preview-container">
     <div>
       <p class="text-xl font-bold text-center text-primary">New Correlation Preview</p>
       <div class="mt-5">
@@ -587,7 +604,7 @@ onMounted(async () => {
         <TimeCorrTargetDisplay :correlation="correlationPreviewResults.correlation"/>
       </div>
       <USeparator class="mt-8 mb-8"/>
-      <div class="mt-2 mb-2">
+      <div class="mt-2 mb-2" data-testid="new-correlation-record-preview-container">
         <UIcon name="i-lucide-list" class="size-3"/>
         <span class="text-sm font-bold">
           New correlation records
@@ -612,7 +629,7 @@ onMounted(async () => {
         </UTooltip>
 
         <UTooltip text="Commit the correlation, producing all related output products">
-          <UButton @click="commitCorrelation" class="float-right" loading-auto>
+          <UButton @click="commitCorrelation" class="float-right" loading-auto data-testid="commit-new-correlation">
             Commit
           </UButton>
         </UTooltip>

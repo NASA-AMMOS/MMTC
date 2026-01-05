@@ -119,6 +119,7 @@ async function refresh() {
     :pagination-options="{
         getPaginationRowModel: getPaginationRowModel()
       }"
+    data-testid="run-history-table"
   >
     <template #expanded="{ row }">
         <pre class="max-w-full whitespace-pre-wrap break-words">{{ row.original }}</pre>
@@ -127,7 +128,7 @@ async function refresh() {
         <UModal :dismissable="!rollbackInProgress">
 
           <UTooltip text="Roll back to this state">
-            <UButton size="xs" icon="i-lucide-arrow-big-left-dash" v-if="row.original['Run ID'] != currentRunId"/>
+            <UButton size="xs" icon="i-lucide-arrow-big-left-dash" v-if="row.original['Run ID'] != currentRunId" :data-testid="`invoke-rollback-button-${row.original['Run ID']}`"/>
           </UTooltip>
           <!-- @click="confirmRollback(row.original)" -->
           <template #header>
@@ -164,6 +165,7 @@ async function refresh() {
               :loading="rollbackInProgress"
               :disabled="rollbackInProgress"
               @click="performRollback(row.original['Run ID'], close);"
+              data-testid="confirm-rollback-button"
             >
               Proceed
             </UButton>

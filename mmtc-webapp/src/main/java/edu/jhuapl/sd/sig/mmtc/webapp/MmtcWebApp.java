@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.webapp;
 
+import edu.jhuapl.sd.sig.mmtc.app.BuildInfo;
 import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.webapp.auth.AuthorizationService;
@@ -35,13 +36,15 @@ public class MmtcWebApp {
     }
 
     public MmtcWebApp() throws Exception {
+        BuildInfo.log(logger);
+
         this.config = new MmtcWebAppConfig();
+        this.config.acquireLockFile();
 
         new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
 
         TimeConvert.loadSpiceLib();
 
-        // todo disconnect tlm source on shutdown
         this.config.getTelemetrySource().connect();
 
         javalinApp = Javalin.create(javalinConfig -> {
@@ -79,6 +82,9 @@ public class MmtcWebApp {
 
         javalinApp.before(ctx -> {
             authService.ensureAuthorized(ctx);
+            if (System.getenv().containsKey("MMTC_WEB_LOG_ALL_REQUESTS")) {
+                logger.debug(ctx.url());
+            }
         });
         logger.info("Auth service: " + authService.getClass().getSimpleName());
 
@@ -106,12 +112,25 @@ public class MmtcWebApp {
 
             ctx.result(errorMessage);
         });
+
+        Runtime.getRuntime().addShutdownHook(new Thread(javalinApp::stop));
+
+        javalinApp.events(event -> {
+            event.serverStopping(() -> {
+                try {
+                    this.config.getTelemetrySource().disconnect();
+                } finally {
+                    this.config.releaseLockFile();
+                }
+            });
+        });
     }
 
     private SslContextFactory.Server getSslContextFactory() {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-        sslContextFactory.setKeyStorePath(config.getString("webapp.tls.keystore.location"));
-        sslContextFactory.setKeyStorePassword("webapp.tls.keystore.password");
+        sslContextFactory.setKeyStorePath(config.getTlsKeystoreLocation());
+        sslContextFactory.setKeyStorePassword(config.getTlsKeystorePassword());
+        sslContextFactory.setKeyStoreType("PKCS12");
         return sslContextFactory;
     }
 
