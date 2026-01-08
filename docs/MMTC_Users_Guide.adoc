@@ -435,7 +435,7 @@ After installing the RPM, perform the following steps as needed:
 
 After upgrading an MMTC installation, run `bin/mmtc migrate` in order to migrate output product structures forward to their new versions, where applicable.  A backup archive in ZIP format will be created, should the prior state of the files be needed.
 
-MMTC can then be invoked from the command line. Change the working directory to the MMTC installation directory (`/opt/local/mmtc` by default), and then run:
+MMTC can then be used as desired.  To create a new correlation from the command line, change the working directory to the MMTC installation directory (`/opt/local/mmtc` by default), and then run:
 
 [source, bash]
 ----
@@ -462,7 +462,9 @@ with the correct path to log4j2.properties.
 * The log folder can be located anywhere; simply modify the log4j2.properties file’s *property.basedir* property to specify the path to the folder.
 * There is no requirement for all output products to be written to the same output folder. Simply ensure that the various output path properties in TimeCorrelationConfigProperties.xml point to the desired output paths.
 
-MMTC can then be invoked from the command line. Change the working directory to where the archive file was extracted, and then run:
+After upgrading an MMTC installation, run `bin/mmtc migrate` in order to migrate output product structures forward to their new versions, where applicable.  A backup archive in ZIP format will be created, should the prior state of the files be needed.
+
+MMTC can then be used as desired.  To create a new correlation from the command line, change the working directory to the MMTC installation directory (`/opt/local/mmtc` by default), and then run:
 
 [source, bash]
 ----
@@ -506,7 +508,7 @@ In order to run MMTC after it has been built, set up the runtime environment:
 
 [.red]#Please note that MMTC cannot interpolate environment variables within  TimeCorrelationConfigProperties.xml.#
 
-Once the environment has been configured, MMTC can be invoked from the command line.  Change the working directory to `./build/mmtc-dist-tmp`, and run the following:
+Once the environment has been configured, MMTC can be used as desired.  To create a new correlation from the command line, change the working directory to the MMTC installation directory (`/opt/local/mmtc` by default), and then run:
 
 [source, bash]
 ----
@@ -574,11 +576,11 @@ The code block above gives the MMTC start-up Bash script. If possible, missions 
 
 == Running MMTC
 
-MMTC is invoked by running the startup script described in <<Invoking MMTC>>. There is no GUI; MMTC is operated by its command-line interface only.
+MMTC is invoked by running the startup script described in <<Invoking MMTC>>.  MMTC can be operated by its command-line interface or its GUI.
 
-=== Arguments and options
+=== CLI Arguments and options
 
-MMTC takes two required arguments, a start time and a stop time in Earth Received Time (ERT) for the data to query from its telemetry source. These are calendar string values in UTC and in ISO of the format:
+MMTC's default operation creates a new correlation.  It requires at least two arguments: a start time and a stop time in Earth Received Time (ERT) for the data to query from its telemetry source. These are calendar string values in UTC and in ISO of the format:
 
 _yyyy-mm-ddThh:mm:ss.nnn_
 
@@ -634,8 +636,8 @@ The above example queries all AMPCS sessions for 2 hours and 2 minutes of teleme
 
 *Note*: If you get an error message suggesting that SPICE kernels are missing, it could be due to not all required kernels having been provided, but it could also be due to the spacecraft ephemeris SPK kernel not covering the start and stop times provided to MMTC. If this is the case, MMTC cannot compute the essential one-way light travel time (OWLT) and will fail.
 
-.MMTC Command Line Options
-[[table4, Table 4: MMTC Command Line Options]]
+.MMTC Correlation Command Line Options
+[[table4, Table 4: MMTC Correlation Command Line Options]]
 [%autowidth]
 |===
 |Short Option |Long Option |Value(s) |Description
@@ -699,7 +701,7 @@ remain unappended. Otherwise runs MMTC normally according to other options and c
 |-h
 |--help
 |N/A
-|Prints out a short summary of the command line usage and these options. If this option is specified, the MMTC will not perform time correlation.
+|Prints out a short summary of the command line usage, including these options. If this option is specified, the MMTC will not perform time correlation.
 
 |-v
 |--version
@@ -2136,7 +2138,7 @@ This web application is currently intended for use by a single user at a time, t
 
 === Configuring the MMTC web application
 
-The MMTC web application reads the same TimeCorrelationConfigProperties.xml file as the rest of the MMTC codebase, though it includes a few additional keys:
+The MMTC web application reads the same TimeCorrelationConfigProperties.xml file as the rest of the MMTC codebase, though it uses a few additional keys:
 
 .MMTC Web Application Configuration Parameters
 [[table8, Table 8: Configuration Parameters]]
@@ -2663,6 +2665,9 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 
 | GNC
 | Guidance, Navigation, and Control
+
+| GUI
+| Graphical User Interface
 
 | I&T
 | Integration and Test
