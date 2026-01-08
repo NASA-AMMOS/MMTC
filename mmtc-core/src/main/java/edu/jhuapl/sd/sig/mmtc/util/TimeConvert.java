@@ -1263,7 +1263,7 @@ public class TimeConvert {
                 config.getTkSclkFineTickModulus()
         );
 
-        // expected SCET is the value TDT(G) value as converted using the SCLK kernel
+        // estimated SCET is the FrameSample's TDT(G) value as converted using the SCLK kernel
         double estimatedEtUsingSclkKernel  = CSPICE.sct2e(config.getNaifSpacecraftId(), tcTarget.getTargetSampleEncSclk());
         double estimatedTdtUsingSclkkernel = CSPICE.unitim(estimatedEtUsingSclkKernel, "ET", "TDT");
         final OffsetDateTime estimatedScet = tdtToUtc(estimatedTdtUsingSclkkernel, 9);
@@ -1271,7 +1271,7 @@ public class TimeConvert {
         // actual SCET is the actual TDT_G, in SCET terms, that was read on the ground
         final OffsetDateTime actualScet = tdtToUtc(tcTarget.getTargetSampleTdtG(), 9);
 
-        // for our estimated - actual calculation, we want the error term to be negative if the estimated value is larger (later) than the actual value, which would correspond to a 'negative' result from ChronoUnit.between, so invert the sign
+        // for our estimated - actual calculation, we want the error term to be positive if the estimated value is larger (later) than the actual value, which would correspond to a 'negative' result from ChronoUnit.between, so invert the sign
         return new FrameSampleMetrics(
                 tcTarget.getTargetSampleTdtG(),
                 actualScet,
