@@ -576,7 +576,7 @@ The code block above gives the MMTC start-up Bash script. If possible, missions 
 
 == Running MMTC
 
-MMTC is invoked by running the startup script described in <<Invoking MMTC>>.  MMTC can be operated by its command-line interface or its GUI.
+The MMTC CLI is invoked by running the startup script described in <<Invoking MMTC>>.  MMTC can also be operated via its GUI (see <<Web application & graphical user interface>>).
 
 === CLI Arguments and options
 
