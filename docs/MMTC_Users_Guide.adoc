@@ -261,7 +261,7 @@ the /output/ directory of the demo installation.
 With the MMTC demo directory set as the working directory, MMTC can be invoked with +
 `bin/mmtc 2017-342T00:00:00 2017-342T23:59:59 -F` +
 or any other combination of valid command line arguments as documented in
-<<Arguments and options>>.
+<<CLI Arguments and Options>>.
 
 === Demo Output Products
 With the above invocation, MMTC should create five total files: An SCLK kernel
@@ -362,7 +362,7 @@ with a new interpolated one. This method has been shown to provide a slightly mo
 This value is also written to the Time History File. Since MMTC creates the SCLK/SCET file from
 the SCLK kernel, the SCLK/SCET file will contain the same interpolated values for all but the very last time correlation,
 but rounded to one less digit of precision. *This is the recommended method of computing the clock change rate and is the
-default if no alternate clock change rate mode is specified with command line arguments* (see <<Arguments and options>>.
+default if no alternate clock change rate mode is specified with command line arguments* (see <<CLI Arguments and Options>>.
 
 [.underline]#*Assign Clock Change Rate*# +
 MMTC allows the user to assign the value for the clock change rate that will be written to the SCLK kernel and SCLK/SCET
@@ -578,7 +578,7 @@ The code block above gives the MMTC start-up Bash script. If possible, missions 
 
 The MMTC CLI is invoked by running the startup script described in <<Invoking MMTC>>.  MMTC can also be operated via its GUI (see <<Web application & graphical user interface>>).
 
-=== CLI Arguments and options
+=== CLI Arguments and Options
 
 MMTC's default operation creates a new correlation.  It requires at least two arguments: a start time and a stop time in Earth Received Time (ERT) for the data to query from its telemetry source. These are calendar string values in UTC and in ISO of the format:
 
