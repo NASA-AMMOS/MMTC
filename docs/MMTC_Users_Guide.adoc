@@ -1,8 +1,8 @@
 = Multi-Mission Time Correlation User's Guide
 :authors: Robert Seng <robert.seng@jhuapl.edu>, John Lage <john.lage@jhuapl.edu>
-:revdate: January 8, 2026
-:revnumber: 1.6.0
-:revremark: Rev G
+:revdate: October 22, 2026
+:revnumber: 1.7.0
+:revremark: Rev H
 :imagesdir: ./images/
 :toc: macro
 :toc-title:
@@ -94,6 +94,11 @@ Added information on new feature to choose sample set building strategy.
 |Jan 8, 2026
 |Multiple
 |Updates for enhancements to MMTC for 1.6.0, including the new UI.
+
+|Rev H for Rel 1.7.0.
+|Oct 22, 2026
+|Multiple
+|TBD
 |===
 
 
