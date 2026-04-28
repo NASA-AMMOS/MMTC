@@ -28,7 +28,8 @@ public class BuiltInOutputProductMigrationManager {
 
     private static final List<String> MIGRATEABLE_MMTC_VERSIONS = Arrays.asList(
             "1.5.1",
-            "1.6.0"
+            "1.6.0",
+            "1.7.0"
     );
 
     private final MmtcConfig config;
@@ -46,6 +47,7 @@ public class BuiltInOutputProductMigrationManager {
         this.migrations = new HashMap<>();
         this.migrations.put("1.5.1", () -> null);
         this.migrations.put("1.6.0", this::migrateToMmtc1_6_0);
+        this.migrations.put("1.7.0", this::migrateToMmtc1_7_0);
     }
 
     public String getVersionOfExistingProducts() throws MmtcException {
@@ -86,6 +88,7 @@ public class BuiltInOutputProductMigrationManager {
     }
 
     public void migrate() throws MmtcException, IOException {
+        logger.info("Beginning built-in output product migration.");
         String versionOfExistingProducts = getVersionOfExistingProducts();
 
         if (versionOfExistingProducts.equals(this.currentMmtcAndProductVersion)) {
@@ -112,6 +115,7 @@ public class BuiltInOutputProductMigrationManager {
 
         for (String v : versionsToMigrateTo) {
             try {
+                logger.info(String.format("Migrating built-in products to %s", v));
                 migrations.get(v).call();
             } catch (Exception e) {
                 // give advice on restoring from backup
@@ -209,6 +213,26 @@ public class BuiltInOutputProductMigrationManager {
         rhf.updateLastRowWithColVal("Built-In Output Product Version", "1.6.0");
         rhf.write();
         logger.info(USER_NOTICE, mmtc160MigrationLogPrefix + "migrated Run History File at " + config.getRunHistoryFilePath());
+
+        return null;
+    }
+
+    /**
+     * Migrates MMTC output products from 1.6.0 to 1.7.0.
+     *
+     * @return null
+     * @throws MmtcException
+     */
+    private Void migrateToMmtc1_7_0() throws MmtcException {
+        final String mmtc170MigrationLogPrefix = "MMTC 1.7.0 migration: ";
+
+        // No actual migrations yet
+
+        // Update the RHF's latest entry with the RHF to indicate a migration has occurred to this version
+        final GenericCsv rhf = new GenericCsv(config.getRunHistoryFilePath());
+        rhf.updateLastRowWithColVal("Built-In Output Product Version", "1.7.0");
+        rhf.write();
+        logger.info(USER_NOTICE, mmtc170MigrationLogPrefix + "migrated Run History File at " + config.getRunHistoryFilePath());
 
         return null;
     }
