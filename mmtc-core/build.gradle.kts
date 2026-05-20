@@ -165,6 +165,16 @@ tasks.build {
     dependsOn(uberJar)
 }
 
+tasks.jar {
+    manifest {
+        attributes(
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version,
+            "Multi-Release" to "true"
+        )
+    }
+}
+
 publishing {
     publications {
         create<MavenPublication>("mmtc-core") {
