@@ -8,7 +8,6 @@ rootProject.name = "mmtc"
 include(":mmtc-core")
 include(":mmtc-output-plugin-sdk")
 include(":mmtc-plugin-ampcs")
-include(":mmtc-output-plugin-sdk")
 include(":mmtc-tlm-source-plugin-sdk")
 include(":mmtc-webapp")
 include(":mmtc-webapp-ui")
@@ -17,27 +16,52 @@ include(":jnispice")
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
-            library("commons-csv", "org.apache.commons:commons-csv:1.14.0")
-            library("commons-lang3", "org.apache.commons:commons-lang3:3.18.0")
-            library("commons-cli", "commons-cli:commons-cli:1.9.0")
-            library("commons-io", "commons-io:commons-io:2.19.0")
+            // comments in this block indicate reasons as to why certain dependencies are not at their latest
 
-            library("log4j-api", "org.apache.logging.log4j:log4j-api:2.25.1")
-            library("log4j-core", "org.apache.logging.log4j:log4j-core:2.25.1")
-            library("log4j-jcl", "org.apache.logging.log4j:log4j-jcl:2.25.1")
-            library("log4j-slf4j", "org.apache.logging.log4j:log4j-slf4j2-impl:2.25.1")
+            library("commons-csv", "org.apache.commons:commons-csv:1.14.1")
+            library("commons-lang3", "org.apache.commons:commons-lang3:3.20.0")
+            library("commons-cli", "commons-cli:commons-cli:1.11.0")
+            library("commons-io", "commons-io:commons-io:2.22.0")
+            library("commons-beanutils", "commons-beanutils:commons-beanutils:1.11.0")
+            library("commons-configuration", "org.apache.commons:commons-configuration2:2.15.0")
 
-            // provides javax.xml.bind classes
+            library("google-guava", "com.google.guava:guava:33.6.0-jre")
+
+            library("log4j-api", "org.apache.logging.log4j:log4j-api:2.26.0")
+            library("log4j-core", "org.apache.logging.log4j:log4j-core:2.26.0")
+            library("log4j-jcl", "org.apache.logging.log4j:log4j-jcl:2.26.0")
+            library("log4j-slf4j", "org.apache.logging.log4j:log4j-slf4j2-impl:2.26.0")
+
+            // these provide javax.xml.bind classes
+            // version 3 is the last to support Java 8
             library("jakarta-xml", "jakarta.xml.bind:jakarta.xml.bind-api:3.0.1")
             library("jaxb-impl", "com.sun.xml.bind:jaxb-impl:3.0.1")
+
+            // this is the last JDBI version to support Java 8
+            library("jdbi3-core", "org.jdbi:jdbi3-core:3.39.1")
+            library("jdbi3-sqlite", "org.jdbi:jdbi3-sqlite:3.39.1")
+
+            // todo update javalin from v6 to v7
+            library("javalin-javalin", "io.javalin:javalin:6.7.0")
+
+            // Javalin only supports jackson 2.x currently
+            library("jackson-databind", "com.fasterxml.jackson.core:jackson-databind:2.21.3")
+
+            // sqlite follows semantic versioning; any 3.x release should maintain backward compatibility
+            // todo still, write a regression test that uses cached data from MMTC 1.6.0
+            library("sqlite-jdbc", "org.xerial:sqlite-jdbc:3.53.1.0")
         }
 
         create("testlibs") {
-            library("junit-jupiter-api", "org.junit.jupiter:junit-jupiter-api:5.13.4")
-            library("junit-jupiter-params", "org.junit.jupiter:junit-jupiter-params:5.13.4")
-            library("junit-jupiter-engine", "org.junit.jupiter:junit-jupiter-engine:5.13.4")
-            library("junit-platform-launcher", "org.junit.platform:junit-platform-launcher:1.13.4")
-            library("mockito-inline", "org.mockito:mockito-inline:4.11.0")
+            // staying with major version 5 for junit-jupiter to maintain similarity with end-to-end-tests
+            library("junit-jupiter-api", "org.junit.jupiter:junit-jupiter-api:5.14.4")
+            library("junit-jupiter-params", "org.junit.jupiter:junit-jupiter-params:5.14.4")
+            library("junit-jupiter-engine", "org.junit.jupiter:junit-jupiter-engine:5.14.4")
+
+            // junit platform launcher v1 works with JUnit 5; newer versions require Java 17+
+            library("junit-platform-launcher", "org.junit.platform:junit-platform-launcher:1.14.4")
+
+            library("mockito-core", "org.mockito:mockito-core:5.23.0")
         }
     }
 }

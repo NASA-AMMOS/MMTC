@@ -21,8 +21,8 @@ dependencies {
     )))
 
     implementation(project(":mmtc-core"))
-    implementation("io.javalin:javalin:6.7.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
+    implementation(libs.javalin.javalin)
+    implementation(libs.jackson.databind)
     implementation(libs.log4j.slf4j)
     implementation(libs.log4j.api)
     implementation(libs.log4j.core)

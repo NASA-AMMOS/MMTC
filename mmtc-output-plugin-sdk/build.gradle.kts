@@ -17,7 +17,7 @@ dependencies {
     testImplementation(testlibs.junit.jupiter.params)
     testImplementation(testlibs.junit.jupiter.engine)
     testRuntimeOnly(testlibs.junit.platform.launcher)
-    testImplementation(testlibs.mockito.inline)
+    testImplementation(testlibs.mockito.core)
 }
 
 description = "mmtc-output-plugin-example"
