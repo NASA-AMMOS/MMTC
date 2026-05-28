@@ -29,14 +29,14 @@ dependencies {
     implementation(libs.jakarta.xml)
     implementation(libs.jaxb.impl)
 
-    implementation("commons-beanutils:commons-beanutils:1.11.0")
-    implementation("org.apache.commons:commons-configuration2:2.12.0")
-    implementation("com.google.guava:guava:33.4.8-jre")
+    implementation(libs.commons.beanutils)
+    implementation(libs.commons.configuration)
+    implementation(libs.google.guava)
 
-    implementation("org.jdbi:jdbi3-core:3.39.1")
-    implementation("org.jdbi:jdbi3-sqlite:3.39.1")
+    implementation(libs.jdbi3.core)
+    implementation(libs.jdbi3.sqlite)
     implementation(libs.log4j.slf4j) // jdbi3-core uses slf4j-api, and we need to provide it a logging implementation
-    implementation("org.xerial:sqlite-jdbc:3.50.3.0")
+    implementation(libs.sqlite.jdbc)
 
     implementation(libs.commons.cli)
     implementation(libs.commons.csv)
@@ -54,7 +54,7 @@ dependencies {
     testImplementation(testlibs.junit.jupiter.params)
     testImplementation(testlibs.junit.jupiter.engine)
     testRuntimeOnly(testlibs.junit.platform.launcher)
-    testImplementation(testlibs.mockito.inline)
+    testImplementation(testlibs.mockito.core)
 }
 
 description = "mmtc-core"
@@ -163,6 +163,16 @@ tasks.processResources {
 
 tasks.build {
     dependsOn(uberJar)
+}
+
+tasks.jar {
+    manifest {
+        attributes(
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version,
+            "Multi-Release" to "true"
+        )
+    }
 }
 
 publishing {
