@@ -53,7 +53,6 @@ public class MmtcConfig {
     public static final List<ClockChangeRateMode> CLOCK_CHANGE_RATE_ASSIGN_MODES = Arrays.asList(ClockChangeRateMode.ASSIGN, ClockChangeRateMode.ASSIGN_KEY);
     public static final ClockChangeRateMode DEFAULT_CLOCK_CHANGE_RATE_MODE = ClockChangeRateMode.COMPUTE_INTERPOLATE;
 
-    private static final String LOCKFILE_COOKIE = "mmtc-" + UUID.randomUUID().toString();
 
     protected final Path mmtcHome;
     protected final TimeCorrelationConfig timeCorrelationConfig;
@@ -997,18 +996,43 @@ public class MmtcConfig {
         }
     }
 
+    /**
+     * Tries to create a lockfile with a fingerprint of the current process's PID
+     * @throws MmtcException when the file already exists, can't be created, or can't be read
+     */
     // todo upgrade this to use Linux's file locking facilities to provide an actual guarantee
     public synchronized void acquireLockFile() throws MmtcException {
         final Path lockFile = getLockFileLocation();
+        final String myPid = String.valueOf(ProcessHandle.current().pid());
 
         if (Files.exists(lockFile)) {
-            String errorMessage = "Lock file already exists. Is another copy of MMTC running?";
-            logger.fatal(errorMessage);
-            throw new MmtcException(errorMessage);
+            try {
+                String lockPid = Files.readAllLines(lockFile).get(0).trim();
+                long pid = Long.parseLong(lockPid);
+
+                // Check if PID in existing lockfile is active. If so, another instance is probably running.
+                // If not, likely left by a stale instance that didn't exit correctly
+                if (ProcessHandle.of(pid).isPresent()) {
+                    String errorMessage = "Lock file already exists. Is another copy of MMTC running?";
+                    logger.fatal(errorMessage);
+                    throw new MmtcException(errorMessage);
+                }
+
+                logger.warn("Stale lock file found (PID {} is not running). Removing.", pid);
+                Files.delete(lockFile);
+            } catch (NumberFormatException | IOException e) {
+                // only warns instead of throws because a corrupted lockfile likely means the original creator isn't still alive
+                logger.warn("Lock file exists but could not be read. Removing.", e);
+                try {
+                    Files.delete(lockFile);
+                } catch (IOException ex) {
+                    throw new MmtcException(ex);
+                }
+            }
         }
 
         try {
-            Files.write(lockFile, LOCKFILE_COOKIE.getBytes(StandardCharsets.UTF_8));
+            Files.write(lockFile, myPid.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new MmtcException(e);
         }
@@ -1018,22 +1042,24 @@ public class MmtcConfig {
 
     public synchronized void releaseLockFile() throws MmtcException {
         final Path lockFile = getLockFileLocation();
+        final String myPid = String.valueOf(ProcessHandle.current().pid());
 
-        if (! Files.exists(lockFile)) {
-            throw new MmtcException("Attempt to release non-existent lockfile");
+        if (!Files.exists(lockFile)) {
+            logger.warn("Lock file already absent on release, likely cleaned up by shutdown hook.");
+            return;
         }
 
         try {
-            if (! Files.readAllLines(lockFile).get(0).equals(LOCKFILE_COOKIE)) {
-                throw new MmtcException("Attempt to release a lockfile with a mismatching cookie");
+            String lockPid = Files.readAllLines(lockFile).get(0).trim();
+            if (!lockPid.equals(myPid)) {
+                logger.warn("Lock file PID {} does not match that of the current process ({}), leaving it alone.", lockPid, myPid);
+                return;
             }
-
             Files.delete(lockFile);
+            logger.info(String.format("Released lockfile at %s.", lockFile.toAbsolutePath()));
         } catch (IOException e) {
             throw new MmtcException(e);
         }
-
-        logger.info(String.format("Released lockfile at %s.", lockFile.toAbsolutePath()));
     }
 
     /**
