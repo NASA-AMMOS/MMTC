@@ -998,7 +998,7 @@ public class MmtcConfig {
 
     /**
      * Tries to create a lockfile with a fingerprint of the current process's PID
-     * @throws MmtcException when the file already exists, can't be created, or can't be read
+     * @throws MmtcException when the file already exists, can't be created, or a stale file can't be deleted
      */
     // todo upgrade this to use Linux's file locking facilities to provide an actual guarantee
     public synchronized void acquireLockFile() throws MmtcException {
