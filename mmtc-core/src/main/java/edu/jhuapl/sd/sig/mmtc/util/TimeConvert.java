@@ -189,13 +189,13 @@ public class TimeConvert {
      * Loads a single SPICE kernel.
      *
      * @param path the kernel to load
-     * @throws TimeConvertException if the kernel could not be loaded
+     * @throws MmtcException if the kernel could not be loaded
      */
-    public static void loadSpiceKernel(String path) throws TimeConvertException {
+    public static void loadSpiceKernel(String path) throws MmtcException {
         try {
             KernelDatabase.load(path);
         } catch (SpiceErrorException e) {
-            throw new TimeConvertException("Unable to load SPICE kernel: " + path + " : " + e.getMessage(), e);
+            throw new MmtcException("Unable to load SPICE kernel: " + path + " : " + e.getMessage(), e);
         }
     }
 
@@ -624,7 +624,6 @@ public class TimeConvert {
             double et = CSPICE.unitim(tdt, "TDT", "ET");
             String subsecStr = String.join("", Collections.nCopies(subsecPrecision, "#"));
             tdtStr = CSPICE.timout(et, String.format("DD-MON-YYYY-HR:MN:SC.%s  ::TDT ::RND", subsecStr));
-
         } catch (SpiceErrorException e) {
             throw new TimeConvertException("Error converting a TDT to a TDT string:  " + e.getMessage(), e);
         }

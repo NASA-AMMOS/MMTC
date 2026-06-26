@@ -92,12 +92,7 @@ public class ContactFilter {
 
             // The TDT(G) read from the SCLK Kernel contains a leading '@' character that SPICE cannot parse. If this
             // character is there, remove it.
-            String tdt_g0_previous;
-            if (!Character.isDigit(tdt_g0_p_str.charAt(0))) {
-                tdt_g0_previous = tdt_g0_p_str.substring(1, tdt_g0_p_str.length() - 1);
-            } else {
-                tdt_g0_previous = tdt_g0_p_str;
-            }
+            String tdt_g0_previous = tdt_g0_p_str;
 
             Double priorEncSclk = Double.parseDouble(encsclk_p);
             int naifScId = config.getNaifSpacecraftId();

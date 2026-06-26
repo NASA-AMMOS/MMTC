@@ -5,10 +5,14 @@ import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
-import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,17 +35,6 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         );
     }
 
-    /**
-     * Writes a new SCLK Kernel
-     * @param ctx the current time correlation context from which to pull information for the output product
-     *
-     * @throws MmtcException if the SCLK Kernel cannot be written
-     */
-    @Override
-    public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
-        return SclkKernel.writeNewProductFromDef(ctx);
-    }
-
     @Override
     public boolean isConfigured(MmtcConfig config) {
         return true;
@@ -53,6 +46,27 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     }
 
     /**
+     * Writes a new SCLK Kernel
+     * @param ctx the current time correlation context from which to pull information for the output product
+     *
+     * @throws MmtcException if the SCLK Kernel cannot be written
+     */
+    @Override
+    public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
+        final Path outputPath = ctx.config.getSclkKernelOutputDir().resolve(
+                ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + SclkKernel.FILE_SUFFIX
+        );
+        ctx.newSclkKernelPath.set(outputPath);
+
+        return SclkKernel.writeNewProduct(ctx, ctx.newSclkKernelPath.get());
+    }
+
+    public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx, Path sclkKernelOutputPath) throws MmtcException {
+        ctx.newSclkKernelPath.set(sclkKernelOutputPath);
+        return SclkKernel.writeNewProduct(ctx, sclkKernelOutputPath);
+    }
+
+    /**
      * This implementation is distinct from that of other output products in that it does still write the SCLK kernel to
      * disk. The only difference is that it's written to the /tmp directory and its latest two lines are recorded here.
      * @param ctx The active run's TimeCorrelationContext
@@ -61,16 +75,29 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
      */
     @Override
     public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
-        SclkKernel.writeNewProductFromDef(ctx);
+        // write product to tmp directory even though it's a dry run, because it has to be loaded for SCLK-SCET file creation
+        writeNewProduct(
+                ctx,
+                Paths.get("/tmp").resolve(
+                        ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + SclkKernel.FILE_SUFFIX
+                )
+        );
 
-        String[] newSclkEntries = ctx.newSclkKernel.get().getLastXRecords(2);
+        List<CorrelationTriplet> newSclkEntries = ctx.newSclkKernel.get().getTriplets().subList(ctx.newSclkKernel.get().getTriplets().size() - 2, ctx.newSclkKernel.get().getTriplets().size());
+
         // If an interpolated clock change rate has replaced the rate in the existing SCLK kernel record,
         // or if a smoothing record was inserted, print the two latest records.
         // Otherwise, just return the new record
-        if (ctx.newSclkKernel.get().hasNewClkChgRateSet() || ctx.newSclkKernel.get().hasSmoothingRecordSet()) {
-            return String.format("[DRY RUN] Updated SCLK entries: \n" + newSclkEntries[0] + "\n" + newSclkEntries[1]);
-        } else {
-            return String.format("[DRY RUN] New SCLK entry: \n" + newSclkEntries[1]);
+        try {
+            if (ctx.correlation.updatedInterpolatedTriplet.isSet() || ctx.correlation.newSmoothingTriplet.isSet()) {
+                return "[DRY RUN] Updated SCLK entries: \n"
+                        + newSclkEntries.get(0).format(ctx.newSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat()) + "\n"
+                        + newSclkEntries.get(1).format(ctx.newSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat());
+            } else {
+                return "[DRY RUN] New SCLK entry: \n" + newSclkEntries.get(1).format(ctx.newSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat());
+            }
+        } catch (TimeConvertException e) {
+            throw new MmtcException(e);
         }
     }
 
@@ -84,9 +111,5 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     @Override
     public String getDisplayName() {
         return "SCLK Kernel";
-    }
-
-    public ProductWriteResult writeToAlternatePath(TimeCorrelationContext ctx, Path sclkKernelOutputPath) throws MmtcException {
-        return SclkKernel.writeNewProduct(ctx, sclkKernelOutputPath);
     }
 }

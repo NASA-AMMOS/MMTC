@@ -2161,6 +2161,11 @@ The MMTC web application reads the same TimeCorrelationConfigProperties.xml file
 |===
 |Name |Required |Type |Description
 
+|webapp.leapSecondsKernelPath
+|REQUIRED
+|STR
+|The web application requires a leap second kernel for operation.  Please specify the path to a leapsecond kernel (LSK) in this configuration entry.
+
 |webapp.auth.mode
 |REQUIRED
 |STR

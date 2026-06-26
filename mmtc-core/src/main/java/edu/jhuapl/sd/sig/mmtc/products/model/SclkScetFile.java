@@ -5,6 +5,7 @@ import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
@@ -159,26 +160,7 @@ public class SclkScetFile extends TextProduct {
      * @throws TextProductException if the product cannot be created
      */
     public void createNewProduct(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException {
-
         productCreationTime = getProductDateTimeIsoUtc();
-
-        if (!sourceProductReadIn) {
-            throw new TextProductException("Source product not read-in.");
-        }
-
-        /* Find the last data (quadruplet) record in the SCLK/SCET data. A data record should contain
-         * 4 fields and the second (index 1) field should contain a "T" character as part
-         * of the ISO time string format.
-         */
-        endDataNum = lastDataRecNum(sourceProductLines);
-
-        if (endDataNum < 3) {
-            throw new TextProductException("Cannot find last data record. Invalid SCLK/SCET data loaded.");
-        }
-
-        if (sourceProductLines.size() < 1) {
-            throw new TextProductException("Valid source SCLK/SCET file data have not been loaded.");
-        }
 
         /*
          * Create the new data product either from an SCLK kernel or from an existing SCLK/SCET file.
@@ -188,7 +170,7 @@ public class SclkScetFile extends TextProduct {
         /* ******************************************************
          * Create the new product from an SCLK kernel.
          */
-        List<SclkScet> sclkScetRecs = convertSclkKernelDataToScetData();
+        List<SclkScet> sclkScetRecs = convertSclkKernelDataToSclkScetEntries();
 
         /* Get the data start time and create the file header block. */
         OffsetDateTime startTime  = sclkScetRecs.get(0).getScet();
@@ -320,58 +302,37 @@ public class SclkScetFile extends TextProduct {
      * @return the entirety of the source SCLK kernel data converted to SCLK/SCET records
      * @throws TimeConvertException if a computation could not be performed
      */
-    private List<SclkScet> convertSclkKernelDataToScetData() throws TimeConvertException {
+    private List<SclkScet> convertSclkKernelDataToSclkScetEntries() throws TimeConvertException {
+        List<SclkScet> sclkScetEntries = new ArrayList<>();
 
-        List<SclkScet> scetData = new ArrayList<>();
-
-        Double sclkTicks;
-        OffsetDateTime scetUtc;
-        Double dutval;
-        Double sclkrate;
-
-        /* Extract the individual encSclk, TDT str, and change rate fields from the
-         * SCLK kernel triplet. Convert to the corresponding SCET file fields.
+        /* Convert the encSclk, TDT str, and change rate fields from
+         * SCLK kernel triplets into the corresponding SCLK-SCET file entries.
          */
-        for (int i = 0; i< sourceProductLines.size(); i++) {
-            String sclkKernelRecord = sourceProductLines.get(i).trim();
-            logger.trace("SclkScetFile.List(): sclkKernelRecord = " + sclkKernelRecord);
+        for (CorrelationTriplet triplet : ctx.newSclkKernel.get().getTriplets()) {
+            final Double encSclk = triplet.getEncSclk();
+            final Double sclkTicks = TimeConvert.encSclkToSclk(naifScId, clockTickRate, encSclk);
 
-            if (isDataRecord(sclkKernelRecord)) {
-                String[] fields = sclkKernelRecord.split("\\s+");
+            /* Convert the TDT string to a UTC string. Remove the leading "@"
+             * character if it is there.
+             */
+            final String tdtStr = triplet.getTdtCalStr();
+            final OffsetDateTime scetUtc = TimeConvert.parseIsoDoyUtcStr(TimeConvert.tdtCalStrToUtc(tdtStr, SclkScet.getScetStrSecondsPrecision()));
 
-                /* Convert the encoded SCLK back to regular SCLK ticks. */
-                Double encSclk = Double.parseDouble(fields[0]);
-                sclkTicks = TimeConvert.encSclkToSclk(naifScId, clockTickRate, encSclk);
-                logger.trace("SclkScetFile.List(): str encSclk = " + fields[0] + ", Double encSclk = " + encSclk);
+            /* Compute the Delta Universal TIme (DUT) offset of UTC from TDT. */
+            final Double dutval = getDutBefore(scetUtc);
 
-                /* Convert the TDT string to a UTC string. Remove the leading "@"
-                 * character if it is there.
-                 */
-                String tdtStr;
-                if (fields[1].startsWith("@")) {
-                    tdtStr = fields[1].substring(1, fields[1].length());
-                }
-                else {
-                    tdtStr = fields[1];
-                }
-                scetUtc = TimeConvert.parseIsoDoyUtcStr(TimeConvert.tdtCalStrToUtc(tdtStr, SclkScet.getScetStrSecondsPrecision()));
-                logger.trace("SclkScetFile.List(): tdtStr = " + tdtStr + ", scetUtc = " + scetUtc);
+            /* The SCLK change rate is the same as the SCLK kernel clock change rate. */
+            final Double sclkrate = triplet.getClkChgRate();
 
-                /* Compute the Delta Universal TIme (DUT) offset of UTC from TDT. */
-                dutval = getDutBefore(scetUtc);
-
-                /* The SCLK change rate is the same as the SCLK kernel clock change rate. */
-                sclkrate = Double.parseDouble(fields[2]);
-
-
-                logger.trace("SclkScetFile.List(): sclkTicks = " + sclkTicks + ", scetUtc = " + scetUtc +
-                        ", dutval = " + dutval + ", sclkrate = " + sclkrate);
-                SclkScet scetRec = new SclkScet(sclkToSclkStr(sclkTicks), scetUtc, dutval, sclkrate);
-                scetData.add(scetRec);
-            }
+            sclkScetEntries.add(new SclkScet(
+                    sclkToSclkStr(sclkTicks),
+                    scetUtc,
+                    dutval,
+                    sclkrate
+            ));
         }
 
-        return scetData;
+        return sclkScetEntries;
     }
 
 
@@ -396,30 +357,6 @@ public class SclkScetFile extends TextProduct {
     public static Double getDutAsOf(OffsetDateTime time) throws TimeConvertException {
         return TimeConvert.utcTdtOffset() + TimeConvert.getDeltaEtAsOf(time);
     }
-
-    /**
-     * Determines if the record is an SCLK/SCET time correlation record containing a quadruplet
-     * if an SCLK/SCET file or a triplet if an SCLK kernel, or if its supporting text. Implements
-     * the corresponding abstract method in the parent class. An SCLK/SCET time correlation contains
-     * four fields (SCLK, SCET, DUT, ClockChgRate) separated by whitespace. The SCET UTC string
-     * always contains an ISO "T" character. An SCLK kernel time correlation contains three fields
-     * (enc SCLK, TDT, ClockChgRate) separated by whitespace. The TDT string always has "@" as its
-     * first character.
-     *
-     * @param record IN the record to evaluate
-     * @return true if the record is a time correlation quadruplet, false otherwise
-     */
-    public boolean isDataRecord(String record) {
-        boolean isdata = false;
-        String[] fields = record.trim().split("\\s+");
-
-        if (fields.length == 3) {
-            isdata = fields[1].startsWith("@");
-        }
-
-        return isdata;
-    }
-
 
     /**
      * Creates a set of SCLK/SCET records for each leap second added within the time
@@ -671,20 +608,6 @@ public class SclkScetFile extends TextProduct {
         } catch (TimeConvertException | TextProductException ex) {
             throw new MmtcException("Unable to write SCLK/SCET file", ex);
         }
-    }
-
-
-    /**
-     * Reads the product file and place its contents into the local sourceProduct buffer.
-     * Differs from inherited method in that it doesn't read a source product file and instead
-     * retrieves sourceProductLines from the newSclkKernel in the TimeCorrelationContext.
-     *
-     */
-    @Override
-    public void readSourceProduct() {
-
-        this.sourceProductLines = ctx.newSclkKernel.get().newProductLines;
-        sourceProductReadIn = true;
     }
 
     public void setCtx(TimeCorrelationContext ctx) {

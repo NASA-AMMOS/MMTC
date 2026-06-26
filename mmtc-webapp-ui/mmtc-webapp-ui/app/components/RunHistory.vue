@@ -136,7 +136,7 @@ async function refresh() {
           </template>
           <template #body>
               <p>
-              This operation allows users to revert all of MMTC's output products to their state as they were after a prior time correlation run.<br/><br/>
+              This operation reverts all of MMTC's output products to their state as they were after a prior time correlation run.<br/><br/>
                 You have selected to revert all products to their version as of <strong>{{ row.original['Run ID'] === 'Initial State' ? 'their initial state' : `the completion of run ${row.original['Run ID']}` }}</strong>.<br/><br/>
 
               If you proceed, the following will occur:<br/>

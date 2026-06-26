@@ -3,6 +3,8 @@
 FILENAME = "new-horizons_1000.tsc"
 CREATION_DATE = "22-Jan-2021"
 
+Added a fake third triplet with a clock rate less than one for testing with scientific notation parsing and writing.
+
 Copied and truncated from new-horizons_1600.tsc for testing MMTC
 NEW HORIZONS Spacecraft Clock Kernel (SCLK)
 ===========================================================================
@@ -201,4 +203,5 @@ SCLK_PARTITION_END_98      = ( 7.01906785000000e+12
 SCLK01_COEFFICIENTS_98     = (
                    0     @19-JAN-2006-18:09:05.184000     1.00000000000       
           2766250000     @20-JAN-2006-09:31:12.483494     1.00000000905
+          2796250000     @20-JAN-2006-09:41:12.483494     0.99999999876
 )
