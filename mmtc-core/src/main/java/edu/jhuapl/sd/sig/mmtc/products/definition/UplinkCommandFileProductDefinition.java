@@ -14,8 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Describes the set of SCLK kernel output products that MMTC performs operations on.
- * A single SCLK kernel is modeled by {@link SclkKernel}.
+ * Describes the Uplink Command File products that MMTC writes.
  */
 public class UplinkCommandFileProductDefinition extends EntireFileOutputProductDefinition {
     public UplinkCommandFileProductDefinition() {

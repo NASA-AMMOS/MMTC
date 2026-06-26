@@ -45,6 +45,7 @@ public class MmtcWebApp {
         new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
 
         TimeConvert.loadSpiceLib();
+        TimeConvert.loadSpiceKernel(this.config.getLeapSecondsKernelPath().toString());
 
         this.config.getTelemetrySource().connect();
 

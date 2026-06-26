@@ -10,8 +10,9 @@ import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.EntireFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
-import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -277,13 +278,13 @@ public class TimeCorrelationController extends BaseController {
          String scetUtc
     ) { }
 
-    private TimeCorrelationTriplet convertTriplet(SclkKernel.CorrelationTriplet t) throws TimeConvertException {
+    private TimeCorrelationTriplet convertTriplet(CorrelationTriplet t) throws TimeConvertException {
         return new TimeCorrelationTriplet(
-                Double.toString(t.encSclk),
-                TimeConvert.tdtCalStrToTdt(t.tdtStr),
-                t.tdtStr,
-                Double.toString(t.clkChgRate),
-                TimeConvert.tdtCalStrToUtc(t.tdtStr, 6)
+                Long.toString(t.getEncSclkAsLong()),
+                t.getTdt(),
+                t.getTdtCalStr(),
+                Double.toString(t.getClkChgRate()),
+                TimeConvert.tdtCalStrToUtc(t.getTdtCalStr(), 6)
         );
     }
 
@@ -291,21 +292,18 @@ public class TimeCorrelationController extends BaseController {
         final Path sclkKernelPath = config.getSclkKernelPathFor(sclkKernelFilename);
 
         return config.withSpiceMutexAndKernels(sclkKernelPath, () -> {
-            SclkKernel sclkKernel = new SclkKernel(sclkKernelPath.toAbsolutePath().toString());
-            sclkKernel.readSourceProduct();
-
-            List<String[]> parsedRecords = sclkKernel.getParsedRecords();
+            SclkKernel sclkKernel = SclkKernel.read(sclkKernelPath.toAbsolutePath());
 
             List<TimeCorrelationTriplet> results = new ArrayList<>();
 
-            for (String[] rec : parsedRecords) {
+            for (CorrelationTriplet triplet : sclkKernel.getTriplets()) {
                 results.add(
                         new TimeCorrelationTriplet(
-                                rec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX],
-                                TimeConvert.tdtCalStrToTdt(rec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX]),
-                                rec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX],
-                                rec[SclkKernel.TRIPLET_CLKCHGRATE_FIELD_INDEX],
-                                TimeConvert.tdtCalStrToUtc(rec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX], 6)
+                                Long.toString(triplet.getEncSclkAsLong()),
+                                triplet.getTdt(),
+                                triplet.getTdtCalStr(),
+                                Double.toString(triplet.getClkChgRate()),
+                                TimeConvert.tdtCalStrToUtc(triplet.getTdtCalStr(), 6)
                         )
                 );
             }

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -67,6 +68,8 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
         return getDouble("webapp.testmode.owltSec", 0.0);
     }
 
+    public Path getLeapSecondsKernelPath() { return Paths.get(getString("webapp.leapSecondsKernelPath")); }
+
     public <T> T withSpiceMutex(Callable<T> callable) throws MmtcException {
         synchronized (spiceLoadedKernelMutex) {
             try {
@@ -75,6 +78,7 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
                 throw new MmtcException(e);
             } finally {
                 TimeConvert.unloadSpiceKernels();
+                TimeConvert.loadSpiceKernel(getLeapSecondsKernelPath().toString());
             }
         }
     }
@@ -94,6 +98,7 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
                 throw new MmtcException(e);
             } finally {
                 TimeConvert.unloadSpiceKernels();
+                TimeConvert.loadSpiceKernel(getLeapSecondsKernelPath().toString());
             }
         }
     }

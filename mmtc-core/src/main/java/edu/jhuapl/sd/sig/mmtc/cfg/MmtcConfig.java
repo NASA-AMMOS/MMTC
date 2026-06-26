@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import edu.jhuapl.sd.sig.mmtc.products.definition.*;
-import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.TelemetrySelectionStrategy;
@@ -36,8 +36,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
-import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 /**
  * A class assisting with loading and providing access to values in file-based configuration. These include the
@@ -489,7 +487,9 @@ public class MmtcConfig {
         // the file pattern given in the configuration parameters, unless spice.kernel.sclk.inputPathOverride
         // is set in the configuration parameters. The inputPathOverride parameter overrides the normal
         // previous SCLK kernel search.
-        kernels.put(getInputSclkKernelPath().toString(), "sclk");
+        if (includeSclkKernel) {
+            kernels.put(getInputSclkKernelPath().toString(), "sclk");
+        }
 
         // Leap seconds kernel
         if (timeCorrelationConfig.getConfig().containsKey("spice.kernel.lsk.path")) {

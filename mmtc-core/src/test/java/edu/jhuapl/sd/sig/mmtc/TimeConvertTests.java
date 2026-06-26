@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.util.CdsTimeCode;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
@@ -235,7 +236,7 @@ public class TimeConvertTests {
     }
     @Test
     @DisplayName("cdsToEt Test 1")
-    void cdsToEt_test1() throws TimeConvertException {
+    void cdsToEt_test1() throws TimeConvertException, MmtcException {
         /*
          * Equivalent UTC string time is 2017-353T11:31:13.294197
          * ET value obtained from NAIF tool:
@@ -591,7 +592,7 @@ public class TimeConvertTests {
     }
 
     @Test
-    void leapSeconds_Test1() throws TimeConvertException {
+    void leapSeconds_Test1() throws TimeConvertException, MmtcException {
         TimeConvert.loadSpiceKernel("src/test/resources/nh_kernels/lsk/naif0012.tls");
 
         List<TimeConvert.LeapSecond> leapSeconds = TimeConvert.parseLeapSeconds();
@@ -612,7 +613,7 @@ public class TimeConvertTests {
     }
 
     @Test
-    void leapSeconds_Test2() throws TimeConvertException {
+    void leapSeconds_Test2() throws TimeConvertException, MmtcException {
         TimeConvert.loadSpiceKernel("src/test/resources/naif0013-neg.tls");
 
         List<TimeConvert.LeapSecond> leapSeconds = TimeConvert.parseLeapSeconds();
