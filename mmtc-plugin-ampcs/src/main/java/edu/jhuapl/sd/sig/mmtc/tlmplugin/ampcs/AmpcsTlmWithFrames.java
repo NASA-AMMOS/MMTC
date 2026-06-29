@@ -135,9 +135,7 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
             // Run chill_get_packets to query for all of the time correlation packets that are within the selected
             // contact interval. Query by APID and ERT.
             String cmd = chillGdsPath+"/bin/chill_get_packets -m";
-            if (sessionId != null) {
-                cmd += " -K " + sessionId;
-            }
+            cmd += getChillSessionIdOpt();
             cmd += " --packetApid " + TKPKTAPID + " --timeType ERT " +
                     "--beginTime " + beginTime + " --endTime " + endTime + " --report --filename " + packetOutputFilename;
             if (connectionParms != null) {
@@ -183,7 +181,7 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
             }
 
             // do preliminary parsing to fill out batchQuery
-            final ChillGetFramesBatchQuery batchQuery = new ChillGetFramesBatchQuery(ampcsConfig, Optional.ofNullable(sessionId), Optional.ofNullable(connectionParms));
+            final ChillGetFramesBatchQuery batchQuery = new ChillGetFramesBatchQuery(ampcsConfig, getChillSessionIdOpt(), Optional.ofNullable(connectionParms));
 
             int csvRecordIdx = -1;
 
@@ -402,9 +400,7 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
             // Run chill_get_packets to query for all of the time correlation packets that are within the selected
             // contact interval. Query by APID and ERT.
             String cmd = chillGdsPath+"/bin/chill_get_packets -m";
-            if (sessionId != null) {
-                cmd += " -K " + sessionId;
-            }
+            cmd += getChillSessionIdOpt();
             cmd += " --packetApid " + TKPKTAPID + " --timeType ERT " +
                     "--beginTime " + beginTime + " --endTime " + endTime + " --report --filename " + packetOutputFilename;
             if (connectionParms != null) {
@@ -518,9 +514,7 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
                 // sample's ERT. (Also ask chill_get_frames to return the results sorted by ERT.)
 
                 cmd = chillGdsPath+"/bin/chill_get_frames -m";
-                if (sessionId != null) {
-                    cmd += " -K " + sessionId;
-                }
+                cmd += getChillSessionIdOpt();
                 cmd += " --timeType ERT " + "--beginTime " + frameBeginTime +
                         " --endTime " + ertStr + " --vcid " + vcid + " --vcfcs " + vcfc + " --orderBy ERT";
                 if (connectionParms != null) {
@@ -705,20 +699,20 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
 
         private final AmpcsTelemetrySourceConfig ampcsConfig;
         private final String chillGdsPath;
-        private final Optional<String> sessionId;
+        private final String sessionIdOpt;
         private final Optional<String> connectionParams;
 
         private final Map<Integer, RangeSet<OffsetDateTime>> queryRangesByVcid;
         private final Map<Integer, Set<Integer>> vcfcsByVcid;
 
-        public ChillGetFramesBatchQuery(AmpcsTelemetrySourceConfig config, Optional<String> sessionId, Optional<String> connectionParams) throws MmtcException {
+        public ChillGetFramesBatchQuery(AmpcsTelemetrySourceConfig config, String sessionIdOpt, Optional<String> connectionParams) throws MmtcException {
             this.chillGdsPath = Environment.getEnvironmentVariable("CHILL_GDS");
             if (this.chillGdsPath == null) {
                 throw new MmtcException("Environment variable $CHILL_GDS is not set.");
             }
 
             this.ampcsConfig = config;
-            this.sessionId = sessionId;
+            this.sessionIdOpt = sessionIdOpt;
             this.connectionParams = connectionParams;
 
             queryRangesByVcid = new HashMap<>();
@@ -752,9 +746,7 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
 
                 for (OffsetDateTimeRange range : rangesToRunOver) {
                     String cmd = chillGdsPath + "/bin/chill_get_frames -m";
-                    if (sessionId.isPresent()) {
-                        cmd += " -K " + sessionId.get();
-                    }
+                    cmd += sessionIdOpt;
                     cmd += " --timeType ERT " + "--beginTime " + TimeConvert.timeToIsoUtcString(range.getStart()) +
                             " --endTime " + TimeConvert.timeToIsoUtcString(range.getStop()) + " --vcid " + vcid + " --vcfcs " + String.join(",", vcfcsToQueryFor) + " --orderBy ERT";
                     if (connectionParams.isPresent()) {

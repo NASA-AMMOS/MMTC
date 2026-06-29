@@ -111,9 +111,7 @@ public class AmpcsTlmArchive extends AmpcsTelemetrySource {
             // Run chill_get_* to query for all of the time correlation packets that are within the selected contact interval.
             // Query by APID and ERT.
             String cmd = chillGdsPath+"/bin/chill_get_packets -m";
-            if (sessionId != null) {
-                cmd += " -K " + sessionId;
-            }
+            cmd += getChillSessionIdOpt();
             cmd += " --packetApid " + TKPKTAPID + " --timeType ERT " +
                     "--beginTime " + beginTime + " --endTime " + endTime + " --report --filename " + packetOutputFilename;
             if (connectionParms != null) {
