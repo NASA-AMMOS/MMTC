@@ -55,9 +55,9 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     protected String chillGdsPath;
 
     /**
-     * The AMPCS session ID.
+     * AMPCS session IDs.
      */
-    protected String sessionId = null;
+    protected List<String> cliSessionIds = new ArrayList<>();
 
     /**
      * Any additional AMPCS arguments.
@@ -74,7 +74,6 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
 
     // ExecutorService to manage a thread pool to consume subprocess pipes.
     private ExecutorService executorService;
-
 
     public AmpcsTelemetrySource() {
     }
@@ -96,7 +95,7 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
                 "K",
                 "ampcs-session-id",
                 true,
-                "Specifies the session ID when using an AMPCS telemetry source."
+                "Specifies the session ID(s) when using an AMPCS telemetry source. Multiple comma-separated values may be provided."
         );
 
         Option connectionParmsOpt = new Option(
@@ -119,10 +118,19 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
     }
 
     @Override
-    public void applyOption(String name, String value) throws MmtcException {
+    public void applyOption(String name, String value) {
         switch(name) {
             case AMPCS_SESSION_ID_OPT: {
-                setSessionId(value);
+                List<String> sessionIds = Arrays.stream(value.split(","))
+                        .map(String::trim)
+                        .filter(s -> ! s.isEmpty())
+                        .collect(Collectors.toList());
+
+                if (sessionIds.isEmpty()) {
+                    throw new IllegalArgumentException("Empty or invalid session IDs provided");
+                }
+
+                this.cliSessionIds = sessionIds;
                 break;
             }
             case ADDITIONAL_AMPCS_CLI_ARGS_OPT: {
@@ -182,11 +190,6 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
 
             if (stdout.contains("AMPCS")) {
                 logger.debug("Verified that MMTC is able to call AMPCS chill_get_packets.");
-                if (this.sessionId != null) {
-                    logger.debug(String.format("Calls to AMPCS will use session ID %s.", this.sessionId));
-                } else {
-                    logger.debug("Calls to AMPCS will not use a session ID.");
-                }
                 connectedToAmpcs = true;
             }
 
@@ -202,16 +205,6 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
         logger.info("Connected.");
     }
 
-    private void setSessionId(String sessionId) throws MmtcException {
-        // Allow null; otherwise, verify that the session ID is a positive integer.
-        if (sessionId == null || (sessionId.matches("\\d+") && !sessionId.matches("0+"))) {
-            this.sessionId = sessionId;
-        } else {
-            throw new MmtcException(String.format(
-                    "Invalid session ID %d.  Session ID is optional, but if specified, it must be a positive integer.", sessionId
-            ));
-        }
-    }
 
     private void setChillTimeout(int timeoutSec) throws MmtcException {
         if (timeoutSec > 0) {
@@ -287,13 +280,10 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
             String endTime = endTimeAsOffsetDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME).split("\\+")[0];
             endTime = endTime.replace("Z", "");
 
-            String queryCmd = chillGdsPath + "/bin/chill_get_chanvals --showColumns ";
+            String queryCmd = chillGdsPath + "/bin/chill_get_chanvals --showColumns";
+            queryCmd += getChillSessionIdOpt();
 
-            if (sessionId != null) {
-                queryCmd += String.format("-K %s ", sessionId);
-            }
-
-            queryCmd += String.format("--timeType SCET --beginTime %s --endTime %s ", beginTime, endTime);
+            queryCmd += String.format(" --timeType SCET --beginTime %s --endTime %s ", beginTime, endTime);
 
             final Optional<ChanValReadConfig> gncSclkChannelConfig     = ampcsConfig.getGncChanValReadConfig("gncsclk", true);
             final Optional<ChanValReadConfig> tdtSChannelConfig        = ampcsConfig.getGncChanValReadConfig("tdts", true);
@@ -380,62 +370,106 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
 
         logger.debug("Getting the temperature for oscillator " + oscillatorId + ".");
 
-        Optional<ChanValReadConfig> oscTempChanValReadConfig = ampcsConfig.getOscTempChanValReadConfig(oscillatorId);
-
-        if (! oscTempChanValReadConfig.isPresent()) {
-            logger.info("Skipping retrieval of oscillator temperature, as channel value information was not provided in configuration.");
-            return Double.NaN;
-        }
-
-        final String tkOscTempChannelId = oscTempChanValReadConfig.get().channelId;
-        final String tkOscTempReadField = oscTempChanValReadConfig.get().readField;
-
-        // Create a bounding time +/- seconds to query the channels at.
-        OffsetDateTime time_minus = scet.minusSeconds(config.getTkOscTempWindowSec());
-        String beginTime = time_minus.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME).split("\\+")[0];
-        beginTime = beginTime.replace("Z", "");
-
-        OffsetDateTime time_plus = scet.plusSeconds(config.getTkOscTempWindowSec());
-        String endTime = time_plus.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME).split("\\+")[0];
-        endTime = endTime.replace("Z", "");
-
-        logger.debug("Obtaining temperature for oscillator " + oscillatorId + " (from channel ID "
-                + tkOscTempChannelId + ").");
-
-        String queryCmd = chillGdsPath+"/bin/chill_get_chanvals --showColumns";
-        if (sessionId != null) {
-            queryCmd += " -K " + sessionId;
-        }
-
-        queryCmd += " --timeType SCET --channelIds " + tkOscTempChannelId +
-                " --beginTime "  + beginTime +
-                " --endTime "    + endTime;
-
-        if (connectionParms != null) {
-            queryCmd += " " + connectionParms;
-        }
-
-        // Get the channels associated with the packet.
-        CSVParser channelValueOutputs;
         try {
+            Optional<ChanValReadConfig> oscTempChanValReadConfig = ampcsConfig.getOscTempChanValReadConfig(oscillatorId);
+
+            if (! oscTempChanValReadConfig.isPresent()) {
+                logger.info("Skipping retrieval of oscillator temperature, as channel value information was not provided in configuration.");
+                return Double.NaN;
+            }
+
+            final String tkOscTempChannelId = oscTempChanValReadConfig.get().channelId;
+            final String tkOscTempReadField = oscTempChanValReadConfig.get().readField;
+
+            // Create a bounding time +/- seconds to query the channels at.
+            OffsetDateTime time_minus = scet.minusSeconds(config.getTkOscTempWindowSec());
+            String beginTime = time_minus.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME).split("\\+")[0];
+            beginTime = beginTime.replace("Z", "");
+
+            OffsetDateTime time_plus = scet.plusSeconds(config.getTkOscTempWindowSec());
+            String endTime = time_plus.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME).split("\\+")[0];
+            endTime = endTime.replace("Z", "");
+
+            logger.debug("Obtaining temperature for oscillator " + oscillatorId + " (from channel ID "
+                    + tkOscTempChannelId + ").");
+
+            String queryCmd = chillGdsPath+"/bin/chill_get_chanvals --showColumns";
+            queryCmd += getChillSessionIdOpt();
+
+            queryCmd += " --timeType SCET --channelIds " + tkOscTempChannelId +
+                    " --beginTime "  + beginTime +
+                    " --endTime "    + endTime;
+
+            if (connectionParms != null) {
+                queryCmd += " " + connectionParms;
+            }
+
+            // Get the channels associated with the packet.
+            CSVParser channelValueOutputs;
+
             channelValueOutputs = runSubprocessCsv(queryCmd);
+
+            SingleChanValReader channelValueReader = new SingleChanValReader(ampcsConfig, new ChanValReadConfig(tkOscTempChannelId, tkOscTempReadField), scet);
+
+            for (CSVRecord channelValueRow : channelValueOutputs) {
+                channelValueReader.read(channelValueRow);
+            }
+
+            double oscillatorTemperature = channelValueReader.getValueClosestToTargetScet();
+
+            if (Double.isNaN(oscillatorTemperature)) {
+                logger.warn("No oscillator temperature data found in the sampling interval (channel ID " + tkOscTempChannelId + ").");
+            }
+
+            return oscillatorTemperature;
         } catch (IOException e) {
             throw new MmtcException("Unable to retrieve oscillator temperature", e);
         }
+    }
 
-        SingleChanValReader channelValueReader = new SingleChanValReader(ampcsConfig, new ChanValReadConfig(tkOscTempChannelId, tkOscTempReadField), scet);
+    protected String getChillSessionIdOpt() throws IOException {
+        // if session IDs are passed on the CLI, use those
+        if (! cliSessionIds.isEmpty()) {
+            if (ampcsConfig.getSessionFilter().isPresent()) {
+                logger.info("Using CLI-provided session ID instead of configured session query filter");
+            }
 
-        for (CSVRecord channelValueRow : channelValueOutputs) {
-            channelValueReader.read(channelValueRow);
+            return " -K " + String.join(",", cliSessionIds);
         }
 
-        double oscillatorTemperature = channelValueReader.getValueClosestToTargetScet();
-
-        if (Double.isNaN(oscillatorTemperature)) {
-            logger.warn("No oscillator temperature data found in the sampling interval (channel ID " + tkOscTempChannelId + ").");
+        // else, if a filter is configured, execute the filter to find which sessions to search
+        if (ampcsConfig.getSessionFilter().isPresent()) {
+            return " -K " + String.join(",", findSessionIdsMatchingFilter());
         }
 
-        return oscillatorTemperature;
+        // else, do not filter on session ID
+        return "";
+    }
+
+    private List<String> findSessionIdsMatchingFilter() throws IOException {
+        String chillGetSessionsCliOpts = ampcsConfig.getSessionFilter().orElseThrow(() -> new IllegalStateException("This method may only be called if the session filter configuration is set"));
+
+        String cmd = chillGdsPath + "/bin/chill_get_sessions -m";
+        cmd += " " + chillGetSessionsCliOpts;
+
+        if (connectionParms != null) {
+            cmd += " " + connectionParms;
+        }
+
+        CSVParser matchingSessionMetadata = runSubprocessCsv(cmd);
+
+        List<String> matchingSessionIds = matchingSessionMetadata.stream()
+                .map(rec -> rec.get(ampcsConfig.getSessionIdFieldName()))
+                .sorted()
+                .collect(Collectors.toList());
+
+        if (matchingSessionIds.isEmpty()) {
+            throw new IOException("No sessions matched the criteria specified by the provided chill_get_sessions CLI options: " + chillGetSessionsCliOpts);
+        }
+
+        logger.debug("Session IDs matching filter: " + String.join(",", matchingSessionIds));
+
+        return matchingSessionIds;
     }
 
     /**
@@ -582,10 +616,6 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
      */
     public boolean isConnectedToAmpcs() { return this.connectedToAmpcs; }
 
-    /**
-     * @return the current AMPCS session ID
-     */
-    public String getSessionId() { return this.sessionId; }
 
     /**
      * Obtains the current active oscillator from configration parameters.

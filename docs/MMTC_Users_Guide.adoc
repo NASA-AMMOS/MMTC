@@ -1526,15 +1526,25 @@ The parameters in the table below are only applicable to missions using AMPCS wh
 |STR
 |The name of the CSV field output by chill_get_frames that contains the target frame ground station identifier. Applicable only it telemetry.source.name is set to AmpcsTlmWithFrames.
 
+|telemetry.source.plugin.ampcs.frame.vcidFieldName
+|CONDITIONAL
+|STR
+|The name of the CSV field output by chill_get_frames that contains the target frame Virtual Channel ID (VCID). Applicable only if telemetry.source.name is set to AmpcsTlmWithFrames.
+
 |telemetry.source.plugin.ampcs.frame.vcfcFieldName
 |CONDITIONAL
 |STR
 |The name of the CSV field output by chill_get_frames that contains the target frame Virtual Channel Frame Count (VCFC). Applicable only if telemetry.source.name is set to AmpcsTlmWithFrames.
 
-|telemetry.source.plugin.ampcs.frame.vcidFieldName
+|telemetry.source.plugin.ampcs.session.sessionIdFieldName
 |CONDITIONAL
 |STR
-|The name of the CSV field output by chill_get_frames that contains the target frame Virtual Channel ID (VCID). Applicable only if telemetry.source.name is set to AmpcsTlmWithFrames.
+|The name of the CSV field output by chill_get_sessions that contains the Session ID string (an integer.)  Applicable only if telemetry.source.plugin.ampcs.sessionFilter is set.
+
+|telemetry.source.plugin.ampcs.sessionFilter
+|OPTIONAL
+|STR
+|If set to a nonempty value, MMTC's AMPCS telemetry sources will limit telemetry retrieval through the chill* interfaces to a subset of all sessions.  This key's value should be set to the chill_get_sessions* CLI query options that will return the subset of sessions to use for all telemetry retrieval via chill_get_packets, chill_get_frames, and/or chill_get_chanvals.
 
 |telemetry.source.plugin.ampcs.frame.maxTkpacketFrameSeparation
 |CONDITIONAL

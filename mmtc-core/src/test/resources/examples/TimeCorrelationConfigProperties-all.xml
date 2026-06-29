@@ -116,6 +116,7 @@
     <!-- AMPCS configuration keys -->
     <entry key="telemetry.source.plugin.ampcs.chillTimeoutSec"></entry>
     <entry key="telemetry.source.plugin.ampcs.additionalChillCliParms"></entry>
+    <entry key="telemetry.source.plugin.ampcs.sessionFilter"></entry>
     <entry key="telemetry.source.plugin.ampcs.tkPacket.tkPacketHeaderFineSclkModulus"></entry>
 
     <!-- timekeeping packet configuration -->
@@ -130,6 +131,8 @@
     <entry key="telemetry.source.plugin.ampcs.tkpacket.vcfcFieldName"></entry>
     <entry key="telemetry.source.plugin.ampcs.tkpacket.dssIdFieldName"></entry>
     <entry key="telemetry.source.plugin.ampcs.tkpacket.pktLengthFieldName"></entry>
+
+    <entry key="telemetry.source.plugin.ampcs.session.sessionIdFieldName"></entry>
 
     <!-- channel value configuration -->
     <entry key="telemetry.source.plugin.ampcs.channel.channelIdFieldName"></entry>

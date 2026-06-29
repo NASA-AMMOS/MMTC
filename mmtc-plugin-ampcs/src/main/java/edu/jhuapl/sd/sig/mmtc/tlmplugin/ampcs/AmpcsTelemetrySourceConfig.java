@@ -1,7 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
-import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 
 import java.nio.file.Path;
@@ -219,6 +218,20 @@ public class AmpcsTelemetrySourceConfig {
     }
 
     /**
+     * The name of the field in the CSV metadata output from a chill_get_sessions command that contains the
+     * Session ID that uniquely identifies a session.
+     *
+     * @return the field name of the session ID
+     */
+    public String getSessionIdFieldName() {
+        if (! timeCorrelationAppConfig.containsNonEmptyKey("telemetry.source.plugin.ampcs.session.sessionIdFieldName")) {
+            throw new IllegalStateException("Please specify telemetry.source.plugin.ampcs.session.sessionIdFieldName (likely as the value 'sessionId')");
+        }
+
+        return timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.session.sessionIdFieldName");
+    }
+
+    /**
      * Only applicable when using the AMPCS_CHILL_WITH_FRAMES telemetry source. When searching for
      * the target frame corresponding to a TK packet, search for frames whose ERT is at most this
      * many seconds earlier than the TK packet ERT.
@@ -227,6 +240,19 @@ public class AmpcsTelemetrySourceConfig {
      */
     public int getMaxTkpacketFrameSeparation() {
         return timeCorrelationAppConfig.getInt("telemetry.source.plugin.ampcs.frame.maxTkpacketFrameSeparation");
+    }
+
+    /**
+     * These are CLI arguments to append to chill_get_sessions to query for data within
+     *
+     * @return
+     */
+    public Optional<String> getSessionFilter() {
+        if (timeCorrelationAppConfig.containsNonEmptyKey("telemetry.source.plugin.ampcs.sessionFilter")) {
+            return Optional.of(timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.sessionFilter"));
+        }
+
+        return Optional.empty();
     }
 
     /**
