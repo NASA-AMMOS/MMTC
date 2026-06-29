@@ -23,6 +23,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -422,9 +424,23 @@ public class TimeCorrelationRollback {
             }
 
             for (File foundFile : foundFiles){
-                int fileId = Integer.parseInt(foundFile.getName().replaceAll("^\\D*(\\d+).*$", "$1"));
-                if ((! newLatestProductVersion.isPresent() || fileId > Integer.parseInt(newLatestProductVersion.get()))) {
-                    logger.info(String.format("Removing %s because its version %d is earlier than new latest version %s", foundFile, fileId, newLatestProductVersion));
+                // find the last contiguous group of digits in the filename, and assume that is the version string
+                // todo create a stronger model of product output filenames, including prefixes, version strings, and suffixes, and replace this with that
+
+                Pattern p = Pattern.compile("(\\d+)");
+                Matcher m = p.matcher(foundFile.getName());
+                String fileVersionStr = null;
+                while (m.find()) {
+                    fileVersionStr = m.group(1);
+                }
+
+                if (fileVersionStr == null) {
+                    throw new IllegalStateException("Unable to find version integer in filename: " + foundFile.getName());
+                }
+
+                int fileVersion = Integer.parseInt(fileVersionStr);
+                if ((! newLatestProductVersion.isPresent() || fileVersion > Integer.parseInt(newLatestProductVersion.get()))) {
+                    logger.info(String.format("Removing %s because its version %d is higher than new latest version %s", foundFile, fileVersion, newLatestProductVersion));
                     filesToDelete.add(foundFile);
                 }
             }
