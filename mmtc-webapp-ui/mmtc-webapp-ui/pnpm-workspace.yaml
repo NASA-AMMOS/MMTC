@@ -5,3 +5,6 @@ ignoredBuiltDependencies:
   - maplibre-gl
   - unrs-resolver
   - vue-demi
+# minimumReleaseAge's value type is minutes; the following instructs pnpm to not use packages newer than a week old
+minimumReleaseAge: 10080
+blockExoticSubdeps: true
