@@ -6,6 +6,7 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.TelemetryService;
 import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
@@ -21,8 +22,8 @@ public class TelemetryController extends BaseController {
     }
 
     @Override
-    public void registerEndpoints(Javalin javalinApp) {
-        javalinApp.get("/api/v1/telemetry/range", ctx -> {
+    public void registerEndpoints(JavalinConfig javalinConfig) {
+        javalinConfig.routes.get("/api/v1/telemetry/range", ctx -> {
             OffsetDateTime beginTimeErt = TimeConvert.parseIsoDoyUtcStr(ctx.queryParam("beginTimeErt"));
             OffsetDateTime endTimeErt = TimeConvert.parseIsoDoyUtcStr(ctx.queryParam("endTimeErt"));
 
