@@ -41,8 +41,7 @@ dependencyResolutionManagement {
             library("jdbi3-core", "org.jdbi:jdbi3-core:3.39.1")
             library("jdbi3-sqlite", "org.jdbi:jdbi3-sqlite:3.39.1")
 
-            // todo update javalin from v6 to v7
-            library("javalin-javalin", "io.javalin:javalin:6.7.0")
+            library("javalin-javalin", "io.javalin:javalin:7.2.2")
 
             // Javalin only supports jackson 2.x currently
             library("jackson-databind", "com.fasterxml.jackson.core:jackson-databind:2.21.3")
