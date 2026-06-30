@@ -405,7 +405,7 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
     }
 
     public boolean isCreateUplinkCmdFile() {
-        if (this.runConfigInputs != null && this.runConfigInputs.isCreateUplinkCmdFile) {
+        if (this.runConfigInputs.isCreateUplinkCmdFile) {
             return true;
         }
 

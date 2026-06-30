@@ -39,6 +39,7 @@ public class MmtcWebApp {
         BuildInfo.log(logger);
 
         this.config = new MmtcWebAppConfig();
+        this.config.validate();
         this.config.acquireLockFile();
 
         TimeConvert.loadSpiceLib();
