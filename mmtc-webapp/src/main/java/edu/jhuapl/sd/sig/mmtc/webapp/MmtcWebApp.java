@@ -48,6 +48,14 @@ public class MmtcWebApp {
 
         this.config.getTelemetrySource().connect();
 
+        // select auth service
+        final AuthorizationService authService = switch(config.getAuthMode()) {
+            case NONE                    -> new NoopAuthorizationService();
+            case AUTOGEN_BASIC_HTTP_AUTH -> new AutoGenBasicHttpAuthorizationService(config);
+        };
+        this.telemetryService = new TelemetryService(config);
+        this.outputProductService = new OutputProductService(config);
+
         javalinApp = Javalin.create(javalinConfig -> {
             if (config.isPlaintextServerEnabled()) {
                 javalinConfig.jetty.addConnector((server, httpConfiguration) -> {
@@ -73,51 +81,40 @@ public class MmtcWebApp {
             javalinConfig.staticFiles.add("/docs");
 
             javalinConfig.jsonMapper(new JavalinJackson(MmtcObjectMapper.get(), false));
-        });
 
-        // set up auth
-        final AuthorizationService authService = switch(config.getAuthMode()) {
-            case NONE                    -> new NoopAuthorizationService();
-            case AUTOGEN_BASIC_HTTP_AUTH -> new AutoGenBasicHttpAuthorizationService(config);
-        };
+            javalinConfig.routes.before(ctx -> {
+                authService.ensureAuthorized(ctx);
+                if (System.getenv().containsKey("MMTC_WEB_LOG_ALL_REQUESTS")) {
+                    logger.debug(ctx.url());
+                }
+            });
+            logger.info("Auth service: " + authService.getClass().getSimpleName());
 
-        javalinApp.before(ctx -> {
-            authService.ensureAuthorized(ctx);
-            if (System.getenv().containsKey("MMTC_WEB_LOG_ALL_REQUESTS")) {
-                logger.debug(ctx.url());
-            }
-        });
-        logger.info("Auth service: " + authService.getClass().getSimpleName());
+            // instantiate controllers and set up routes
+            Collection<BaseController> controllers = new HashSet<>();
+            controllers.add(new TimeCorrelationController(config, this.telemetryService, this.outputProductService));
+            controllers.add(new TelemetryController(config, this.telemetryService));
+            controllers.add(new OutputProductController(config, this.outputProductService));
+            controllers.add(new InfoController(config));
+            controllers.forEach(c -> c.registerEndpoints(javalinConfig));
 
-        this.telemetryService = new TelemetryService(config);
-        this.outputProductService = new OutputProductService(config);
+            // set up generic exception handler
+            javalinConfig.routes.exception(Exception.class, (e, ctx) -> {
+                logger.error("Server error", e);
+                ctx.status(500);
 
-        // instantiate controllers and set up routes
-        Collection<BaseController> controllers = new HashSet<>();
-        controllers.add(new TimeCorrelationController(config, this.telemetryService, this.outputProductService));
-        controllers.add(new TelemetryController(config, this.telemetryService));
-        controllers.add(new OutputProductController(config, this.outputProductService));
-        controllers.add(new InfoController(config));
-        controllers.forEach(c -> c.registerEndpoints(javalinApp));
+                String errorMessage = Optional.ofNullable(e.getMessage()).orElse("An error occurred.").trim();
 
-        javalinApp.exception(Exception.class, (e, ctx) -> {
-            logger.error("Server error", e);
-            ctx.status(500);
+                if (! errorMessage.endsWith(".")) {
+                    errorMessage += ".";
+                }
+                errorMessage += " Please see the MMTC log for details.";
 
-            String errorMessage = Optional.ofNullable(e.getMessage()).orElse("An error occurred.").trim();
+                ctx.result(errorMessage);
+            });
 
-            if (! errorMessage.endsWith(".")) {
-                errorMessage += ".";
-            }
-            errorMessage += " Please see the MMTC log for details.";
-
-            ctx.result(errorMessage);
-        });
-
-        Runtime.getRuntime().addShutdownHook(new Thread(javalinApp::stop));
-
-        javalinApp.events(event -> {
-            event.serverStopping(() -> {
+            // configure a server stop event handler
+            javalinConfig.events.serverStopping(() -> {
                 try {
                     this.config.getTelemetrySource().disconnect();
                 } finally {
@@ -125,6 +122,8 @@ public class MmtcWebApp {
                 }
             });
         });
+
+        Runtime.getRuntime().addShutdownHook(new Thread(javalinApp::stop));
     }
 
     private SslContextFactory.Server getSslContextFactory() {

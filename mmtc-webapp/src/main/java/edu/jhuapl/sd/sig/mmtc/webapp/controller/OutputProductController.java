@@ -8,6 +8,7 @@ import edu.jhuapl.sd.sig.mmtc.products.util.GenericCsv;
 import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.OutputProductService;
 import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,17 +25,17 @@ public class OutputProductController extends BaseController {
     }
 
     @Override
-    public void registerEndpoints(Javalin javalinApp) {
+    public void registerEndpoints(JavalinConfig javalinConfig) {
         // list all products by name
-        javalinApp.get("/api/v1/products/", ctx -> ctx.json(outputputProductService.getAllOutputProductDefs()));
+        javalinConfig.routes.get("/api/v1/products/", ctx -> ctx.json(outputputProductService.getAllOutputProductDefs()));
 
         // get the contents of a product
-        javalinApp.get("/api/v1/products/{name}/{filename}", ctx -> {
+        javalinConfig.routes.get("/api/v1/products/{name}/{filename}", ctx -> {
             ctx.result(getOutputProductContents(ctx.pathParam("name"),  ctx.pathParam("filename")));
         });
 
         // get the contents of a product as table rows
-        javalinApp.get("/api/v1/productsAsTable/{name}/{filename}", ctx -> {
+        javalinConfig.routes.get("/api/v1/productsAsTable/{name}/{filename}", ctx -> {
             ctx.json(getOutputProductContentsAsTable(ctx.pathParam("name"),  ctx.pathParam("filename")));
         });
     }
