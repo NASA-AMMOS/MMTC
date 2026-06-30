@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.webapp.controller;
 
 import edu.jhuapl.sd.sig.mmtc.app.BuildInfo;
 import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
-import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,9 +28,9 @@ public class InfoController extends BaseController {
 
 
     @Override
-    public void registerEndpoints(Javalin javalinApp) {
-        javalinApp.get("/api/v1/info/info", ctx -> ctx.json(mmtcInstanceInfo));
-        javalinApp.get("/api/v1/info/configuration", ctx -> ctx.json(getConfigurationFileContent()));
+    public void registerEndpoints(JavalinConfig javalinConfig) {
+        javalinConfig.routes.get("/api/v1/info/info", ctx -> ctx.json(mmtcInstanceInfo));
+        javalinConfig.routes.get("/api/v1/info/configuration", ctx -> ctx.json(getConfigurationFileContent()));
     }
 
     public record ConfigurationFile(String filename, String contents) { }

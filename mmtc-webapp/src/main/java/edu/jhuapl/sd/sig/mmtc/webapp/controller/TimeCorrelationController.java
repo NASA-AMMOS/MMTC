@@ -22,6 +22,7 @@ import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfigRequestPrevi
 import edu.jhuapl.sd.sig.mmtc.webapp.service.OutputProductService;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.TelemetryService;
 import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -70,30 +71,30 @@ public class TimeCorrelationController extends BaseController {
     ) { }
 
     @Override
-    public void registerEndpoints(Javalin javalinApp) {
-        javalinApp.post("/api/v1/correlation/preview", ctx -> {
+    public void registerEndpoints(JavalinConfig javalinConfig) {
+        javalinConfig.routes.post("/api/v1/correlation/preview", ctx -> {
             NewTimeCorrelationConfigRequestPreview correlationConfigPreview = ctx.bodyAsClass(NewTimeCorrelationConfigRequestPreview.class);
             ctx.json(executeSingleThreaded(() -> previewNewCorrelation(correlationConfigPreview)));
         });
 
-        javalinApp.post("/api/v1/correlation/create", ctx -> {
+        javalinConfig.routes.post("/api/v1/correlation/create", ctx -> {
             NewTimeCorrelationConfigRequest correlationConfig = ctx.bodyAsClass(NewTimeCorrelationConfigRequest.class);
             ctx.json(executeSingleThreaded(() -> createNewCorrelation(correlationConfig)));
         });
 
-        javalinApp.get("/api/v1/correlation/runhistory", ctx -> {
+        javalinConfig.routes.get("/api/v1/correlation/runhistory", ctx -> {
             ctx.json(executeSingleThreaded(() -> getRunHistoryContentsAsTableRows()));
         });
 
-        javalinApp.post("/api/v1/correlation/rollback", ctx -> {
+        javalinConfig.routes.post("/api/v1/correlation/rollback", ctx -> {
             ctx.result(executeSingleThreaded(() -> rollback(ctx.queryParam("runId"))));
         });
 
-        javalinApp.get("/api/v1/correlation/defaultConfig", ctx -> {
+        javalinConfig.routes.get("/api/v1/correlation/defaultConfig", ctx -> {
             ctx.json(executeSingleThreaded(() -> getNewCorrelationConfig()));
         });
 
-        javalinApp.get("/api/v1/correlation/range", ctx -> {
+        javalinConfig.routes.get("/api/v1/correlation/range", ctx -> {
             String beginTime = ctx.queryParam("beginTime");
             String endTime = ctx.queryParam("endTime");
             String sclkKernelName = ctx.queryParam("sclkKernelName");
