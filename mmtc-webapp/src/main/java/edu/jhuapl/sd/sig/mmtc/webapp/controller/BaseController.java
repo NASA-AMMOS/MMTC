@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.webapp.controller;
 
 import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
-import io.javalin.Javalin;
+import io.javalin.config.JavalinConfig;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -16,7 +16,7 @@ public abstract class BaseController {
         this.config = config;
     }
 
-    public abstract void registerEndpoints(Javalin javalinApp);
+    public abstract void registerEndpoints(JavalinConfig javalinConfig);
 
     protected <T> T executeSingleThreaded(Callable<T> callable) throws ExecutionException, InterruptedException {
         return singleThreadedExecutor.submit(callable).get();
