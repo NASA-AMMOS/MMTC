@@ -24,6 +24,19 @@ import java.util.stream.Collectors;
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
 public class BuiltInOutputProductMigrationManager {
+
+    private static final class NewColumn {
+        final String name;
+        final int index;
+        final List<String> values;
+
+        NewColumn(String name, int index, List<String> values) {
+            this.name = name;
+            this.index = index;
+            this.values = values;
+        }
+
+    }
     private static final Logger logger = LogManager.getLogger();
 
     private static final List<String> MIGRATEABLE_MMTC_VERSIONS = Arrays.asList(
@@ -161,10 +174,20 @@ public class BuiltInOutputProductMigrationManager {
             final GenericCsv summTable = new GenericCsv(summaryTablePath);
 
             thf.renameColumn("ClkChgRate(s/s)", "Predicted Clk Chg Rate (s/s)");
-            thf.addColumnAtIndexWithValues("Interpolated Clk Chg Rate (s/s)", 6, summTable.readValuesForColumn("Interpolated Clk Change Rate"));
-            thf.addColumnAtIndexWithValues("TD SC (sec)", 19, summTable.readValuesForColumn("TD SC (sec)"));
-            thf.addColumnAtIndexWithValues("TD BE (sec)", 20, summTable.readValuesForColumn("TD BE (sec)"));
-            thf.addColumnAtIndexWithValues("TF Offset", 21, summTable.readValuesForColumn("TF Offset"));
+
+            List<NewColumn> newColumns = Arrays.asList(
+                new NewColumn("Interpolated Clk Chg Rate (s/s)", 6, summTable.readValuesForColumn("Interpolated Clk Change Rate")),
+                new NewColumn("TD SC (sec)", 19, summTable.readValuesForColumn("TD SC (sec)")),
+                new NewColumn("TD BE (sec)", 20, summTable.readValuesForColumn("TD BE (sec)")),
+                new NewColumn("TF Offset", 21, summTable.readValuesForColumn("TF Offset"))
+            );
+
+            List<String> excluded = config.getTimeHistoryFileExcludeColumns();
+            for(NewColumn col : newColumns) {
+                if(!excluded.contains(col.name)) {
+                    thf.addColumnAtIndexWithValues(col.name, col.index, col.values);
+                }
+            }
 
             // Convert 1.5.1 Encoded SCLK values stored in scientific notation to (big) decimals
             migrateTimeHistEncSclkTo1_6_0(thf);
