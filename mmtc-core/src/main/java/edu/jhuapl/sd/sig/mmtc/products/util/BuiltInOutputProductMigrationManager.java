@@ -186,6 +186,9 @@ public class BuiltInOutputProductMigrationManager {
             for(NewColumn col : newColumns) {
                 if(!excluded.contains(col.name)) {
                     thf.addColumnAtIndexWithValues(col.name, col.index, col.values);
+                    logger.debug("Added new column "+col.name+" to Time History File");
+                } else {
+                    logger.debug("New Time History file column "+col.name+" found in configured excluded columns, ignoring.");
                 }
             }
 
@@ -208,10 +211,12 @@ public class BuiltInOutputProductMigrationManager {
             // remove Summary Table from Run History File
             rhf.removeColumn("Latest SummaryTable Line Pre-run");
             rhf.removeColumn("Latest SummaryTable Line Post-run");
+            logger.debug("Removed Summary Table columns from Run History File");
 
             // add missing version columns
             rhf.addColumnAtIndexWithValues("MMTC Version", 2, Collections.nCopies(rhf.getNumRows(), "1.5.1"));
             rhf.addColumnAtIndexWithValues("Built-In Output Product Version", 3, Collections.nCopies(rhf.getNumRows(), "1.5.1"));
+            logger.debug("Added version tracking columns to Run History File");
 
             // change the representation of an empty CSV from '1' to '-'
             {
@@ -229,6 +234,7 @@ public class BuiltInOutputProductMigrationManager {
             // add '-' for the smoothing triplet column, as this feature was introduced with 1.6.0
             {
                 rhf.addColumnAtIndexWithValues("Smoothing Triplet TDT", 7, Collections.nCopies(rhf.getNumRows(), "-"));
+                logger.debug("Added 'Smoothing Triplet TDT' column to Run History File");
             }
         }
 
