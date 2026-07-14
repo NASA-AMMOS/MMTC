@@ -8,3 +8,9 @@ ignoredBuiltDependencies:
 # minimumReleaseAge's value type is minutes; the following instructs pnpm to not use packages newer than a week old
 minimumReleaseAge: 10080
 blockExoticSubdeps: true
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  maplibre-gl: false
+  unrs-resolver: true
+  vue-demi: false

@@ -46,3 +46,4 @@ Followed some guidance in: https://pnpm.io/supply-chain-security:
   - Check for packages with updates within the version range specified in `package.json`: `pnpm outdated` and `pnpm outdated --compatible`
   - Update to the latest version of deps compatible with the contents of `package.json`: `pnpm update`
   - (or) update to the absolute latest version (crossing major versions, and even perhaps updating `package.json`): `pnpm update --latest`
+

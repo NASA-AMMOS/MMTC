@@ -11,9 +11,9 @@ val nuxtBuild = tasks.register<Exec>("nuxtBuild") {
     inputs.file(projectDir.toPath().resolve("mmtc-webapp-ui/tsconfig.json"))
 
     workingDir("mmtc-webapp-ui")
-
-    executable("npx")
-    args("nuxt", "generate")
+    environment("NODE_OPTIONS", "--max-old-space-size=4096")
+    executable("pnpm")
+    args("exec", "nuxt", "generate")
 
     outputs.dir("mmtc-webapp-ui/.output/public/")
 }
