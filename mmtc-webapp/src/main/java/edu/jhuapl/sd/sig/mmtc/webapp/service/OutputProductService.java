@@ -5,9 +5,7 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.AppendedFileOutputProductDefin
 import edu.jhuapl.sd.sig.mmtc.products.definition.EntireFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
-import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.webapp.config.MmtcWebAppConfig;
-import edu.jhuapl.sd.sig.mmtc.webapp.controller.OutputProductController;
 
 import java.io.IOException;
 import java.nio.file.Files;

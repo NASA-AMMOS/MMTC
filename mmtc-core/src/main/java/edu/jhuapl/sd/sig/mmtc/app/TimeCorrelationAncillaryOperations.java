@@ -2,7 +2,6 @@ package edu.jhuapl.sd.sig.mmtc.app;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
-import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -48,13 +47,8 @@ public class TimeCorrelationAncillaryOperations {
 
     private double computeDt() throws TimeConvertException, TextProductException {
         // The TDT(G) value can be either a calendar string or a numeric value inside an SCLK kernel
-        String tdtGPrevStr = ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX);
-        final double tdtGPrev;
-        if (SclkKernel.isNumVal(tdtGPrevStr)) {
-            tdtGPrev = Double.parseDouble(tdtGPrevStr);
-        } else {
-            tdtGPrev = TimeConvert.tdtCalStrToTdt(tdtGPrevStr.replace("@", ""));
-        }
+        String tdtGPrevStr = ctx.currentSclkKernel.get().getLastTriplet().tdtStr;
+        final double tdtGPrev = TimeConvert.tdtCalStrToTdt(tdtGPrevStr);
 
         return (ctx.correlation.target.get().getTargetSampleTdtG() - tdtGPrev) / TimeConvert.SECONDS_PER_DAY;
     }

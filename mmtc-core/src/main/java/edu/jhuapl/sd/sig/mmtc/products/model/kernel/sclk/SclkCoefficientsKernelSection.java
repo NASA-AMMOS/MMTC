@@ -20,6 +20,10 @@ public class SclkCoefficientsKernelSection extends KernelSection {
         this.afterTripletLines = afterTripletLines;
     }
 
+    public SclkCoefficientFormat getSclkCoefficientFormat() {
+        return sclkCoefficientFormat;
+    }
+
     @Override
     public List<String> toOutputLines() throws TimeConvertException {
         List<String> outputLines = new ArrayList<>();
@@ -45,7 +49,7 @@ public class SclkCoefficientsKernelSection extends KernelSection {
 
         for (String line : lines) {
             if (! sawSclk01CoefficientsOpening) {
-                if (line.matches("^SCLK01_COEFFICIENTS_(\\S)+(\\s)*=(\\s)*\\((\\s+)")) {
+                if (line.matches("^SCLK01_COEFFICIENTS_(\\S)+(\\s)*=(\\s)*\\((\\s*)")) {
                     sawSclk01CoefficientsOpening = true;
                     beforeTripletLines.add(line);
                     beforeTripletLines.add("");

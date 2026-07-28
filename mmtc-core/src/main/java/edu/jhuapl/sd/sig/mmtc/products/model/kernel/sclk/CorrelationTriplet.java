@@ -22,6 +22,57 @@ public class CorrelationTriplet {
         this.clkChgRate = clkChgRate;
     }
 
+    public String format(SclkCoefficientFormat fmt) throws TimeConvertException {
+        String outputLine = "";
+
+        switch (fmt.encSclkFormat) {
+            case INTEGER:
+                outputLine += String.format("%" + fmt.encSclkRightAlignedIndex + "d", (long) Math.floor(encSclk));
+                break;
+            case SCIENTIFIC_NOTATION:
+                outputLine += String.format("%" + fmt.encSclkRightAlignedIndex + "." + fmt.encSclkScale + "E", encSclk);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value format: " + fmt.encSclkFormat);
+        }
+
+        // pre-TDT padding
+        outputLine = appendSpaces(outputLine, fmt.preTdtSpaceCount);
+
+        switch (fmt.tdtFormat) {
+            case SCIENTIFIC_NOTATION:
+                // todo check this
+                double tdtDbl = TimeConvert.tdtCalStrToTdt(tdtStr);
+                outputLine += String.format("%." + fmt.tdtScale + "E", tdtDbl);
+                break;
+            case CAL_STR:
+                // todo apply TDT precision here?
+                outputLine += "@" + tdtStr;
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value format: " + fmt.tdtFormat);
+        }
+
+        // pre-clkrate padding
+        outputLine = appendSpaces(outputLine, fmt.preClkRateSpaceCount);
+
+        switch (fmt.clkRateFormat) {
+            case SCIENTIFIC_NOTATION:
+                outputLine += String.format("%." + fmt.clkRateScale + "E", clkChgRate);
+                break;
+            case FLOAT:
+                outputLine += String.format("%." + fmt.clkRateScale + "f", clkChgRate);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value format: " + fmt.clkRateFormat);
+        }
+
+        // post-clkrate padding
+        outputLine = appendSpaces(outputLine, fmt.postClkRateSpaceCount);
+
+        return outputLine;
+    }
+
     public static CorrelationTriplet parse(String tripletLine) throws TimeConvertException {
         final Matcher matcher = TRIPLET_LINE_PATTERN.matcher(tripletLine);
 
@@ -76,57 +127,6 @@ public class CorrelationTriplet {
         }
 
         return new CorrelationTriplet(encSclk, tdtStrVal, clkRate);
-    }
-
-    public String format(SclkCoefficientFormat fmt) throws TimeConvertException {
-        String outputLine = "";
-
-        switch (fmt.encSclkFormat) {
-            case INTEGER:
-                outputLine += String.format("%" + fmt.encSclkRightAlignedIndex + "d", (long) Math.floor(encSclk));
-                break;
-            case SCIENTIFIC_NOTATION:
-                outputLine += String.format("%" + fmt.encSclkRightAlignedIndex + "." + fmt.encSclkScale + "E", encSclk);
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value format: " + fmt.encSclkFormat);
-        }
-
-        // pre-TDT padding
-        outputLine = appendSpaces(outputLine, fmt.preTdtSpaceCount);
-
-        switch (fmt.tdtFormat) {
-            case SCIENTIFIC_NOTATION:
-                // todo check this
-                double tdtDbl = TimeConvert.tdtCalStrToTdt(tdtStr);
-                outputLine += String.format("%." + fmt.tdtScale + "E", tdtDbl);
-                break;
-            case CAL_STR:
-                // todo apply TDT precision here?
-                outputLine += "@" + tdtStr;
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value format: " + fmt.tdtFormat);
-        }
-
-        // pre-clkrate padding
-        outputLine = appendSpaces(outputLine, fmt.preClkRateSpaceCount);
-
-        switch (fmt.clkRateFormat) {
-            case SCIENTIFIC_NOTATION:
-                outputLine += String.format("%." + fmt.clkRateScale + "E", clkChgRate);
-                break;
-            case FLOAT:
-                outputLine += String.format("%." + fmt.clkRateScale + "f", clkChgRate);
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value format: " + fmt.clkRateFormat);
-        }
-
-        // post-clkrate padding
-        outputLine = appendSpaces(outputLine, fmt.postClkRateSpaceCount);
-
-        return outputLine;
     }
 
     private static String appendSpaces(String str, int numSpaces) {

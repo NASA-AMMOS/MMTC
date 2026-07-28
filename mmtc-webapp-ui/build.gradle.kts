@@ -14,6 +14,7 @@ val nuxtBuild = tasks.register<Exec>("nuxtBuild") {
 
     executable("npx")
     args("nuxt", "generate")
+    environment("NODE_OPTIONS", "--max-old-space-size=4096")
 
     outputs.dir("mmtc-webapp-ui/.output/public/")
 }

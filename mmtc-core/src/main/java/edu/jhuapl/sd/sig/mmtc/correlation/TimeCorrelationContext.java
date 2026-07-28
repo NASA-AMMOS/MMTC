@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.correlation;
 
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
-import edu.jhuapl.sd.sig.mmtc.products.model.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.NewSclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
 
@@ -22,8 +22,8 @@ public class TimeCorrelationContext {
     public final OffsetDateTime appRunTime;
     public final Settable<Integer> runId = new Settable<>();
 
-    public final Settable<SclkKernel> currentSclkKernel = new Settable<>();
-    public final Settable<SclkKernel> newSclkKernel = new Settable<>();
+    public final Settable<NewSclkKernel> currentSclkKernel = new Settable<>();
+    public final Settable<NewSclkKernel> newSclkKernel = new Settable<>();
     public final Settable<String> newSclkVersionString = new Settable<>();
     public final Settable<Path> newSclkKernelPath = new Settable<>();
     public final Settable<Integer> tk_sclk_fine_tick_modulus = new Settable<>();

@@ -2,7 +2,6 @@ package edu.jhuapl.sd.sig.mmtc.app;
 
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.time.OffsetDateTime;
 import java.util.*;
 import java.math.BigDecimal;
 
@@ -15,6 +14,8 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.model.*;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.NewSclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -95,8 +96,8 @@ public class TimeCorrelationApp {
         logger.info("SPICE kernels loaded:\n" + String.join("\n", TimeConvert.getLoadedKernelNames()));
 
         {
-            SclkKernel currentSclkKernel = new SclkKernel(config.getInputSclkKernelPath().toString());
-            logger.info("Loaded SCLK kernel: " + currentSclkKernel.getPath() + ".");
+            NewSclkKernel currentSclkKernel = NewSclkKernel.read(config.getInputSclkKernelPath());
+            logger.info("Loaded SCLK kernel: " + config.getInputSclkKernelPath().getFileName() + ".");
 
             // Check that the SCLK is a 2-stage clock. Only 2-stage clocks are currently supported. The number of
             // stages is given in the SCLK01_N_FIELDS_nnn field of the SCLK Kernel.
@@ -106,7 +107,7 @@ public class TimeCorrelationApp {
                         "ERROR: SCLK Kernel variable SCLK01_N_FIELDS_nnn indicates an SCLK with %d stages. Only 2-stage clocks are supported by MMTC.", numSclkStages
                 ));
             }
-            currentSclkKernel.readSourceProduct();
+
             ctx.currentSclkKernel.set(currentSclkKernel);
         }
 
@@ -174,12 +175,12 @@ public class TimeCorrelationApp {
             logger.info(USER_NOTICE, "Contact Filter is disabled either in configuration parameters or by command line option -F.");
         } else {
             // In this case, the lookBackRec is the latest record in the current (soon to be previous) SCLK kernel.
-            final String[] lookBackRec;
+            final CorrelationTriplet lookBackRec;
             final int sclk_p;
 
             try {
                 lookBackRec = ctx.currentSclkKernel.get().getPriorRec(tcTarget.getTargetSampleTdtG(), 0.0, runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
-                sclk_p = TimeConvert.encSclkToSclk(config.getNaifSpacecraftId(), sclk_kernel_fine_tick_modulus, Double.parseDouble(lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX])).intValue();
+                sclk_p = TimeConvert.encSclkToSclk(config.getNaifSpacecraftId(), sclk_kernel_fine_tick_modulus, lookBackRec.encSclk).intValue();
             } catch (TextProductException | TimeConvertException e) {
                 throw new MmtcException("Could not find or convert lookback record for Contact Filter in SCLK kernel", e);
             }
@@ -189,8 +190,8 @@ public class TimeCorrelationApp {
             } else {
                 ContactFilter contactFilter = new ContactFilter();
 
-                contactFilter.setEncSclk_previous(lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX]);
-                contactFilter.setTdt_g_previous(lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX]);
+                contactFilter.setEncSclk_previous(Double.toString(lookBackRec.encSclk));
+                contactFilter.setTdt_g_previous(lookBackRec.tdtStr);
                 contactFilter.setTdt_g_current(tcTarget.getTargetSampleTdtG());
 
                 if (contactFilter.process(tcTarget.getTargetSample(), config, sclk_kernel_fine_tick_modulus)) {
@@ -240,7 +241,7 @@ public class TimeCorrelationApp {
 
             if (prodDef instanceof SclkKernelProductDefinition) {
                 // handle the SCLK kernel uniquely, as the seed kernel is already in place before any MMTC run is executed
-                newRunHistoryFileRecord.setValue(preRunProdColName, ctx.currentSclkKernel.get().getVersionString(config.getSclkKernelBasename(), config.getSclkKernelSeparator()));
+                newRunHistoryFileRecord.setValue(preRunProdColName, NewSclkKernel.getVersionString(config.getInputSclkKernelPath(), config.getSclkKernelBasename(), config.getSclkKernelSeparator()));
             } else {
                 // all the other products are only created after at least a single run of MMTC, so we can reuse the postrun values from the prior run here
                 newRunHistoryFileRecord.setValue(preRunProdColName, runHistoryFile.getLatestNonEmptyValueOfCol(postRunProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
@@ -300,21 +301,21 @@ public class TimeCorrelationApp {
         return clkChgRate;
     }
 
-    private String[] getLookbackRecordForPredictedClkChgRate(Double tdtGOfNewTriplet) throws MmtcException, TextProductException, TimeConvertException {
+    private CorrelationTriplet getLookbackRecordForPredictedClkChgRate(Double tdtGOfNewTriplet) throws MmtcException, TextProductException, TimeConvertException {
         Optional<Double> desiredPriorCorrelationTdt = config.getPriorCorrelationTdt();
 
         // this is returned in order of most recent to oldest
-        final List<String[]> priorRecsWithinLookbackWindow = ctx.currentSclkKernel.get().getPriorRecs(
+        final List<CorrelationTriplet> priorRecsWithinLookbackWindow = ctx.currentSclkKernel.get().getPriorRecs(
                 tdtGOfNewTriplet,
                 config.getPredictedClkRateLookBackHours(),
                 config.getMaxPredictedClkRateLookBackHours(),
                 runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback()
         );
 
-        for (String[] record : priorRecsWithinLookbackWindow) {
+        for (CorrelationTriplet record : priorRecsWithinLookbackWindow) {
             if (desiredPriorCorrelationTdt.isPresent()) {
                 final double desired = desiredPriorCorrelationTdt.get();
-                final double candidate = TimeConvert.tdtCalStrToTdt(record[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
+                final double candidate = TimeConvert.tdtCalStrToTdt(record.tdtStr.substring(1));
                 double diff = candidate - desired;
                 logger.info(String.format("Desired %f, candidate %f, diff %f", desired, candidate, diff));
                 if (desired == candidate) {
@@ -328,12 +329,12 @@ public class TimeCorrelationApp {
         if (desiredPriorCorrelationTdt.isPresent()) {
             throw new MmtcException("The specified triplet was not found within the configured lookback period");
         } else {
-            final String[] mostRecentLookbackRecMeetingMinimumOnly = ctx.currentSclkKernel.get().getPriorRec(tdtGOfNewTriplet, config.getPredictedClkRateLookBackHours(), runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
-            Double lookbackRecTdtG        = TimeConvert.tdtCalStrToTdt(mostRecentLookbackRecMeetingMinimumOnly[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
+            final CorrelationTriplet mostRecentLookbackRecMeetingMinimumOnly = ctx.currentSclkKernel.get().getPriorRec(tdtGOfNewTriplet, config.getPredictedClkRateLookBackHours(), runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
+            Double lookbackRecTdtG        = TimeConvert.tdtCalStrToTdt(mostRecentLookbackRecMeetingMinimumOnly.tdtStr.substring(1));
             final double deltaTdt = tdtGOfNewTriplet - lookbackRecTdtG;
 
             String errorMsg = "Insufficient earlier data in the input SCLK Kernel to compute the Predicted CLKRATE. ";
-            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + mostRecentLookbackRecMeetingMinimumOnly[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1) + ",";
+            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + mostRecentLookbackRecMeetingMinimumOnly.tdtStr.substring(1) + ",";
             errorMsg       += "which is " + deltaTdt/3600 + " hours older than the new record being generated. ";
             errorMsg       += "The most recent lookback record is determined using a combination of the lookback and max lookback configuration values, and may not necessarily be the most recent entry in the latest SCLK Kernel. ";
             errorMsg       += String.format("However, the maximum allowable difference specified by the compute.tdtG.rate.predicted.maxLookBackDays configuration option is %f hours. ", config.getMaxPredictedClkRateLookBackHours());
@@ -357,18 +358,16 @@ public class TimeCorrelationApp {
      * @throws MmtcException if the new SCLK or TDT values overlap a previous time correlation
      */
     private Double computePredictedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException, MmtcException {
-        String[] lookBackRec = getLookbackRecordForPredictedClkChgRate(tdt_g);
+        CorrelationTriplet lookBackRec = getLookbackRecordForPredictedClkChgRate(tdt_g);
 
-        logger.debug("computePredictedClkChgRate(): lookBackRec from SCLK = " +
-                lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX] + " " + lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX] + " "
-                + lookBackRec[SclkKernel.TRIPLET_CLKCHGRATE_FIELD_INDEX]);
+        logger.debug("computePredictedClkChgRate(): lookBackRec from SCLK = " + lookBackRec.format(ctx.currentSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat()));
         String tdtGStr = TimeConvert.tdtToTdtCalStr(tdt_g);
         logger.debug("computePredictedClkChgRate(): New TDT(G) = " + tdtGStr + ".");
 
-        Double priorEncSclk  = Double.parseDouble(lookBackRec[SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX]);
+        Double priorEncSclk  = lookBackRec.encSclk;
         int naifScId         = config.getNaifSpacecraftId();
         int sclk0            = TimeConvert.encSclkToSclk(naifScId, sclk_kernel_fine_tick_modulus, priorEncSclk).intValue();
-        Double tdt_g0        = TimeConvert.tdtCalStrToTdt(lookBackRec[SclkKernel.TRIPLET_TDTG_FIELD_INDEX].substring(1));
+        Double tdt_g0        = TimeConvert.tdtCalStrToTdt(lookBackRec.tdtStr.substring(1));
 
         logger.debug("computePredictedClkChgRate(): sclk0 = " + sclk0 + ", tdt_g0 = " + tdt_g0 + ", sclk = " + sclk + ", tdt_g = " + tdt_g);
         return computeClkChgRate(sclk0, tdt_g0, sclk, tdt_g);
@@ -388,12 +387,10 @@ public class TimeCorrelationApp {
      * @throws MmtcException if the input SCLK or TDT overlaps a previous time correlation
      */
     private Double computeInterpolatedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException {
-        final SclkKernel currentSclkKernel = ctx.currentSclkKernel.get();
+        final NewSclkKernel currentSclkKernel = ctx.currentSclkKernel.get();
 
-        logger.debug("computeInterpolatedClkChgRate(): Last rec in existing SCLK kernel = " +
-                currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX) + " " +
-                currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX) + " " +
-                currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_CLKCHGRATE_FIELD_INDEX));
+        final CorrelationTriplet lastRecValue = ctx.currentSclkKernel.get().getLastTriplet();
+        logger.debug("computeInterpolatedClkChgRate(): Last rec in existing SCLK kernel = " + lastRecValue.format(ctx.currentSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat()));
 
         int naifScId = config.getNaifSpacecraftId();
 
@@ -401,15 +398,12 @@ public class TimeCorrelationApp {
         // These will never be (and should never be) a smoothing record, as:
         // - a smoothing entry will always be a penultimate record, not a final one
         // - the User Guide recommends never mixing the use of smoothing entries with interpolated mode
-        String existingKernelEncSclkStr = currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX);
-        String existingKernelTdt_gStr   = currentSclkKernel.getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX);
-
-        double priorEncSclk = Double.parseDouble(existingKernelEncSclkStr);
+        double priorEncSclk = lastRecValue.encSclk;
         int sclk0           = TimeConvert.encSclkToSclk(naifScId, sclk_kernel_fine_tick_modulus, priorEncSclk).intValue();
-        double tdt_g0       = TimeConvert.tdtCalStrToTdt(existingKernelTdt_gStr.replace("@", ""));
+        double tdt_g0       = TimeConvert.tdtCalStrToTdt(lastRecValue.tdtStr.replace("@", ""));
 
-        logger.debug("computeInterpolatedClkChgRate(): existingKernelEncSclkStr = " + existingKernelEncSclkStr);
-        logger.debug("computeInterpolatedClkChgRate(): existingKernelTdt_gStr = " + existingKernelTdt_gStr);
+        logger.debug("computeInterpolatedClkChgRate(): Prior enc SCLK = " + Double.toString(priorEncSclk));
+        logger.debug("computeInterpolatedClkChgRate(): Prior TDT(G) str = " + lastRecValue.tdtStr);
         logger.debug("computeInterpolatedClkChgRate(): sclk0 = " + sclk0 + ", tdt_g0 = " + tdt_g0 +
                 ", sclk = " + sclk + ", tdt_g = " + tdt_g);
 
@@ -520,7 +514,7 @@ public class TimeCorrelationApp {
             final double predictedClockChangeRate;
 
             final TimeCorrelationRunConfig.ClockChangeRateMode actualClockChangeRateMode;
-            if (config.getClockChangeRateMode().equals(TimeCorrelationRunConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE) && ctx.currentSclkKernel.get().getSourceProductDataRecCount() == 1) {
+            if (config.getClockChangeRateMode().equals(TimeCorrelationRunConfig.ClockChangeRateMode.COMPUTE_INTERPOLATE) && ctx.currentSclkKernel.get().getTriplets().size() == 1) {
                 /*
                  * If this is the very first run of the application for a mission, the input SCLK Kernel is assumed to be the seed kernel.
                  * In this case and ONLY in this case, only compute the predicted clock change rate value, so as
@@ -545,6 +539,16 @@ public class TimeCorrelationApp {
                     break;
                 case COMPUTE_INTERPOLATE:
                     ctx.correlation.interpolated_clock_change_rate.set(computeInterpolatedClkChgRate(curr_sclk_coarse, curr_tdt_g));
+
+                    final CorrelationTriplet currentFinalTriplet = ctx.currentSclkKernel.get().getLastTriplet();
+                    ctx.correlation.updatedInterpolatedTriplet.set(
+                        new CorrelationTriplet(
+                                currentFinalTriplet.encSclk,
+                                currentFinalTriplet.tdtStr,
+                                ctx.correlation.interpolated_clock_change_rate.get()
+                        )
+                    );
+
                     // purposeful fall-through to also compute the predicted (forward-looking) clock change rate
                 case COMPUTE_PREDICT:
                     predictedClockChangeRate = computePredictedClkChgRate(tcTarget.getTargetSample().getTkSclkCoarse(), curr_tdt_g);
@@ -557,6 +561,13 @@ public class TimeCorrelationApp {
             }
 
             ctx.correlation.predicted_clock_change_rate.set(predictedClockChangeRate);
+            ctx.correlation.newPredictedTriplet.set(
+                    new CorrelationTriplet(
+                            ctx.correlation.target.get().getTargetSampleEncSclk(),
+                            TimeConvert.tdtToTdtCalStr(ctx.correlation.target.get().getTargetSampleTdtG()),
+                            predictedClockChangeRate
+                    )
+            );
         }
 
         // Compute 'smoothing' record, if enabled
@@ -568,12 +579,21 @@ public class TimeCorrelationApp {
         // Perform all ancillary post-correlation operations
         new TimeCorrelationAncillaryOperations(ctx).perform();
 
-        // Write or log all output products
+
         ctx.newSclkVersionString.set(getNextSclkKernelVersionString());
+
+        // Write or log all output products
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
             final String postRunColProdColName = RunHistoryFile.getPostRunProductColNameFor(prodDef);
 
             if (prodDef.shouldBeWritten(ctx)) {
+                // SCLK Kernel is a special case and is generated and stored in the run context itself here.
+                // It is then written or reported according to the dry run mode below.
+
+                if (prodDef.getName().equals(SclkKernelProductDefinition.PRODUCT_NAME)) {
+                    ctx.newSclkKernel.set(NewSclkKernel.assembleNewKernelFromContext(ctx));
+                }
+
                 switch(ctx.config.getDryRunConfig().mode) {
                     case NOT_DRY_RUN: {
                         final ProductWriteResult res = prodDef.write(ctx);
@@ -590,7 +610,7 @@ public class TimeCorrelationApp {
                         // Intentionally skip all processing for other output products, and only write the SCLK kernel to a special path
                         if (prodDef.getName().equals(SclkKernelProductDefinition.PRODUCT_NAME)) {
                             SclkKernelProductDefinition sclkKernelProdDef = (SclkKernelProductDefinition) prodDef;
-                            sclkKernelProdDef.writeToAlternatePath(ctx, ctx.config.getDryRunConfig().sclkKernelOutputPath);
+                            sclkKernelProdDef.writeNewProduct(ctx, ctx.config.getDryRunConfig().sclkKernelOutputPath);
                         }
                         break;
                     }
@@ -642,7 +662,7 @@ public class TimeCorrelationApp {
                 final int curLatestTripletPartition = ctx.config.getSclkPartition(
                         TimeConvert.parseIsoDoyUtcStr(
                             TimeConvert.tdtCalStrToUtc(
-                                    ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX).replace("@", ""),
+                                    ctx.currentSclkKernel.get().getLastTriplet().tdtStr.replace("@", ""),
                                     9
                             )
                         )
@@ -680,7 +700,7 @@ public class TimeCorrelationApp {
 
             logger.info(USER_NOTICE, String.format("Calculated additional smoothing triplet: %d %s %f", smoothingRecordCoarseSclk, TimeConvert.tdtToTdtCalStr(smoothingRecordTdtG), smoothingRecordClkChgRate));
 
-            SclkKernel.CorrelationTriplet newSmoothingTriplet = new SclkKernel.CorrelationTriplet(
+            CorrelationTriplet newSmoothingTriplet = new CorrelationTriplet(
                     TimeConvert.sclkToEncSclk(
                             ctx.config.getNaifSpacecraftId(),
                             partitionForSmoothingRecord,
@@ -701,13 +721,8 @@ public class TimeCorrelationApp {
         final TimeCorrelationTarget tcTarget = ctx.correlation.target.get();
         final double targetTdtG = tcTarget.getTargetSampleTdtG();
 
-        final String prevTdtGStr = ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TRIPLET_TDTG_FIELD_INDEX);
-        final double prevTdtG;
-        if (SclkKernel.isNumVal(prevTdtGStr)) {
-            prevTdtG = Double.parseDouble(prevTdtGStr);
-        } else {
-            prevTdtG = TimeConvert.tdtCalStrToTdt(prevTdtGStr.replace("@", ""));
-        }
+        final String prevTdtGStr = ctx.currentSclkKernel.get().getLastTriplet().tdtStr;
+        final double prevTdtG = TimeConvert.tdtCalStrToTdt(prevTdtGStr.replace("@", ""));
 
         if (!(targetTdtG > prevTdtG)) {
             throw new MmtcException(String.format(
@@ -717,7 +732,7 @@ public class TimeCorrelationApp {
             ));
         }
 
-        final double prevEncSclk = Double.parseDouble(ctx.currentSclkKernel.get().getLastRecValue(SclkKernel.TRIPLET_ENCSCLK_FIELD_INDEX));
+        final double prevEncSclk = ctx.currentSclkKernel.get().getLastTriplet().encSclk;
         if (!(tcTarget.getTargetSampleEncSclk() > prevEncSclk)) {
             throw new MmtcException(String.format(
                     "Error: the target sample has an earlier or equal SCLK as compared to the last triplet in the input SCLK kernel; new correlations must have subsequent SCLK and TDT(G) values that are strictly increasing. Target sample enc SCLK: %f; SCLK kernel's latest enc SCLK: %f",
@@ -727,7 +742,7 @@ public class TimeCorrelationApp {
         }
     }
 
-    private String getNextSclkKernelVersionString() {
+    private String getNextSclkKernelVersionString() throws MmtcException {
         boolean runHistoryRecordExists;
         Map<String, String> lastRunHistoryRecord;
         String currentSclkCounterStr = "";
@@ -742,9 +757,9 @@ public class TimeCorrelationApp {
 
         if(!config.generateUniqueKernelCounters() || !runHistoryRecordExists) {
             return constructNextSclkKernelCounter(
-                    ctx.currentSclkKernel.get().getName(),
+                    config.getInputSclkKernelPath().getFileName().toString(),
                     config.getSclkKernelSeparator(),
-                    SclkKernel.FILE_SUFFIX
+                    NewSclkKernel.FILE_SUFFIX
             );
         } else {
             return StringUtils.leftPad(String.valueOf(

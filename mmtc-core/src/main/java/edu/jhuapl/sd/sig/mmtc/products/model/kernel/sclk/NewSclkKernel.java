@@ -1,5 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
+import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.*;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -9,8 +12,12 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -20,8 +27,12 @@ import java.util.stream.IntStream;
 // an immutable class that retains no reference to its original filepath
 public class NewSclkKernel extends TextKernel {
     public static final Pattern TRIPLET_LINE_PATTERN = Pattern.compile("^(\\s+)(\\S+)(\\s+)(\\S+)(\\s+)(\\S+)(\\s*)");
+    public static final String FILE_SUFFIX = ".tsc";
 
     private static final String SCLK_KERNEL_IDENTIFIER = "KPL/SCLK";
+
+    public static final String TEXT_FIELD_FILENAME = "FILENAME";
+    public static final String TEXT_FIELD_CREATION_DATE = "CREATION_DATE";
 
     protected static final Logger logger = LogManager.getLogger();
 
@@ -33,6 +44,52 @@ public class NewSclkKernel extends TextKernel {
         this(other.sections);
     }
 
+    private NewSclkKernel withAppendedTriplet(CorrelationTriplet correlationTriplet) {
+        return withAppendedTriplets(Arrays.asList(correlationTriplet));
+    }
+
+    private static String formatCreationDateForKernel(OffsetDateTime creationDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        OffsetDateTime productCreationTime = creationDateTime;
+        return productCreationTime.format(formatter);
+    }
+
+    public static NewSclkKernel assembleNewKernelFromContext(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException {
+        NewSclkKernel updatedSclkKernel = ctx.currentSclkKernel.get()
+                .withUpdatedTextField(NewSclkKernel.TEXT_FIELD_FILENAME, ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc")
+                .withUpdatedTextField(NewSclkKernel.TEXT_FIELD_CREATION_DATE, formatCreationDateForKernel(ctx.appRunTime));
+
+        // if applicable, set the updated 'final' / 'ultimate' triplet with the interpolated rate (soon to be penultimate)
+        if (ctx.correlation.updatedInterpolatedTriplet.isSet()) {
+            updatedSclkKernel = updatedSclkKernel.withUpdatedFinalTriplet(ctx.correlation.updatedInterpolatedTriplet.get());
+        }
+
+        // if applicable, add the new smoothing triplet
+        if (ctx.correlation.newSmoothingTriplet.isSet()) {
+            updatedSclkKernel = updatedSclkKernel.withAppendedTriplet(ctx.correlation.newSmoothingTriplet.get());
+        }
+
+        // add the new predicted triplet
+        updatedSclkKernel = updatedSclkKernel.withAppendedTriplet(ctx.correlation.newPredictedTriplet.get());
+
+        return updatedSclkKernel;
+    }
+
+    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx, Path outputPath) throws MmtcException {
+        // the passed context already contains the new SCLK kernel
+
+        try {
+            Files.write(outputPath, ctx.newSclkKernel.get().toLines());
+        } catch (TimeConvertException | IOException e) {
+            throw new MmtcException(e);
+        }
+
+        return new ProductWriteResult(
+                outputPath,
+                ctx.newSclkVersionString.get()
+        );
+    }
+
     public SclkCoefficientsKernelSection getCoefficientsSection() {
         KernelSection coeffSection = this.sections.stream().filter(sec -> sec instanceof SclkCoefficientsKernelSection).findFirst().orElseThrow(() -> new IllegalStateException("Did not find an SCLK coefficients section"));
         return (SclkCoefficientsKernelSection) coeffSection;
@@ -40,6 +97,10 @@ public class NewSclkKernel extends TextKernel {
 
     public List<CorrelationTriplet> getTriplets() {
         return getCoefficientsSection().getTriplets();
+    }
+
+    public static String getVersionString(final Path path, final String sclkBaseName, final String separator) {
+        return path.getFileName().toString().replace(sclkBaseName + separator, "").replace(FILE_SUFFIX, "");
     }
 
     public NewSclkKernel withUpdatedTextField(String fieldName, String fieldVal) {
@@ -188,12 +249,12 @@ public class NewSclkKernel extends TextKernel {
         return results;
     }
 
-    protected static NewSclkKernel read(Path path) throws IOException, TimeConvertException {
+    public static NewSclkKernel read(Path path) throws IOException, TimeConvertException {
         final List<LinesKernelSection> linesKernelSections = TextKernel.readSections(path);
 
-        // validate that the first section is a text kernel section, and that is has the SCLK kernel identifier
+        // check that the first section is a text kernel section, and that it has the SCLK kernel identifier
         if (! firstLineStartsWith(linesKernelSections.get(0), SCLK_KERNEL_IDENTIFIER)) {
-            throw new RuntimeException("First line of file does not contain " + SCLK_KERNEL_IDENTIFIER);
+            logger.warn("First line of file does not contain " + SCLK_KERNEL_IDENTIFIER);
         }
 
         final List<KernelSection> resultingSclkKernelSections = new ArrayList<>();

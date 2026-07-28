@@ -42,9 +42,12 @@ public abstract class TextKernel {
         return outputLines;
     }
 
+    /*
     public void write(Path path) throws TimeConvertException, IOException {
         Files.write(path, toLines());
     }
+
+     */
 
     protected static List<LinesKernelSection> readSections(Path path) throws IOException {
         List<String> lines = Files.readAllLines(path);
@@ -53,48 +56,38 @@ public abstract class TextKernel {
 
         CurrentParserSection currentParserSection = CurrentParserSection.TEXT;
         KernelTextLineAccumulator textLineAccum = new KernelTextLineAccumulator();
+
         for (int lineNum = 0; lineNum < lines.size(); lineNum++) {
             String line = lines.get(lineNum);
+
             if (line.startsWith(TEXT_KERNEL_BEGIN_TEXT_MARKER)) {
-                if (currentParserSection.equals(CurrentParserSection.TEXT)) {
-                    throw new IllegalStateException(String.format("Parsing error at line %d: unexpected '%s' when already in a text section", lineNum + 1, TEXT_KERNEL_BEGIN_DATA_MARKER));
-                }
+                addSectionIfNonEmpty(parsedSections, textLineAccum, currentParserSection);
 
-                parsedSections.add(new DataKernelSection(textLineAccum));
                 currentParserSection = CurrentParserSection.TEXT;
-
                 textLineAccum = new KernelTextLineAccumulator();
-                textLineAccum.add(line);
-
-                continue;
             } else if (line.startsWith(TEXT_KERNEL_BEGIN_DATA_MARKER)) {
-                if (currentParserSection.equals(CurrentParserSection.DATA)) {
-                    throw new IllegalStateException(String.format("Parsing error at line %d: unexpected '%s' when already in a data section", lineNum + 1, TEXT_KERNEL_BEGIN_DATA_MARKER));
-                }
+                addSectionIfNonEmpty(parsedSections, textLineAccum, currentParserSection);
 
-                parsedSections.add(new TextKernelSection(textLineAccum));
                 currentParserSection = CurrentParserSection.DATA;
-
                 textLineAccum = new KernelTextLineAccumulator();
-                textLineAccum.add(line);
-
-                continue;
             }
 
             textLineAccum.add(line);
         }
 
-        if (! textLineAccum.lines.isEmpty()) {
-            if (currentParserSection.equals(CurrentParserSection.DATA)) {
-                parsedSections.add(new DataKernelSection(textLineAccum));
-            } else if (currentParserSection.equals(CurrentParserSection.TEXT)) {
-                parsedSections.add(new TextKernelSection(textLineAccum));
-            }
-        }
-
-
+        addSectionIfNonEmpty(parsedSections, textLineAccum, currentParserSection);
 
         return Collections.unmodifiableList(parsedSections);
+    }
+
+    private static void addSectionIfNonEmpty(List<LinesKernelSection> parsedSections, KernelTextLineAccumulator accum, CurrentParserSection currentParserSection) {
+        if (! accum.lines.isEmpty()) {
+            if (currentParserSection.equals(CurrentParserSection.DATA)) {
+                parsedSections.add(new DataKernelSection(accum));
+            } else if (currentParserSection.equals(CurrentParserSection.TEXT)) {
+                parsedSections.add(new TextKernelSection(accum));
+            }
+        }
     }
 
     protected static boolean firstLineStartsWith(LinesKernelSection section, String expectedString) {
