@@ -1,7 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk;
 
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
-import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.NewSclkKernel;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
@@ -13,11 +12,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class NewSclkKernelTest {
+class SclkKernelTest {
 
     @Test
     public void readWriteTest() throws IOException, TimeConvertException {
-        NewSclkKernel sclkKernel = NewSclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc"));
+        SclkKernel sclkKernel = SclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc"));
 
         // sanity checks on the triplets
         assertEquals(1455, sclkKernel.getTriplets().size());
@@ -63,7 +62,7 @@ class NewSclkKernelTest {
 
     @Test
     public void readTest() throws IOException, TimeConvertException, TextProductException {
-        NewSclkKernel sclkKernel = NewSclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_0000.tsc"));
+        SclkKernel sclkKernel = SclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_0000.tsc"));
 
         assertEquals(1, sclkKernel.getTriplets().size());
         CorrelationTriplet firstTriplet = sclkKernel.getTriplets().get(0);
@@ -74,7 +73,7 @@ class NewSclkKernelTest {
         CorrelationTriplet lastTriplet = sclkKernel.getLastTriplet();
         assertEquals(firstTriplet, lastTriplet);
 
-        sclkKernel = NewSclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_1876.tsc"));
+        sclkKernel = SclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_1876.tsc"));
         assertEquals(1877, sclkKernel.getTriplets().size());
         lastTriplet = sclkKernel.getLastTriplet();
 
@@ -87,7 +86,7 @@ class NewSclkKernelTest {
     public void testGetVersionString() {
         assertEquals(
                 "1454",
-                NewSclkKernel.getVersionString(
+                SclkKernel.getVersionString(
                     Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc"),
                     "new-horizons",
                     "_"
@@ -96,7 +95,7 @@ class NewSclkKernelTest {
 
         assertEquals(
                 "0001",
-                NewSclkKernel.getVersionString(
+                SclkKernel.getVersionString(
                         Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_0001.tsc"),
                         "new-horizons",
                         "_"
@@ -105,7 +104,7 @@ class NewSclkKernelTest {
 
         assertEquals(
                 "0001",
-                NewSclkKernel.getVersionString(
+                SclkKernel.getVersionString(
                         Paths.get("src/test/resources/nh_kernels/sclk/new_horizons_0001.tsc"),
                         "new_horizons",
                         "_"

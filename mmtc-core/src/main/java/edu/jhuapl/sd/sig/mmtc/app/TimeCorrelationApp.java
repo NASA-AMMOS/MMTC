@@ -15,7 +15,7 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.model.*;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
-import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.NewSclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -96,7 +96,7 @@ public class TimeCorrelationApp {
         logger.info("SPICE kernels loaded:\n" + String.join("\n", TimeConvert.getLoadedKernelNames()));
 
         {
-            NewSclkKernel currentSclkKernel = NewSclkKernel.read(config.getInputSclkKernelPath());
+            SclkKernel currentSclkKernel = SclkKernel.read(config.getInputSclkKernelPath());
             logger.info("Loaded SCLK kernel: " + config.getInputSclkKernelPath().getFileName() + ".");
 
             // Check that the SCLK is a 2-stage clock. Only 2-stage clocks are currently supported. The number of
@@ -241,7 +241,7 @@ public class TimeCorrelationApp {
 
             if (prodDef instanceof SclkKernelProductDefinition) {
                 // handle the SCLK kernel uniquely, as the seed kernel is already in place before any MMTC run is executed
-                newRunHistoryFileRecord.setValue(preRunProdColName, NewSclkKernel.getVersionString(config.getInputSclkKernelPath(), config.getSclkKernelBasename(), config.getSclkKernelSeparator()));
+                newRunHistoryFileRecord.setValue(preRunProdColName, SclkKernel.getVersionString(config.getInputSclkKernelPath(), config.getSclkKernelBasename(), config.getSclkKernelSeparator()));
             } else {
                 // all the other products are only created after at least a single run of MMTC, so we can reuse the postrun values from the prior run here
                 newRunHistoryFileRecord.setValue(preRunProdColName, runHistoryFile.getLatestNonEmptyValueOfCol(postRunProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
@@ -387,7 +387,7 @@ public class TimeCorrelationApp {
      * @throws MmtcException if the input SCLK or TDT overlaps a previous time correlation
      */
     private Double computeInterpolatedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException {
-        final NewSclkKernel currentSclkKernel = ctx.currentSclkKernel.get();
+        final SclkKernel currentSclkKernel = ctx.currentSclkKernel.get();
 
         final CorrelationTriplet lastRecValue = ctx.currentSclkKernel.get().getLastTriplet();
         logger.debug("computeInterpolatedClkChgRate(): Last rec in existing SCLK kernel = " + lastRecValue.format(ctx.currentSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat()));
@@ -591,7 +591,7 @@ public class TimeCorrelationApp {
                 // It is then written or reported according to the dry run mode below.
 
                 if (prodDef.getName().equals(SclkKernelProductDefinition.PRODUCT_NAME)) {
-                    ctx.newSclkKernel.set(NewSclkKernel.assembleNewKernelFromContext(ctx));
+                    ctx.newSclkKernel.set(SclkKernel.assembleNewKernelFromContext(ctx));
                 }
 
                 switch(ctx.config.getDryRunConfig().mode) {
@@ -759,7 +759,7 @@ public class TimeCorrelationApp {
             return constructNextSclkKernelCounter(
                     config.getInputSclkKernelPath().getFileName().toString(),
                     config.getSclkKernelSeparator(),
-                    NewSclkKernel.FILE_SUFFIX
+                    SclkKernel.FILE_SUFFIX
             );
         } else {
             return StringUtils.leftPad(String.valueOf(

@@ -7,7 +7,7 @@ import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import java.math.BigDecimal;
 import java.util.regex.Matcher;
 
-import static edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.NewSclkKernel.TRIPLET_LINE_PATTERN;
+import static edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel.TRIPLET_LINE_PATTERN;
 
 public class CorrelationTriplet {
     public final double encSclk;

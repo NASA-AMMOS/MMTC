@@ -3,9 +3,8 @@ package edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.KernelValueFormat;
 
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.NewSclkKernel.TRIPLET_LINE_PATTERN;
+import static edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel.TRIPLET_LINE_PATTERN;
 
 public class SclkCoefficientFormat {
     final int encSclkRightAlignedIndex;

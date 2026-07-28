@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
@@ -22,10 +21,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 // an immutable class that retains no reference to its original filepath
-public class NewSclkKernel extends TextKernel {
+public class SclkKernel extends TextKernel {
     public static final Pattern TRIPLET_LINE_PATTERN = Pattern.compile("^(\\s+)(\\S+)(\\s+)(\\S+)(\\s+)(\\S+)(\\s*)");
     public static final String FILE_SUFFIX = ".tsc";
 
@@ -36,15 +34,15 @@ public class NewSclkKernel extends TextKernel {
 
     protected static final Logger logger = LogManager.getLogger();
 
-    protected NewSclkKernel(List<KernelSection> sections) {
+    protected SclkKernel(List<KernelSection> sections) {
         super(sections);
     }
 
-    public NewSclkKernel(NewSclkKernel other) {
+    public SclkKernel(SclkKernel other) {
         this(other.sections);
     }
 
-    private NewSclkKernel withAppendedTriplet(CorrelationTriplet correlationTriplet) {
+    private SclkKernel withAppendedTriplet(CorrelationTriplet correlationTriplet) {
         return withAppendedTriplets(Arrays.asList(correlationTriplet));
     }
 
@@ -54,10 +52,10 @@ public class NewSclkKernel extends TextKernel {
         return productCreationTime.format(formatter);
     }
 
-    public static NewSclkKernel assembleNewKernelFromContext(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException {
-        NewSclkKernel updatedSclkKernel = ctx.currentSclkKernel.get()
-                .withUpdatedTextField(NewSclkKernel.TEXT_FIELD_FILENAME, ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc")
-                .withUpdatedTextField(NewSclkKernel.TEXT_FIELD_CREATION_DATE, formatCreationDateForKernel(ctx.appRunTime));
+    public static SclkKernel assembleNewKernelFromContext(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException {
+        SclkKernel updatedSclkKernel = ctx.currentSclkKernel.get()
+                .withUpdatedTextField(SclkKernel.TEXT_FIELD_FILENAME, ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc")
+                .withUpdatedTextField(SclkKernel.TEXT_FIELD_CREATION_DATE, formatCreationDateForKernel(ctx.appRunTime));
 
         // if applicable, set the updated 'final' / 'ultimate' triplet with the interpolated rate (soon to be penultimate)
         if (ctx.correlation.updatedInterpolatedTriplet.isSet()) {
@@ -103,7 +101,7 @@ public class NewSclkKernel extends TextKernel {
         return path.getFileName().toString().replace(sclkBaseName + separator, "").replace(FILE_SUFFIX, "");
     }
 
-    public NewSclkKernel withUpdatedTextField(String fieldName, String fieldVal) {
+    public SclkKernel withUpdatedTextField(String fieldName, String fieldVal) {
         List<KernelSection> newSections = new ArrayList<>();
 
         for (KernelSection section : this.sections) {
@@ -129,10 +127,10 @@ public class NewSclkKernel extends TextKernel {
             }
         }
 
-        return new NewSclkKernel(newSections);
+        return new SclkKernel(newSections);
     }
 
-    public NewSclkKernel withAppendedTriplets(List<CorrelationTriplet> newTripletsToAppend) {
+    public SclkKernel withAppendedTriplets(List<CorrelationTriplet> newTripletsToAppend) {
         List<KernelSection> newSections = new ArrayList<>();
 
         for (KernelSection section : this.sections) {
@@ -144,10 +142,10 @@ public class NewSclkKernel extends TextKernel {
             }
         }
 
-        return new NewSclkKernel(newSections);
+        return new SclkKernel(newSections);
     }
 
-    public NewSclkKernel withUpdatedFinalTriplet(CorrelationTriplet updatedTriplet) {
+    public SclkKernel withUpdatedFinalTriplet(CorrelationTriplet updatedTriplet) {
         List<KernelSection> newSections = new ArrayList<>();
 
         for (KernelSection section : this.sections) {
@@ -159,7 +157,7 @@ public class NewSclkKernel extends TextKernel {
             }
         }
 
-        return new NewSclkKernel(newSections);
+        return new SclkKernel(newSections);
     }
 
     public CorrelationTriplet getLastTriplet() throws TextProductException {
@@ -249,7 +247,7 @@ public class NewSclkKernel extends TextKernel {
         return results;
     }
 
-    public static NewSclkKernel read(Path path) throws IOException, TimeConvertException {
+    public static SclkKernel read(Path path) throws IOException, TimeConvertException {
         final List<LinesKernelSection> linesKernelSections = TextKernel.readSections(path);
 
         // check that the first section is a text kernel section, and that it has the SCLK kernel identifier
@@ -268,6 +266,6 @@ public class NewSclkKernel extends TextKernel {
             }
         }
 
-        return new NewSclkKernel(resultingSclkKernelSections);
+        return new SclkKernel(resultingSclkKernelSections);
     }
 }

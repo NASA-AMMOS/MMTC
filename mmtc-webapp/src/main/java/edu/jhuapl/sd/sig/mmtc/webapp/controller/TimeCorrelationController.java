@@ -12,7 +12,7 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
-import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.NewSclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -292,7 +292,7 @@ public class TimeCorrelationController extends BaseController {
         final Path sclkKernelPath = config.getSclkKernelPathFor(sclkKernelFilename);
 
         return config.withSpiceMutexAndKernels(sclkKernelPath, () -> {
-            NewSclkKernel sclkKernel = NewSclkKernel.read(sclkKernelPath.toAbsolutePath());
+            SclkKernel sclkKernel = SclkKernel.read(sclkKernelPath.toAbsolutePath());
 
             List<TimeCorrelationTriplet> results = new ArrayList<>();
 

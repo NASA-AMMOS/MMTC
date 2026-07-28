@@ -6,7 +6,7 @@ import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
-import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.NewSclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 /**
  * Describes the set of SCLK kernel output products that MMTC performs operations on.
- * A single SCLK kernel is modeled by {@link NewSclkKernel}.
+ * A single SCLK kernel is modeled by {@link SclkKernel}.
  */
 public class SclkKernelProductDefinition extends EntireFileOutputProductDefinition {
     public static final String PRODUCT_NAME = "SCLK Kernel";
@@ -29,7 +29,7 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         return new ResolvedProductDirPrefixSuffix(
                 conf.getSclkKernelOutputDir().toAbsolutePath(),
                 conf.getSclkKernelBasename(),
-                NewSclkKernel.FILE_SUFFIX
+                SclkKernel.FILE_SUFFIX
         );
     }
 
@@ -53,11 +53,11 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         final Path outputPath = ctx.config.getSclkKernelOutputDir().resolve(ctx.newSclkVersionString.get());
         ctx.newSclkKernelPath.set(outputPath);
-        return NewSclkKernel.writeNewProduct(ctx, outputPath);
+        return SclkKernel.writeNewProduct(ctx, outputPath);
     }
 
     public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx, Path sclkKernelOutputPath) throws MmtcException {
-        return NewSclkKernel.writeNewProduct(ctx, sclkKernelOutputPath);
+        return SclkKernel.writeNewProduct(ctx, sclkKernelOutputPath);
     }
 
     /**
