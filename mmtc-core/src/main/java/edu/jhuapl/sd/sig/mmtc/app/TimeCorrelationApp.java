@@ -315,7 +315,7 @@ public class TimeCorrelationApp {
         for (CorrelationTriplet record : priorRecsWithinLookbackWindow) {
             if (desiredPriorCorrelationTdt.isPresent()) {
                 final double desired = desiredPriorCorrelationTdt.get();
-                final double candidate = TimeConvert.tdtCalStrToTdt(record.tdtStr.substring(1));
+                final double candidate = TimeConvert.tdtCalStrToTdt(record.tdtStr);
                 double diff = candidate - desired;
                 logger.info(String.format("Desired %f, candidate %f, diff %f", desired, candidate, diff));
                 if (desired == candidate) {
@@ -330,11 +330,11 @@ public class TimeCorrelationApp {
             throw new MmtcException("The specified triplet was not found within the configured lookback period");
         } else {
             final CorrelationTriplet mostRecentLookbackRecMeetingMinimumOnly = ctx.currentSclkKernel.get().getPriorRec(tdtGOfNewTriplet, config.getPredictedClkRateLookBackHours(), runHistoryFile.getSmoothingTripletTdtGValsToIgnoreDuringLookback());
-            Double lookbackRecTdtG        = TimeConvert.tdtCalStrToTdt(mostRecentLookbackRecMeetingMinimumOnly.tdtStr.substring(1));
+            Double lookbackRecTdtG        = TimeConvert.tdtCalStrToTdt(mostRecentLookbackRecMeetingMinimumOnly.tdtStr);
             final double deltaTdt = tdtGOfNewTriplet - lookbackRecTdtG;
 
             String errorMsg = "Insufficient earlier data in the input SCLK Kernel to compute the Predicted CLKRATE. ";
-            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + mostRecentLookbackRecMeetingMinimumOnly.tdtStr.substring(1) + ",";
+            errorMsg       += "The most recent lookback record in the input SCLK Kernel is at TDT(G) = " + mostRecentLookbackRecMeetingMinimumOnly.tdtStr + ",";
             errorMsg       += "which is " + deltaTdt/3600 + " hours older than the new record being generated. ";
             errorMsg       += "The most recent lookback record is determined using a combination of the lookback and max lookback configuration values, and may not necessarily be the most recent entry in the latest SCLK Kernel. ";
             errorMsg       += String.format("However, the maximum allowable difference specified by the compute.tdtG.rate.predicted.maxLookBackDays configuration option is %f hours. ", config.getMaxPredictedClkRateLookBackHours());
@@ -367,7 +367,7 @@ public class TimeCorrelationApp {
         Double priorEncSclk  = lookBackRec.encSclk;
         int naifScId         = config.getNaifSpacecraftId();
         int sclk0            = TimeConvert.encSclkToSclk(naifScId, sclk_kernel_fine_tick_modulus, priorEncSclk).intValue();
-        Double tdt_g0        = TimeConvert.tdtCalStrToTdt(lookBackRec.tdtStr.substring(1));
+        Double tdt_g0        = TimeConvert.tdtCalStrToTdt(lookBackRec.tdtStr);
 
         logger.debug("computePredictedClkChgRate(): sclk0 = " + sclk0 + ", tdt_g0 = " + tdt_g0 + ", sclk = " + sclk + ", tdt_g = " + tdt_g);
         return computeClkChgRate(sclk0, tdt_g0, sclk, tdt_g);
@@ -400,7 +400,7 @@ public class TimeCorrelationApp {
         // - the User Guide recommends never mixing the use of smoothing entries with interpolated mode
         double priorEncSclk = lastRecValue.encSclk;
         int sclk0           = TimeConvert.encSclkToSclk(naifScId, sclk_kernel_fine_tick_modulus, priorEncSclk).intValue();
-        double tdt_g0       = TimeConvert.tdtCalStrToTdt(lastRecValue.tdtStr.replace("@", ""));
+        double tdt_g0       = TimeConvert.tdtCalStrToTdt(lastRecValue.tdtStr);
 
         logger.debug("computeInterpolatedClkChgRate(): Prior enc SCLK = " + Double.toString(priorEncSclk));
         logger.debug("computeInterpolatedClkChgRate(): Prior TDT(G) str = " + lastRecValue.tdtStr);
@@ -581,6 +581,7 @@ public class TimeCorrelationApp {
 
 
         ctx.newSclkVersionString.set(getNextSclkKernelVersionString());
+        logger.debug("Next SCLK version string: " + ctx.newSclkVersionString.get());
 
         // Write or log all output products
         for (OutputProductDefinition<?> prodDef : config.getAllOutputProductDefs()) {
@@ -662,7 +663,7 @@ public class TimeCorrelationApp {
                 final int curLatestTripletPartition = ctx.config.getSclkPartition(
                         TimeConvert.parseIsoDoyUtcStr(
                             TimeConvert.tdtCalStrToUtc(
-                                    ctx.currentSclkKernel.get().getLastTriplet().tdtStr.replace("@", ""),
+                                    ctx.currentSclkKernel.get().getLastTriplet().tdtStr,
                                     9
                             )
                         )
@@ -722,7 +723,7 @@ public class TimeCorrelationApp {
         final double targetTdtG = tcTarget.getTargetSampleTdtG();
 
         final String prevTdtGStr = ctx.currentSclkKernel.get().getLastTriplet().tdtStr;
-        final double prevTdtG = TimeConvert.tdtCalStrToTdt(prevTdtGStr.replace("@", ""));
+        final double prevTdtG = TimeConvert.tdtCalStrToTdt(prevTdtGStr);
 
         if (!(targetTdtG > prevTdtG)) {
             throw new MmtcException(String.format(

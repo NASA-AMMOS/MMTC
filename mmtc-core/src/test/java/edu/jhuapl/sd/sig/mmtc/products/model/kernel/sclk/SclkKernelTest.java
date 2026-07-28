@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SclkKernelTest {
 
@@ -80,6 +81,16 @@ class SclkKernelTest {
         assertEquals(21119278300000l, lastTriplet.encSclk);
         assertEquals("09-JUN-2019-11:28:37.488441", lastTriplet.tdtStr);
         assertEquals(1.00000001166, lastTriplet.clkChgRate);
+    }
+
+    @Test
+    public void updateTextFieldTest() throws IOException, TimeConvertException {
+        SclkKernel sclkKernel = SclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc"));
+        SclkKernel updated = sclkKernel.withUpdatedTextField(SclkKernel.TEXT_FIELD_FILENAME, "test_file_name.tsc");
+        updated = updated.withUpdatedTextField(SclkKernel.TEXT_FIELD_CREATION_DATE, "38 ABC 01234");
+
+        assertTrue(updated.toLines().stream().anyMatch(line -> line.startsWith("FILENAME = \"test_file_name.tsc\"")));
+        assertTrue(updated.toLines().stream().anyMatch(line -> line.startsWith("CREATION_DATE = \"38 ABC 01234\"")));
     }
 
     @Test

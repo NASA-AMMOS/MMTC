@@ -359,30 +359,6 @@ public class SclkScetFile extends TextProduct {
     }
 
     /**
-     * Determines if the record is an SCLK/SCET time correlation record containing a quadruplet
-     * if an SCLK/SCET file or a triplet if an SCLK kernel, or if its supporting text. Implements
-     * the corresponding abstract method in the parent class. An SCLK/SCET time correlation contains
-     * four fields (SCLK, SCET, DUT, ClockChgRate) separated by whitespace. The SCET UTC string
-     * always contains an ISO "T" character. An SCLK kernel time correlation contains three fields
-     * (enc SCLK, TDT, ClockChgRate) separated by whitespace. The TDT string always has "@" as its
-     * first character.
-     *
-     * @param record IN the record to evaluate
-     * @return true if the record is a time correlation quadruplet, false otherwise
-     */
-    public boolean isDataRecord(String record) {
-        boolean isdata = false;
-        String[] fields = record.trim().split("\\s+");
-
-        if (fields.length == 3) {
-            isdata = fields[1].startsWith("@");
-        }
-
-        return isdata;
-    }
-
-
-    /**
      * Creates a set of SCLK/SCET records for each leap second added within the time
      * of interest.
      * @param startTime IN the starting of the time period of interest

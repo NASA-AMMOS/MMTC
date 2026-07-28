@@ -52,7 +52,7 @@ public class SclkKernel extends TextKernel {
         return productCreationTime.format(formatter);
     }
 
-    public static SclkKernel assembleNewKernelFromContext(TimeCorrelationContext ctx) throws TextProductException, TimeConvertException {
+    public static SclkKernel assembleNewKernelFromContext(TimeCorrelationContext ctx) {
         SclkKernel updatedSclkKernel = ctx.currentSclkKernel.get()
                 .withUpdatedTextField(SclkKernel.TEXT_FIELD_FILENAME, ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc")
                 .withUpdatedTextField(SclkKernel.TEXT_FIELD_CREATION_DATE, formatCreationDateForKernel(ctx.appRunTime));
@@ -75,6 +75,8 @@ public class SclkKernel extends TextKernel {
 
     public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx, Path outputPath) throws MmtcException {
         // the passed context already contains the new SCLK kernel
+
+        logger.info("Writing new SCLK kernel product to: " + outputPath);
 
         try {
             Files.write(outputPath, ctx.newSclkKernel.get().toLines());
@@ -110,7 +112,7 @@ public class SclkKernel extends TextKernel {
 
                 KernelTextLineAccumulator textLineAccum = new KernelTextLineAccumulator();
 
-                Pattern declarationPattern = Pattern.compile("^" + fieldName + "\\s*=\\s*\"(.+)\"\\s+");
+                Pattern declarationPattern = Pattern.compile("^" + fieldName + "\\s*=\\s*\"(.+)\"\\s*");
                 for (String line : textKernelSection.getLines()) {
                     Matcher matcher = declarationPattern.matcher(line);
                     if (matcher.matches()) {
@@ -179,7 +181,7 @@ public class SclkKernel extends TextKernel {
             final double minLookbackSeconds = lookBackHours * 3600.;
 
             List<CorrelationTriplet> triplets = getTriplets();
-            for (int i = triplets.size() - 1; i == 0; i--) {
+            for (int i = triplets.size() - 1; i >= 0; i--) {
                 CorrelationTriplet triplet = triplets.get(i);
                 final String tdtStr = triplet.tdtStr;
                 final double tdtSec = TimeConvert.tdtCalStrToTdt(tdtStr);
@@ -221,7 +223,7 @@ public class SclkKernel extends TextKernel {
 
         try {
             List<CorrelationTriplet> triplets = getTriplets();
-            for (int i = triplets.size() - 1; i == 0; i--) {
+            for (int i = triplets.size() - 1; i >= 0; i--) {
                 CorrelationTriplet triplet = triplets.get(i);
 
                 final String recTdtStr = triplet.tdtStr;

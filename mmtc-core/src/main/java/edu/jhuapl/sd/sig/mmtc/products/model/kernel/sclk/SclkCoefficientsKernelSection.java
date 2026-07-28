@@ -51,23 +51,26 @@ public class SclkCoefficientsKernelSection extends KernelSection {
             if (! sawSclk01CoefficientsOpening) {
                 if (line.matches("^SCLK01_COEFFICIENTS_(\\S)+(\\s)*=(\\s)*\\((\\s*)")) {
                     sawSclk01CoefficientsOpening = true;
-                    beforeTripletLines.add(line);
-                    beforeTripletLines.add("");
-                    continue;
                 }
 
                 beforeTripletLines.add(line);
             } else if (! sawClosingParen) {
                 if (line.trim().endsWith(")")) {
                     sawClosingParen = true;
-                    afterTripletLines.add("");
                     afterTripletLines.add(")");
                     continue;
                 }
 
                 String lineWithoutParens = line.replace("(", "").replace(")", "");
 
+                // if we come across empty lines, and we haven't seen triplets yet, then add it to beforeTripletLines
+                // otherwise, add it to afterTripletLines
                 if (lineWithoutParens.trim().isEmpty()) {
+                    if (triplets.isEmpty()) {
+                        beforeTripletLines.add("");
+                    } else {
+                        afterTripletLines.add("");
+                    }
                     continue;
                 }
 

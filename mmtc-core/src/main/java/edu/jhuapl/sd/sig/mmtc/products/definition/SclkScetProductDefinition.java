@@ -56,7 +56,7 @@ public class SclkScetProductDefinition extends EntireFileOutputProductDefinition
             scetFile.setSourceFilespec(ctx.newSclkKernelPath.get().toString());
             scetFile.updateFile(ctx);
         } catch (TextProductException | TimeConvertException | IOException e) {
-            throw new MmtcException("Failed to generate SCLKSCET file");
+            throw new MmtcException("Failed to generate SCLKSCET file", e);
         }
         List<String> newProductLines = scetFile.getNewProductLines();
         String newRecs = IntStream.range(Math.max(0, newProductLines.size() - (ENTRIES_TO_PRINT+1)), newProductLines.size()-1) // Ignore footer row
