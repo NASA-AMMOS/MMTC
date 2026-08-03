@@ -57,8 +57,7 @@ public class CorrelationTriplet {
                 outputLine += String.format("%." + fmt.tdtScale + "E", tdt.doubleValue());
                 break;
             case CAL_STR:
-                // todo apply TDT precision here?
-                outputLine += "@" + getTdtCalStr();
+                outputLine += "@" + getTdtCalStr(fmt.tdtScale);
                 break;
             case FLOAT:
                 outputLine += String.format("%." + fmt.tdtScale + "f", tdt.doubleValue());
@@ -101,6 +100,10 @@ public class CorrelationTriplet {
 
     public String getTdtCalStr() throws TimeConvertException {
         return TimeConvert.tdtToTdtCalStr(this.tdt.doubleValue());
+    }
+
+    public String getTdtCalStr(int subsecPrecision) throws TimeConvertException {
+        return TimeConvert.tdtToTdtCalStr(this.tdt.doubleValue(), subsecPrecision);
     }
 
     public double getClkChgRate() {

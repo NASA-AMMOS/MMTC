@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk;
 
 import edu.jhuapl.sd.sig.mmtc.TestHelper;
+import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
@@ -213,7 +214,7 @@ class SclkKernelTest {
     public void testGetVersionString() {
         assertEquals(
                 "1454",
-                SclkKernel.getVersionString(
+                SclkKernelProductDefinition.getVersionString(
                     Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc"),
                     "new-horizons",
                     "_"
@@ -222,7 +223,7 @@ class SclkKernelTest {
 
         assertEquals(
                 "0001",
-                SclkKernel.getVersionString(
+                SclkKernelProductDefinition.getVersionString(
                         Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_0001.tsc"),
                         "new-horizons",
                         "_"
@@ -231,7 +232,7 @@ class SclkKernelTest {
 
         assertEquals(
                 "0001",
-                SclkKernel.getVersionString(
+                SclkKernelProductDefinition.getVersionString(
                         Paths.get("src/test/resources/nh_kernels/sclk/new_horizons_0001.tsc"),
                         "new_horizons",
                         "_"
