@@ -312,16 +312,13 @@ public class SclkScetFile extends TextProduct {
             final Double encSclk = triplet.getEncSclk();
             final Double sclkTicks = TimeConvert.encSclkToSclk(naifScId, clockTickRate, encSclk);
 
-            /* Convert the TDT string to a UTC string. Remove the leading "@"
-             * character if it is there.
-             */
             final String tdtStr = triplet.getTdtCalStr();
             final OffsetDateTime scetUtc = TimeConvert.parseIsoDoyUtcStr(TimeConvert.tdtCalStrToUtc(tdtStr, SclkScet.getScetStrSecondsPrecision()));
 
-            /* Compute the Delta Universal TIme (DUT) offset of UTC from TDT. */
+            // Compute the Delta Universal Time (DUT) offset of UTC from TDT.
             final Double dutval = getDutBefore(scetUtc);
 
-            /* The SCLK change rate is the same as the SCLK kernel clock change rate. */
+            // The SCLK-SCET change rate is the same as the SCLK kernel clock change rate.
             final Double sclkrate = triplet.getClkChgRate();
 
             sclkScetEntries.add(new SclkScet(

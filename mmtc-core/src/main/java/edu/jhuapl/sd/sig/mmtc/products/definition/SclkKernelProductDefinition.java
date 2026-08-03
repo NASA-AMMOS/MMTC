@@ -6,6 +6,7 @@ import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkCoefficientFormat;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
@@ -14,6 +15,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel.FILE_SUFFIX;
 
 /**
  * Describes the set of SCLK kernel output products that MMTC performs operations on.
@@ -31,7 +34,7 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         return new ResolvedProductDirPrefixSuffix(
                 conf.getSclkKernelOutputDir().toAbsolutePath(),
                 conf.getSclkKernelBasename(),
-                SclkKernel.FILE_SUFFIX
+                FILE_SUFFIX
         );
     }
 
@@ -54,7 +57,7 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     @Override
     public ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         final Path outputPath = ctx.config.getSclkKernelOutputDir().resolve(
-                ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + SclkKernel.FILE_SUFFIX
+                ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + FILE_SUFFIX
         );
         ctx.newSclkKernelPath.set(outputPath);
 
@@ -79,7 +82,7 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         writeNewProduct(
                 ctx,
                 Paths.get("/tmp").resolve(
-                        ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + SclkKernel.FILE_SUFFIX
+                        ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + FILE_SUFFIX
                 )
         );
 
@@ -88,13 +91,15 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
         // If an interpolated clock change rate has replaced the rate in the existing SCLK kernel record,
         // or if a smoothing record was inserted, print the two latest records.
         // Otherwise, just return the new record
+
+        final SclkCoefficientFormat coeffFmt = ctx.newSclkKernel.get().getCoefficientsFormat();
         try {
             if (ctx.correlation.updatedInterpolatedTriplet.isSet() || ctx.correlation.newSmoothingTriplet.isSet()) {
                 return "[DRY RUN] Updated SCLK entries: \n"
-                        + newSclkEntries.get(0).format(ctx.newSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat()) + "\n"
-                        + newSclkEntries.get(1).format(ctx.newSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat());
+                        + newSclkEntries.get(0).format(coeffFmt) + "\n"
+                        + newSclkEntries.get(1).format(coeffFmt);
             } else {
-                return "[DRY RUN] New SCLK entry: \n" + newSclkEntries.get(1).format(ctx.newSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat());
+                return "[DRY RUN] New SCLK entry: \n" + newSclkEntries.get(1).format(coeffFmt);
             }
         } catch (TimeConvertException e) {
             throw new MmtcException(e);
@@ -111,5 +116,9 @@ public class SclkKernelProductDefinition extends EntireFileOutputProductDefiniti
     @Override
     public String getDisplayName() {
         return "SCLK Kernel";
+    }
+
+    public static String getVersionString(final Path path, final String sclkBaseName, final String separator) {
+        return path.getFileName().toString().replace(sclkBaseName + separator, "").replace(FILE_SUFFIX, "");
     }
 }

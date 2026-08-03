@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+// models a SPICE text kernel, such as an SCLK kernel (*.tsc)
 public abstract class TextKernel {
     private static final String TEXT_KERNEL_BEGIN_DATA_MARKER = "\\begindata";
     private static final String TEXT_KERNEL_BEGIN_TEXT_MARKER = "\\begintext";
@@ -77,9 +78,9 @@ public abstract class TextKernel {
     private static void addSectionIfNonEmpty(List<LinesKernelSection> parsedSections, KernelTextLineAccumulator accum, CurrentParserSection currentParserSection) {
         if (! accum.lines.isEmpty()) {
             if (currentParserSection.equals(CurrentParserSection.DATA)) {
-                parsedSections.add(new DataKernelSection(accum));
+                parsedSections.add(new TextKernelDataSection(accum));
             } else if (currentParserSection.equals(CurrentParserSection.TEXT)) {
-                parsedSections.add(new TextKernelSection(accum));
+                parsedSections.add(new TextKernelTextSection(accum));
             }
         }
     }

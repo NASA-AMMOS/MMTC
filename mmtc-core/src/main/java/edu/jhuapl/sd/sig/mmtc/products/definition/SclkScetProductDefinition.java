@@ -19,8 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * Describes the set of SCLK kernel output products that MMTC performs operations on.
- * A single SCLK kernel is modeled by NewSclkKernel.
+ * Describes the set of SCLK-SCET products that MMTC can write.
  */
 public class SclkScetProductDefinition extends EntireFileOutputProductDefinition {
     public SclkScetProductDefinition() {

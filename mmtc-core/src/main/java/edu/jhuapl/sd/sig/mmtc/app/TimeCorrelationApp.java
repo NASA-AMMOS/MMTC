@@ -97,7 +97,7 @@ public class TimeCorrelationApp {
 
         {
             SclkKernel currentSclkKernel = SclkKernel.read(config.getInputSclkKernelPath());
-            logger.info("Loaded SCLK kernel: " + config.getInputSclkKernelPath().getFileName() + ".");
+            logger.info("Read SCLK kernel: " + config.getInputSclkKernelPath().getFileName() + ".");
 
             // Check that the SCLK is a 2-stage clock. Only 2-stage clocks are currently supported. The number of
             // stages is given in the SCLK01_N_FIELDS_nnn field of the SCLK Kernel.
@@ -245,7 +245,7 @@ public class TimeCorrelationApp {
 
             if (prodDef instanceof SclkKernelProductDefinition) {
                 // handle the SCLK kernel uniquely, as the seed kernel is already in place before any MMTC run is executed
-                newRunHistoryFileRecord.setValue(preRunProdColName, SclkKernel.getVersionString(config.getInputSclkKernelPath(), config.getSclkKernelBasename(), config.getSclkKernelSeparator()));
+                newRunHistoryFileRecord.setValue(preRunProdColName, SclkKernelProductDefinition.getVersionString(config.getInputSclkKernelPath(), config.getSclkKernelBasename(), config.getSclkKernelSeparator()));
             } else {
                 // all the other products are only created after at least a single run of MMTC, so we can reuse the postrun values from the prior run here
                 newRunHistoryFileRecord.setValue(preRunProdColName, runHistoryFile.getLatestNonEmptyValueOfCol(postRunProdColName, RunHistoryFile.RollbackEntryOption.IGNORE_ROLLBACKS).orElse("-"));
@@ -321,7 +321,7 @@ public class TimeCorrelationApp {
                 final double desired = desiredPriorCorrelationTdt.get();
                 final double candidate = record.getTdt();
                 double diff = candidate - desired;
-                logger.info(String.format("Desired %f, candidate %f, diff %f", desired, candidate, diff));
+                logger.debug(String.format("Desired %f, candidate %f, diff %f", desired, candidate, diff));
                 if (desired == candidate) {
                     return record;
                 }
@@ -364,7 +364,7 @@ public class TimeCorrelationApp {
     private Double computePredictedClkChgRate(Integer sclk, Double tdt_g) throws TextProductException, TimeConvertException, MmtcException {
         CorrelationTriplet lookBackRec = getLookbackRecordForPredictedClkChgRate(tdt_g);
 
-        logger.debug("computePredictedClkChgRate(): lookBackRec from SCLK = " + lookBackRec.formatWithSingleSpaces(ctx.currentSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat()));
+        logger.debug("computePredictedClkChgRate(): lookBackRec from SCLK = " + lookBackRec.formatWithSingleSpaces(ctx.currentSclkKernel.get().getCoefficientsFormat()));
         String tdtGStr = TimeConvert.tdtToTdtCalStr(tdt_g);
         logger.debug("computePredictedClkChgRate(): New TDT(G) = " + tdtGStr + ".");
 
@@ -394,7 +394,7 @@ public class TimeCorrelationApp {
         final SclkKernel currentSclkKernel = ctx.currentSclkKernel.get();
 
         final CorrelationTriplet lastRecValue = ctx.currentSclkKernel.get().getLastTriplet();
-        logger.debug("computeInterpolatedClkChgRate(): Last rec in existing SCLK kernel = " + lastRecValue.formatWithSingleSpaces(ctx.currentSclkKernel.get().getCoefficientsSection().getSclkCoefficientFormat()));
+        logger.debug("computeInterpolatedClkChgRate(): Last rec in existing SCLK kernel = " + lastRecValue.formatWithSingleSpaces(ctx.currentSclkKernel.get().getCoefficientsFormat()));
 
         int naifScId = config.getNaifSpacecraftId();
 

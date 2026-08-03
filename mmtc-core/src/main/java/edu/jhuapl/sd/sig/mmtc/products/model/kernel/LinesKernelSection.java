@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+// a section of a text kernel, read into a list of lines
 public abstract class LinesKernelSection extends KernelSection {
     protected List<String> lines;
 

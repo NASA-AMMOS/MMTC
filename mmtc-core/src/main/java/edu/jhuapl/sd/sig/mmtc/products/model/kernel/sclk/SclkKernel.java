@@ -5,7 +5,6 @@ import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.model.TextProductException;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.*;
-import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,73 +41,25 @@ public class SclkKernel extends TextKernel {
         this(other.sections);
     }
 
-    private SclkKernel withAppendedTriplet(CorrelationTriplet correlationTriplet) {
-        return withAppendedTriplets(Arrays.asList(correlationTriplet));
-    }
-
-    private static String formatCreationDateForKernel(OffsetDateTime creationDateTime) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
-        OffsetDateTime productCreationTime = creationDateTime;
-        return productCreationTime.format(formatter);
-    }
-
-    public static SclkKernel assembleNewKernelFromContext(TimeCorrelationContext ctx) {
-        SclkKernel updatedSclkKernel = ctx.currentSclkKernel.get()
-                .withUpdatedTextField(SclkKernel.TEXT_FIELD_FILENAME, ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc")
-                .withUpdatedTextField(SclkKernel.TEXT_FIELD_CREATION_DATE, formatCreationDateForKernel(ctx.appRunTime));
-
-        // if applicable, set the updated 'final' / 'ultimate' triplet with the interpolated rate (soon to be penultimate)
-        if (ctx.correlation.updatedInterpolatedTriplet.isSet()) {
-            updatedSclkKernel = updatedSclkKernel.withUpdatedFinalTriplet(ctx.correlation.updatedInterpolatedTriplet.get());
-        }
-
-        // if applicable, add the new smoothing triplet
-        if (ctx.correlation.newSmoothingTriplet.isSet()) {
-            updatedSclkKernel = updatedSclkKernel.withAppendedTriplet(ctx.correlation.newSmoothingTriplet.get());
-        }
-
-        // add the new predicted triplet
-        updatedSclkKernel = updatedSclkKernel.withAppendedTriplet(ctx.correlation.newPredictedTriplet.get());
-
-        return updatedSclkKernel;
-    }
-
-    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx, Path outputPath) throws MmtcException {
-        // the passed context already contains the new SCLK kernel
-
-        logger.info("Writing new SCLK kernel product to: " + outputPath);
-
-        try {
-            Files.write(outputPath, ctx.newSclkKernel.get().toLines());
-        } catch (TimeConvertException | IOException e) {
-            throw new MmtcException(e);
-        }
-
-        return new ProductWriteResult(
-                outputPath,
-                ctx.newSclkVersionString.get()
-        );
-    }
-
     public SclkCoefficientsKernelSection getCoefficientsSection() {
         KernelSection coeffSection = this.sections.stream().filter(sec -> sec instanceof SclkCoefficientsKernelSection).findFirst().orElseThrow(() -> new IllegalStateException("Did not find an SCLK coefficients section"));
         return (SclkCoefficientsKernelSection) coeffSection;
+    }
+
+    public SclkCoefficientFormat getCoefficientsFormat() {
+        return getCoefficientsSection().getSclkCoefficientFormat();
     }
 
     public List<CorrelationTriplet> getTriplets() {
         return getCoefficientsSection().getTriplets();
     }
 
-    public static String getVersionString(final Path path, final String sclkBaseName, final String separator) {
-        return path.getFileName().toString().replace(sclkBaseName + separator, "").replace(FILE_SUFFIX, "");
-    }
-
     public SclkKernel withUpdatedTextField(String fieldName, String fieldVal) {
         List<KernelSection> newSections = new ArrayList<>();
 
         for (KernelSection section : this.sections) {
-            if (section instanceof TextKernelSection) {
-                TextKernelSection textKernelSection = (TextKernelSection) section;
+            if (section instanceof TextKernelTextSection) {
+                TextKernelTextSection textKernelSection = (TextKernelTextSection) section;
 
                 KernelTextLineAccumulator textLineAccum = new KernelTextLineAccumulator();
 
@@ -123,13 +74,17 @@ public class SclkKernel extends TextKernel {
                     }
                 }
 
-                newSections.add(new TextKernelSection(textLineAccum));
+                newSections.add(new TextKernelTextSection(textLineAccum));
             } else {
                 newSections.add(section);
             }
         }
 
         return new SclkKernel(newSections);
+    }
+
+    private SclkKernel withAppendedTriplet(CorrelationTriplet correlationTriplet) {
+        return withAppendedTriplets(Arrays.asList(correlationTriplet));
     }
 
     public SclkKernel withAppendedTriplets(List<CorrelationTriplet> newTripletsToAppend) {
@@ -187,12 +142,12 @@ public class SclkKernel extends TextKernel {
                 final double tdtSec = triplet.getTdt();
 
                 if (smoothingRecordTdtStringsToIgnore.contains(tdtStr)) {
-                    logger.trace(String.format("getPriorRec: skipping record at TDT %s due to it being a smoothing record", tdtStr));
+                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to it being a smoothing record", tdtStr));
                     continue;
                 }
 
                 if ((fromTdt - tdtSec) < minLookbackSeconds) {
-                    logger.trace(String.format("getPriorRec: skipping record at TDT %s due to not meeting lookback minimum", tdtStr));
+                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to not meeting lookback minimum", tdtStr));
                     continue;
                 }
 
@@ -230,13 +185,13 @@ public class SclkKernel extends TextKernel {
                 final double recTdtSec = triplet.getTdt();
 
                 if (smoothingRecordTdtStringsToIgnore.contains(recTdtStr)) {
-                    logger.debug(String.format("getPriorRec: skipping record at TDT %s due to it being a smoothing record", recTdtStr));
+                    logger.debug(String.format("getPriorRecs: skipping record at TDT %s due to it being a smoothing record", recTdtStr));
                     continue;
                 }
 
                 final double recDeltaTdt = fromTdt - recTdtSec;
                 if ((recDeltaTdt < minLookbackSeconds) || recDeltaTdt > maxLookbackSeconds) {
-                    logger.trace(String.format("getPriorRec: skipping record at TDT %s due to not meeting lookback constraints", recTdtStr));
+                    logger.debug(String.format("getPriorRecs: skipping record at TDT %s due to not meeting lookback constraints", recTdtStr));
                     continue;
                 }
 
@@ -247,6 +202,16 @@ public class SclkKernel extends TextKernel {
         }
 
         return results;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 
     public static SclkKernel read(Path path) throws IOException, TimeConvertException {
@@ -261,7 +226,7 @@ public class SclkKernel extends TextKernel {
 
         // identify the data section with the coefficients and update it to a parsed SclkCoefficientsKernelSection
         for (LinesKernelSection section : linesKernelSections) {
-            if (section instanceof DataKernelSection && section.getLines().stream().anyMatch(l -> l.startsWith("SCLK01_COEFFICIENTS"))) {
+            if (section instanceof TextKernelDataSection && section.getLines().stream().anyMatch(l -> l.startsWith("SCLK01_COEFFICIENTS"))) {
                 resultingSclkKernelSections.add(SclkCoefficientsKernelSection.parse(section.getLines()));
             } else {
                 resultingSclkKernelSections.add(section);
@@ -271,13 +236,46 @@ public class SclkKernel extends TextKernel {
         return new SclkKernel(resultingSclkKernelSections);
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        return super.equals(obj);
+    private static String formatCreationDateForKernel(OffsetDateTime creationDateTime) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+        return creationDateTime.format(formatter);
     }
 
-    @Override
-    public int hashCode() {
-        return super.hashCode();
+    public static SclkKernel assembleNewKernelFromContext(TimeCorrelationContext ctx) {
+        SclkKernel updatedSclkKernel = ctx.currentSclkKernel.get()
+                .withUpdatedTextField(SclkKernel.TEXT_FIELD_FILENAME, ctx.config.getSclkKernelBasename() + ctx.config.getSclkKernelSeparator() + ctx.newSclkVersionString.get() + ".tsc")
+                .withUpdatedTextField(SclkKernel.TEXT_FIELD_CREATION_DATE, formatCreationDateForKernel(ctx.appRunTime));
+
+        // if applicable, set the updated 'final' / 'ultimate' triplet with the interpolated rate (soon to be penultimate)
+        if (ctx.correlation.updatedInterpolatedTriplet.isSet()) {
+            updatedSclkKernel = updatedSclkKernel.withUpdatedFinalTriplet(ctx.correlation.updatedInterpolatedTriplet.get());
+        }
+
+        // if applicable, add the new smoothing triplet
+        if (ctx.correlation.newSmoothingTriplet.isSet()) {
+            updatedSclkKernel = updatedSclkKernel.withAppendedTriplet(ctx.correlation.newSmoothingTriplet.get());
+        }
+
+        // add the new predicted triplet
+        updatedSclkKernel = updatedSclkKernel.withAppendedTriplet(ctx.correlation.newPredictedTriplet.get());
+
+        return updatedSclkKernel;
+    }
+
+    public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx, Path outputPath) throws MmtcException {
+        // the passed context already contains the new SCLK kernel
+
+        logger.info("Writing new SCLK kernel product to: " + outputPath);
+
+        try {
+            Files.write(outputPath, ctx.newSclkKernel.get().toLines());
+        } catch (TimeConvertException | IOException e) {
+            throw new MmtcException(e);
+        }
+
+        return new ProductWriteResult(
+                outputPath,
+                ctx.newSclkVersionString.get()
+        );
     }
 }
