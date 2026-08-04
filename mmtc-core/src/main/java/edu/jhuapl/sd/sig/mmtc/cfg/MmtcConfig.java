@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 
 import edu.jhuapl.sd.sig.mmtc.products.definition.*;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
+import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.TelemetrySelectionStrategy;
@@ -164,7 +165,7 @@ public class MmtcConfig {
             throw new IllegalStateException("Please check your loaded configuration and/or plugins to ensure all output products have unique names.  Loaded names are: " + productDefs.stream().map(def -> def.getName()).collect(Collectors.toList()));
         }
 
-        // lastly, validate that they're all of either of the two supported types (constrained by the rollback feature)
+        // validate that they're all of either of the two supported types (constrained by the rollback feature)
         for (OutputProductDefinition<?> def : productDefs) {
             if ((! (def instanceof EntireFileOutputProductDefinition)) && (! (def instanceof AppendedFileOutputProductDefinition))) {
                 throw new IllegalStateException("Product def " + def.getName() + " must either be subclassed from EntireFileProductDefinition or AppendedFileOutputProductDefinition");
@@ -1423,6 +1424,9 @@ public class MmtcConfig {
         }
     }
 
+    protected void validateMigrationNotNeeded() throws MmtcException {
+        new BuiltInOutputProductMigrationManager(this).assertExistingProductsDoNotRequireMigration();
+    }
 
     public static final List<String> REQD_SCLK_SCET_CONFIG_KEY_GROUP = Arrays.asList(
             "product.sclkScetFile.create",
@@ -1440,6 +1444,13 @@ public class MmtcConfig {
             "product.uplinkCmdFile.outputDir",
             "product.uplinkCmdFile.baseName"
     );
+
+    public void validateOutputProductState() throws MmtcException {
+        // perform any product-specific validation of existing output products before new correlations are made
+        for (OutputProductDefinition<?> def : this.allProductDefs) {
+            def.validateExistingState(this);
+        }
+    }
 
     public void ensureValidSclkScetConfiguration() throws MmtcException {
         final List<String> missingKeys = getMissingSclkScetConfigurationKeys();

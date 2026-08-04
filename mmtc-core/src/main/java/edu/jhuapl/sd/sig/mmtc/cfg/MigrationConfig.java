@@ -23,5 +23,7 @@ public class MigrationConfig extends MmtcConfig {
         if (cmdLine.getArgList().size() != 0) {
             throw new MmtcException("Error parsing command line arguments.");
         }
+
+        validate();
     }
 }

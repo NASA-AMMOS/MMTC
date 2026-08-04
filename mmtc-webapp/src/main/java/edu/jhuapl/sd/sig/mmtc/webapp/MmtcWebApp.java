@@ -39,10 +39,7 @@ public class MmtcWebApp {
         BuildInfo.log(logger);
 
         this.config = new MmtcWebAppConfig();
-        this.config.validate();
         this.config.acquireLockFile();
-
-        new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
 
         TimeConvert.loadSpiceLib();
         TimeConvert.loadSpiceKernel(this.config.getLeapSecondsKernelPath().toString());

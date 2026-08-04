@@ -137,4 +137,11 @@ public abstract class OutputProductDefinition<T extends ResolvedProductLocation>
      * @return the display name of the instance of the output product definition; must be unique at MMTC runtime
      */
     public abstract String getDisplayName();
+
+    /**
+     * Validates whether the existing state of an output product, if any, is suitable for writing or updating.
+     */
+    public void validateExistingState(MmtcConfig config) throws MmtcException {
+        // intentionally blank; the base class passes validation but extending classes may implement their own validation
+    }
 }

@@ -164,6 +164,8 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
                 this.telemetrySource.applyOption(opt.name, opt.value.get());
             }
         }
+
+        validate();
     }
 
     public TimeCorrelationRunConfig(TimeCorrelationRunConfigInputSupplier runConfigInputSupplier, MmtcConfigWithTlmSource config) throws Exception {
@@ -175,6 +177,8 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
                 this.telemetrySource.applyOption(opt.name, opt.value.get());
             }
         }
+
+        validate();
     }
 
     private void resolveCalculatedRunConfigInputs() throws MmtcException {
@@ -414,8 +418,11 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
      *
      * @throws MmtcException if the MMTC configuration is incomplete
      */
+    @Override
     public void validate() throws MmtcException {
         super.validate();
+        super.validateMigrationNotNeeded();
+        super.validateOutputProductState();
 
         if (createSclkScetFile()) {
             ensureValidSclkScetConfiguration();

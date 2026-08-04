@@ -2,6 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.webapp.config;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,12 +21,19 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
     public MmtcWebAppConfig() throws Exception {
         super();
         logger.debug(toString());
+        validate();
         this.telemetrySource.applyConfiguration(this);
     }
 
     public enum AuthMode {
         NONE,
         AUTOGEN_BASIC_HTTP_AUTH
+    }
+
+    @Override
+    public void validate() throws MmtcException {
+        super.validate();
+        super.validateMigrationNotNeeded();
     }
 
     public AuthMode getAuthMode() {

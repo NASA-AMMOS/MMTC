@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import org.apache.commons.cli.*;
 
 public class RollbackConfig extends MmtcConfig {
@@ -23,5 +24,14 @@ public class RollbackConfig extends MmtcConfig {
         if (cmdLine.getArgList().size() != 0) {
             throw new MmtcException("Error parsing command line arguments.");
         }
+
+        validate();
+    }
+
+    @Override
+    public void validate() throws MmtcException {
+        super.validate();
+        super.validateMigrationNotNeeded();
+        super.validateOutputProductState();
     }
 }

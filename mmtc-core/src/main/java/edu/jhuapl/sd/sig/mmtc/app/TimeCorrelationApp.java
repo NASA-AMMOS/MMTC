@@ -87,8 +87,6 @@ public class TimeCorrelationApp {
      * the specified SPICE kernels. Load the SCLK kernel separately.
      */
     private void init() throws Exception {
-        new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
-
         logger.debug("Loading SPICE library");
         TimeConvert.loadSpiceLib();
         TimeConvert.loadSpiceKernels(config.getKernelsToLoad());
