@@ -22,6 +22,7 @@ import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.SamplingTelemetrySelectionStrategy;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.WindowingTelemetrySelectionStrategy;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.TelemetrySelectionStrategy;
+import edu.jhuapl.sd.sig.mmtc.util.Settable;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 
@@ -578,9 +579,13 @@ public class TimeCorrelationApp {
             newRunHistoryFileRecord.setValue(RunHistoryFile.SMOOTHING_TRIPLET_TDT, ctx.correlation.newSmoothingTriplet.get().getTdtCalStr());
         }
 
+        // Log any new or updated triplet to stdout
+        logTripletToConsole(ctx.correlation.updatedInterpolatedTriplet, "Updated interpolated triplet");
+        logTripletToConsole(ctx.correlation.newSmoothingTriplet, "New smoothing triplet");
+        logTripletToConsole(ctx.correlation.newPredictedTriplet, "New predicted triplet");
+
         // Perform all ancillary post-correlation operations
         new TimeCorrelationAncillaryOperations(ctx).perform();
-
 
         ctx.newSclkVersionString.set(getNextSclkKernelVersionString());
         logger.debug("Next SCLK version string: " + ctx.newSclkVersionString.get());
@@ -637,6 +642,12 @@ public class TimeCorrelationApp {
         }
 
         return ctx;
+    }
+
+    private void logTripletToConsole(Settable<CorrelationTriplet> maybeTriplet, String message) throws TimeConvertException {
+        if (maybeTriplet.isSet()) {
+            logger.info(USER_NOTICE, String.format("%s: %s", message, maybeTriplet.get().format(ctx.currentSclkKernel.get().getCoefficientsFormat())));
+        }
     }
 
     private static void computeAdditionalSmoothingRecord(TimeCorrelationContext ctx) throws MmtcException {
@@ -701,7 +712,7 @@ public class TimeCorrelationApp {
                 );
             }
 
-            logger.info(USER_NOTICE, String.format("Calculated additional smoothing triplet: %d %s %f", smoothingRecordCoarseSclk, TimeConvert.tdtToTdtCalStr(smoothingRecordTdtG), smoothingRecordClkChgRate));
+            logger.info(USER_NOTICE, String.format("Calculated additional smoothing triplet: SCLK = %d; TDT = %s; clock rate = %f", smoothingRecordCoarseSclk, TimeConvert.tdtToTdtCalStr(smoothingRecordTdtG), smoothingRecordClkChgRate));
 
             CorrelationTriplet newSmoothingTriplet = new CorrelationTriplet(
                     TimeConvert.sclkToEncSclk(
