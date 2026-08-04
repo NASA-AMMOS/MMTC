@@ -1123,13 +1123,12 @@ public class MmtcConfig {
     }
 
     /**
-     * Gets the mission ID. This is used in the SCLK/SCET file and is often, but not always, the same as the
-     * spacecraft name.
+     * Gets the mission ID to use in the SCLK/SCET file header.
      *
      * @return the mission ID used in the SCLK/SCET file
      */
-    public int getMissionId() {
-        return timeCorrelationConfig.getConfig().getInt("missionId");
+    public int getSclkScetFileMissionId() {
+        return timeCorrelationConfig.getConfig().getInt("product.sclkScetFile.missionId");
     }
 
     /**

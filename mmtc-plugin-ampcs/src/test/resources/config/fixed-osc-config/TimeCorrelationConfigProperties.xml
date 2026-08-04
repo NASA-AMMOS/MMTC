@@ -6,7 +6,7 @@
 
   <comment>Time correlation configuration properties for test with NH Raw TLM File data</comment>
   <entry key="missionName">New Horizons</entry>
-  <entry key="missionId">98</entry>
+  <entry key="product.sclkScetFile.missionId">98</entry>
   <entry key="spacecraftName">New Horizons</entry>
   <entry key="spacecraft.id">98</entry>
   <entry key="spacecraft.timeDelaySec">0</entry>

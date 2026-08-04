@@ -96,7 +96,7 @@ public class SclkScetFile extends TextProduct {
         setName(filename);
         setHeaderData(
                 config.getMissionName(),
-                config.getMissionId(),
+                config.getSclkScetFileMissionId(),
                 config.getSpacecraftName(),
                 config.getSpacecraftId(),
                 config.getDataSetId(),

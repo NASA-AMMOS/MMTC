@@ -18,7 +18,6 @@
 
       <!-- Mission and spacecraft IDs -->
       <xs:enumeration value="missionName"/>
-      <xs:enumeration value="missionId"/>
       <xs:enumeration value="spacecraftName"/>
       <xs:enumeration value="spacecraft.id"/>
 
@@ -147,6 +146,7 @@
       <xs:enumeration value="product.sclkScetFile.baseName"/>
       <xs:enumeration value="product.sclkScetFile.separator"/>
       <xs:enumeration value="product.sclkScetFile.suffix"/>
+      <xs:enumeration value="product.sclkScetFile.missionId"/>
       <xs:enumeration value="product.sclkScetFile.scetUtcPrecision"/>
       <xs:enumeration value="product.sclkScetFile.datasetId"/>
       <xs:enumeration value="product.sclkScetFile.producerId"/>
