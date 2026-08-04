@@ -4,13 +4,34 @@ The Multi-Mission Time Correlation (MMTC) application is ground software which p
 
 MMTC is licensed under the Apache License 2.0.  See LICENSE.md for a copy of the license terms.
 
+## Quick Start
+
+To get started with MMTC, visit the [releases](https://github.com/NASA-AMMOS/MMTC/releases) page and download the desired artifacts.  Consider starting with:
+- the MMTC User's Guide
+- the demo package (`mmtc-1.6.0-demo.zip`; see section below)
+- one of the base application packages, ready for configuration & adaptation (e.g. `mmtc-1.6.0.zip` or `mmtc-1.6.0-1.el8.x86_64.rpm`; see User's Guide for details on use and configuration)
+
+Note MMTC's runtime requirements:
+- Red Hat Enterprise Linux (RHEL) 8 or 9 on an x86-64 host
+- Java 8 for all components (except the web application, which requires Java 17)
+
+## Demo
+
+For users who wish to experiment with MMTC’s behavior and functionality without configuring it for a specific mission, a turnkey demo is available in the form of a portable installation that comes packaged with example telemetry and configuration from the New Horizons spacecraft in a single .zip file.  To try it out:
+
+1. Generate the compressed demo files with `./gradlew demoZip`
+2. Extract the contents of the created .zip file (written within `/build/distributions/`) with `unzip build/distributions/mmtc-[version]-demo.zip -d [path to extract to]`
+3. Run `setup-demo-zip.sh` to configure environment variables, adjust the config, and automatically run MMTC several times
+
+See the "Quick Start Guide" section of the User Guide for complete instructions.
+
 ## Introduction
 
 ### Context
 
 Clocks on board spacecraft, like all clocks, experience 'drift', meaning the period between their 'ticks' is not exactly once per second (and in fact can vary in the face of external factors, such as temperature, voltage, current, relativistic effects, etc.)
 
-Most space missions have requirements which demand a means of maintaining an accurate, and in many cases, extremely accurate knowledge of time as measured onboard a spacecraft. For deep-space missions, this is typically performed through so-called time correlation, which is typically accomplished via a combination of spacecraft radio(s), avionics, and one or more oscillators in combination with ground antenna and ground data systems.
+Most space missions have requirements which demand a means of maintaining accurate and precise knowledge of time as measured onboard a spacecraft. For deep-space missions, this is typically performed through a process called 'time correlation', which is typically accomplished via a combination of spacecraft radio(s), avionics, and one or more oscillators in combination with ground antenna and ground data systems.
 
 The decades-long history of space missions performing time correlation, along with the common principles that underlie many of their time correlation and timekeeping operations, provide the motivation for a common & multi-mission time correlation capability.
 
@@ -24,48 +45,30 @@ MMTC creates the following output products:
 - A number of types of CSV files, containing ancillary telemetry and data useful for analysis and/or anomaly resolution, and data that may be used to update onboard Guidance, Navigation and Control parameters
 
 MMTC contains additional functionality, including:
-- the ability to read and write telemetry from and to plaintext CSV files - the ability to 'roll back' the state of output products to prior runs
+- the ability to read and write telemetry from and to plaintext CSV files
+- the ability to 'roll back' the state of output products to prior runs
+- a web application for viewing timekeeping telemetry, creating new correlation records, and related information
 
 Missions adapt MMTC to their mission by accomplishing the following two steps:
 1. Creating an MMTC configuration that defines relevant details about their spacecraft, its telemetry, and the mission's ground data system
 2. Connecting MMTC to their mission's telemetry by selecting an existing MMTC Telemetry Source implementation or implementing a new Telemetry Source plugin using the included SDK
-   MMTC is implemented in Java and relies on NAIF SPICE software and data. MMTC can be run standalone or integrated into a ground system. MMTC software includes an optional first-party integration with the AMMOS commanding and telemetry system, AMPCS, and can be extended to integrate with additional ground systems via its plugin interface.
 
-## Quick Start
+MMTC is implemented in Java and relies on NAIF SPICE software and data. MMTC can be run standalone or integrated into a ground system. MMTC software includes an optional first-party integration with the AMMOS commanding and telemetry system, AMPCS, and can be extended to integrate with additional ground systems via its plugin interface.
+
+## Building
 
 Build requirements:
 - Red Hat Enterprise Linux (RHEL) 8 or 9 on an x86-64 host
 - Java 17
 
-Runtime requirements:
-- Red Hat Enterprise Linux (RHEL) 8 or 9 on an x86-64 host
-- Java 8 for all components except the web application, which requires Java 17
-
-After cloning the repository and running `./gradlew build`, two MMTC installation options are available:
-
-### Demo
-
-For users who wish to experiment with MMTC’s behavior and functionality without configuring it for a specific mission, a turnkey demo is available in the form of a portable installation that comes packaged with example telemetry and configuration from the New Horizons spacecraft in a single .zip file.  To try it out:
-
-1. Generate the compressed demo files with `./gradlew demoZip`
-2. Extract the contents of the created .zip file (written within `/build/distributions/`) with `unzip build/distributions/mmtc-[version]-demo.zip -d [path to extract to]`
-3. Run `setup-demo-zip.sh` to configure environment variables, adjust the config, and automatically run MMTC several times
-
-See the "Quick Start Guide" section of the User Guide for complete instructions.
-
-### Installation
-
-To create a traditional clean installation of MMTC that is ready for configuration and adaptation:
-1. Build the RPM with `./gradlew mmtcEl8Rpm` (or `mmtcEl9Rpm`, as desired)
-2. Install RPM (contents are written to /opt/local/mmtc by default)
-3. Configure as necessary (see the User Guide)
+Clone the repository and run e.g. `./gradlew build` to build the project.
 
 ## Further information
 
-For further information, please see the User Guide at `docs/User_Guide.adoc`, which may be rendered to PDF via `./gradlew :userGuidePdf`, or downloaded from the 'Releases' area.
+For further information, which may be downloaded from the [releases](https://github.com/NASA-AMMOS/MMTC/releases) page, or referenced in the source at `docs/User_Guide.adoc`.
 
 ## Copyright
 
-© 2025 The Johns Hopkins University Applied Physics Laboratory LLC
+© 2026 The Johns Hopkins University Applied Physics Laboratory LLC
 
 This work was performed for the Jet Propulsion Laboratory, California Institute of Technology, sponsored by the United States Government under the Prime Contract 80NM0018D00004 between the Caltech and NASA under subcontract number 1658085.
