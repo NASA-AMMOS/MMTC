@@ -61,8 +61,6 @@ public class TimeCorrelationRollback {
      * (this includes products being modified between rollback being initiated and deletion confirmation being given by the user)
      */
     public void rollback(Optional<String> runId) throws MmtcRollbackException, MmtcException {
-    new BuiltInOutputProductMigrationManager(config).assertExistingProductsDoNotRequireMigration();
-
         try {
             prepareRollback(runId);
         } catch (Exception e) {

@@ -33,6 +33,8 @@ public class MmtcSandboxCreatorConfig extends MmtcConfig {
         }
 
         newSandboxPath = Paths.get(cmdLine.getArgList().get(0)).toAbsolutePath();
+
+        validate();
     }
 
     public Path getNewSandboxPath() {

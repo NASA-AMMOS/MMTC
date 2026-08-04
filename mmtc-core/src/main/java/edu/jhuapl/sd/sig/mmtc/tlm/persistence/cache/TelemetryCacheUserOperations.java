@@ -47,6 +47,7 @@ public class TelemetryCacheUserOperations {
         }
 
         final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(args));
+
         final OffsetDateTime startTime = config.getResolvedTargetSampleRange().get().getStart();
         final OffsetDateTime stopTime = config.getResolvedTargetSampleRange().get().getStop();
 
