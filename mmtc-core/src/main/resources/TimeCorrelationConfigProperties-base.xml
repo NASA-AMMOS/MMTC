@@ -7,7 +7,6 @@
         but doesn't necessarily represent a viable MMTC config and additional keys will likely be required in almost all
         real-world applications. Consult the User Guide for more information.</comment>
     <entry key="missionName"/>
-    <entry key="missionId"/>
     <entry key="spacecraftName"/>
     <entry key="spacecraft.id"/>
     <entry key="spacecraft.timeDelaySec"/>

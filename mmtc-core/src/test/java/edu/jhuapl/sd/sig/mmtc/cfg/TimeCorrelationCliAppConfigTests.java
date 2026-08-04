@@ -142,32 +142,31 @@ class TimeCorrelationCliAppConfigTests {
 		}
 	}
 
-	@Test
-	void testCatchesMissingRequiredConfigKeys() throws Exception {
-		try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
-			mockedEnvironment
-					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
-					.thenReturn("src/test/resources/ConfigTests/missingKeys");
-			TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2020-001T00:00:00", "2020-001T23:59:59"));
+    @Test
+    void testCatchesMissingRequiredConfigKeys() throws Exception {
+        try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
+            mockedEnvironment
+                    .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
+                    .thenReturn("src/test/resources/ConfigTests/missingKeys");
+            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2020-001T00:00:00", "2020-001T23:59:59"));
 
-			ArrayList<String> expectedMissingVals = new ArrayList<>();
-			expectedMissingVals.add("missionId");
-			expectedMissingVals.add("spacecraft.id");
-			expectedMissingVals.add("spice.kernel.sclk.baseName");
-			expectedMissingVals.add("spice.kernel.sclk.separator");
+            ArrayList<String> expectedMissingVals = new ArrayList<>();
+            expectedMissingVals.add("spacecraft.id");
+            expectedMissingVals.add("spice.kernel.sclk.baseName");
+            expectedMissingVals.add("spice.kernel.sclk.separator");
             expectedMissingVals.add("spice.kernel.sclk.uniqueKernelCounters");
 
-			MmtcException resultingException = assertThrows(
-					MmtcException.class,
+            MmtcException resultingException = assertThrows(
+                    MmtcException.class,
                     config::validate
-			);
+            );
 
-			assertTrue(resultingException.getMessage().startsWith("Failed to validate TimeCorrelationConfigProperties.xml, missing 5 required key(s):"));
-			for (String expectedMissingVal : expectedMissingVals) {
-				assertTrue(resultingException.getMessage().contains(expectedMissingVal));
-			}
-		}
-	}
+            assertTrue(resultingException.getMessage().startsWith("Failed to validate TimeCorrelationConfigProperties.xml, missing 4 required key(s):"));
+            for (String expectedMissingVal : expectedMissingVals) {
+                assertTrue(resultingException.getMessage().contains(expectedMissingVal));
+            }
+        }
+    }
 
 	@Test
 	void testPassesConfigWithRequiredKeys() throws Exception {

@@ -1001,11 +1001,6 @@ The parameters in the table below are generally applicable cross-mission, though
 |STR
 |The name of the mission, e.g., “Europa Clipper”.
 
-|missionId
-|REQUIRED
-|INT
-|The Mission ID to be included in SCLK/SCET files.
-
 |spacecraftName
 |REQUIRED
 |STR
@@ -1427,6 +1422,11 @@ Defaults to 9 digits if key isn't included in config or if the value provided ca
 |OPTIONAL
 |INT
 |The number of digits to which the SCET fraction of second is to be written in an SCLK/SCET file. Required if product.sclkScetFile.create is `true`.
+
+|product.sclkScetFile.missionId
+|OPTIONAL
+|INT
+|The Mission ID to be included in the SCLK/SCET file header. Required if product.sclkScetFile.create is `true`.
 
 |product.sclkScetFile.datasetId
 |OPTIONAL

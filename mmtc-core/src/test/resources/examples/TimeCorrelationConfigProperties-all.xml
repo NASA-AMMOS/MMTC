@@ -6,7 +6,6 @@
 
     <comment>Example Time Correlation Configuration Properties for that contains an entry for all possible keys</comment>
     <entry key="missionName"></entry>
-    <entry key="missionId"></entry>
     <entry key="spacecraftName"></entry>
     <entry key="spacecraft.id"></entry>
     <entry key="spacecraft.timeDelaySec"></entry>
@@ -92,8 +91,10 @@
 
     <!-- Output Files -->
     <entry key="table.runHistoryFile.path"></entry>
+
     <entry key="table.rawTelemetryTable.path"></entry>
     <entry key="table.rawTelemetryTable.dateTimePattern"></entry>
+
     <entry key="table.timeHistoryFile.path"></entry>
     <entry key="table.timeHistoryFile.excludeColumns"></entry>
     <entry key="table.timeHistoryFile.scetUtcPrecision"></entry>
@@ -104,12 +105,14 @@
     <entry key="product.sclkScetFile.baseName"></entry>
     <entry key="product.sclkScetFile.separator"></entry>
     <entry key="product.sclkScetFile.suffix"></entry>
+    <entry key="product.sclkScetFile.missionId"></entry>
     <entry key="product.sclkScetFile.datasetId"></entry>
     <entry key="product.sclkScetFile.producerId"></entry>
+    <entry key="product.sclkScetFile.scetUtcPrecision"></entry>
+
     <entry key="product.uplinkCmdFile.create"></entry>
     <entry key="product.uplinkCmdFile.outputDir"></entry>
     <entry key="product.uplinkCmdFile.baseName"></entry>
-    <entry key="product.sclkScetFile.scetUtcPrecision"></entry>
 
     <entry key="product.archive.directory"></entry>
 
