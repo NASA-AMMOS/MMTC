@@ -13,7 +13,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.mockito.Mockito;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,9 +30,10 @@ public abstract class BaseTelemetrySelectionStrategyTest {
     static void setup() throws TimeConvertException {
         TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
 
-        Map<String, String> kernelsToLoad = new HashMap<>();
-        kernelsToLoad.put("src/test/resources/nh_kernels/lsk/naif0012.tls", "lsk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
+        List<String> kernelsToLoad = Arrays.asList(
+                "src/test/resources/nh_kernels/lsk/naif0012.tls",
+                "src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc"
+        );
         TimeConvert.loadSpiceKernels(kernelsToLoad);
     }
 

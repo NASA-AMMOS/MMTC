@@ -4,6 +4,7 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -86,7 +87,11 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
                 throw new MmtcException(e);
             } finally {
                 TimeConvert.unloadSpiceKernels();
-                TimeConvert.loadSpiceKernel(getLeapSecondsKernelPath().toString());
+                try {
+                    TimeConvert.loadSpiceKernel(getLeapSecondsKernelPath().toString());
+                } catch (TimeConvertException e) {
+                    throw new MmtcException(e);
+                }
             }
         }
     }
@@ -96,17 +101,19 @@ public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {
             try {
                 TimeConvert.loadSpiceLib();
                 TimeConvert.loadSpiceKernels(getKernelsToLoad(false));
-
-                final Map<String, String> sclkKernelToLoad = new HashMap<>();
-                sclkKernelToLoad.put(sclkKernelPath.toAbsolutePath().toString(), "sclk");
-                TimeConvert.loadSpiceKernels(sclkKernelToLoad);
+                TimeConvert.loadSpiceKernel(sclkKernelPath.toAbsolutePath().toString());
+                TimeConvert.validateLoadedSclkKernels(getSpacecraftId());
 
                 return callable.call();
             } catch (Exception e) {
                 throw new MmtcException(e);
             } finally {
                 TimeConvert.unloadSpiceKernels();
-                TimeConvert.loadSpiceKernel(getLeapSecondsKernelPath().toString());
+                try {
+                    TimeConvert.loadSpiceKernel(getLeapSecondsKernelPath().toString());
+                } catch (TimeConvertException e) {
+                    throw new MmtcException(e);
+                }
             }
         }
     }

@@ -4,9 +4,7 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.util.CdsTimeCode;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import spice.basic.*;
 
 import java.math.BigDecimal;
@@ -30,10 +28,133 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 
 public class TimeConvertTests {
+    private static final int NH_SC_ID = 98;
 
-    @BeforeAll
-    static void teardown() throws TimeConvertException {
+    @BeforeEach
+    void setup() throws TimeConvertException {
         TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+    }
+
+    @AfterEach
+    void teardown() throws TimeConvertException {
+        TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+    }
+
+    @Test
+    public void testSuccessfulSclkKernelValidation() throws TimeConvertException {
+        TimeConvert.loadSpiceKernels(Arrays.asList("src/test/resources/nh_kernels/lsk/naif0012.tls", "src/test/resources/nh_kernels/sclk/new-horizons_0001.tsc"));
+        TimeConvert.loadSpiceKernels(Arrays.asList("src/test/resources/nh_kernels/lsk/naif0012.tls", "src/test/resources/nh_kernels/sclk/new-horizons_0001.tsc", "src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc"));
+    }
+
+    @Test
+    public void testUnsuccessfulSclkKernelValidations() throws TimeConvertException {
+        TimeConvertException thrownException;
+
+        // parallel time system missing
+        {
+            TimeConvert.loadSpiceKernels(Arrays.asList("src/test/resources/SclkKernelTests/validation/new-horizons_0001_no_time_system.tsc"));
+            thrownException = assertThrows(
+                    TimeConvertException.class,
+                    () -> TimeConvert.validateLoadedSclkKernels(NH_SC_ID)
+            );
+            assertEquals(
+                    "SCLK kernel validation failed: Kernel variable SCLK01_TIME_SYSTEM_98 was not found in the kernel pool.",
+                    thrownException.getMessage()
+            );
+            TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+        }
+
+        // parallel time system set to TDT instead of TDB
+        {
+            TimeConvert.loadSpiceKernels(Arrays.asList("src/test/resources/SclkKernelTests/validation/new-horizons_0001_tdb_time_system.tsc"));
+            thrownException = assertThrows(
+                    TimeConvertException.class,
+                    () -> TimeConvert.validateLoadedSclkKernels(NH_SC_ID)
+            );
+            assertEquals(
+                    "Parallel time system is set to TDB in the loaded SCLK kernel(s).  MMTC only supports TDT as the parallel time system.  Please reference the value of SCLK01_TIME_SYSTEM_98",
+                    thrownException.getMessage()
+            );
+            TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+        }
+
+        // n_fields missing
+        {
+            TimeConvert.loadSpiceKernels(Arrays.asList("src/test/resources/SclkKernelTests/validation/new-horizons_0001_no_n_fields.tsc"));
+            thrownException = assertThrows(
+                    TimeConvertException.class,
+                    () -> TimeConvert.validateLoadedSclkKernels(NH_SC_ID)
+            );
+            assertEquals(
+                    "SCLK kernel validation failed: Kernel variable SCLK01_N_FIELDS_98 was not found in the kernel pool.",
+                    thrownException.getMessage()
+            );
+            TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+        }
+
+        // n_fields defines a 1-stage clock
+        {
+            TimeConvert.loadSpiceKernels(Arrays.asList("src/test/resources/SclkKernelTests/validation/new-horizons_0001_1_field.tsc"));
+            thrownException = assertThrows(
+                    TimeConvertException.class,
+                    () -> TimeConvert.validateLoadedSclkKernels(NH_SC_ID)
+            );
+            assertEquals(
+                    "The loaded SCLK kernel(s) specify a 1-stage clock.  MMTC only supports 2-stage clocks.  Please reference the value of SCLK01_N_FIELDS_98",
+                    thrownException.getMessage()
+            );
+            TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+        }
+
+        // n_fields defines a 3-stage clock
+        {
+            TimeConvert.loadSpiceKernels(Arrays.asList("src/test/resources/SclkKernelTests/validation/new-horizons_0001_3_fields.tsc"));
+            thrownException = assertThrows(
+                    TimeConvertException.class,
+                    () -> TimeConvert.validateLoadedSclkKernels(NH_SC_ID)
+            );
+            assertEquals(
+                    "The loaded SCLK kernel(s) specify a 3-stage clock.  MMTC only supports 2-stage clocks.  Please reference the value of SCLK01_N_FIELDS_98",
+                    thrownException.getMessage()
+            );
+            TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+        }
+
+        // SCLK offset missing
+        {
+            TimeConvert.loadSpiceKernels(Arrays.asList("src/test/resources/SclkKernelTests/validation/new-horizons_0001_no_sclk_offsets.tsc"));
+            thrownException = assertThrows(
+                    TimeConvertException.class,
+                    () -> TimeConvert.validateLoadedSclkKernels(NH_SC_ID)
+            );
+            assertEquals(
+                    "SCLK kernel validation failed: Kernel variable SCLK01_OFFSETS_98 was not found in the kernel pool.",
+                    thrownException.getMessage()
+            );
+            TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+        }
+
+        // SCLK offsets not all zeroes
+        List<String> sclkKernelsWithNonzeroOffsets = Arrays.asList(
+                "src/test/resources/SclkKernelTests/validation/new-horizons_0001_nonzero_sclk_offsets_1.tsc",
+                "src/test/resources/SclkKernelTests/validation/new-horizons_0001_nonzero_sclk_offsets_2.tsc",
+                "src/test/resources/SclkKernelTests/validation/new-horizons_0001_nonzero_sclk_offsets_3.tsc"
+        );
+        {
+            for (String sclkKernelPath : sclkKernelsWithNonzeroOffsets) {
+                TimeConvert.loadSpiceKernels(Arrays.asList(sclkKernelPath));
+                thrownException = assertThrows(
+                        TimeConvertException.class,
+                        () -> TimeConvert.validateLoadedSclkKernels(NH_SC_ID),
+                        "Did not throw for " + sclkKernelPath
+                );
+                assertEquals(
+                        "MMTC supports only 2-stage clocks with offsets defined as 0 for each stage.  Please reference the value of SCLK01_OFFSETS_98",
+                        thrownException.getMessage()
+                );
+                TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
+            }
+        }
     }
 
     @Test
@@ -784,11 +905,11 @@ public class TimeConvertTests {
          * Total kernels loaded is 12 from the nh_tk_meta_mmtc_test.tm metakernel plus the
          * four below.
          */
-        Map<String, String> kernelsToLoad = new HashMap<>();
-        kernelsToLoad.put("src/test/resources/nh_kernels/mk/nh_tk_meta_mmtc_test.tm", "mk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/lsk/naif0012.tls", "lsk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/spk/nh_pred_alleph_od124.bsp", "spk");
+        List<String> kernelsToLoad = new ArrayList<>();
+        kernelsToLoad.add("src/test/resources/nh_kernels/mk/nh_tk_meta_mmtc_test.tm");
+        kernelsToLoad.add("src/test/resources/nh_kernels/lsk/naif0012.tls");
+        kernelsToLoad.add("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc");
+        kernelsToLoad.add("src/test/resources/nh_kernels/spk/nh_pred_alleph_od124.bsp");
         TimeConvert.loadSpiceKernels(kernelsToLoad);
 
         List<String> klist = TimeConvert.getLoadedKernelNames();
@@ -971,9 +1092,9 @@ public class TimeConvertTests {
     }
 
     private void loadBasicNhKernels() throws TimeConvertException {
-        Map<String, String> kernelsToLoad = new HashMap<>();
-        kernelsToLoad.put("src/test/resources/nh_kernels/lsk/naif0012.tls", "lsk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
+        List<String> kernelsToLoad = new ArrayList<>();
+        kernelsToLoad.add("src/test/resources/nh_kernels/lsk/naif0012.tls");
+        kernelsToLoad.add("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc");
         TimeConvert.loadSpiceKernels(kernelsToLoad);
     }
 

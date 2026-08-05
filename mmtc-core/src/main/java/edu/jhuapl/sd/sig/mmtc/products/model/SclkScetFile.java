@@ -406,12 +406,12 @@ public class SclkScetFile extends TextProduct {
          */
 
         // load the new SCLK kernel only for the following conversion
-        Map<String, String> newSclkKernel = new HashMap<>();
-        newSclkKernel.put(sourceFilespec, "sclk");
+        List<String> newSclkKernel = Arrays.asList(sourceFilespec);
 
         final Double sclkPreLeapSecond;
         try {
             TimeConvert.loadSpiceKernels(newSclkKernel);
+            TimeConvert.validateLoadedSclkKernels(spacecraftId);
             sclkPreLeapSecond = TimeConvert.utcToSclk(naifScId, clockTickRate, TimeConvert.timeToIsoUtcString(inputLeapSecRec.leapSecOccurrence)) - 1.0;
         } finally {
             TimeConvert.unloadSpiceKernels(newSclkKernel);
@@ -469,12 +469,12 @@ public class SclkScetFile extends TextProduct {
         // see comments in the above method (getPositiveLeapSecRecordPair) for more context about the calculations below
 
         // load the new SCLK kernel only for the following conversion
-        Map<String, String> newSclkKernel = new HashMap<>();
-        newSclkKernel.put(sourceFilespec, "sclk");
+        List<String> newSclkKernel = Arrays.asList(sourceFilespec);
 
         final Double sclkPreLeapSecond;
         try {
             TimeConvert.loadSpiceKernels(newSclkKernel);
+            TimeConvert.validateLoadedSclkKernels(spacecraftId);
             sclkPreLeapSecond = TimeConvert.utcToSclk(naifScId, clockTickRate, TimeConvert.timeToIsoUtcString(inputLeapSecRec.leapSecOccurrence)) - 1.0;
         } finally {
             TimeConvert.unloadSpiceKernels(newSclkKernel);

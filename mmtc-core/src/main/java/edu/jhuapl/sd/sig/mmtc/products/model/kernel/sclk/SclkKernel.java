@@ -26,7 +26,20 @@ public class SclkKernel extends TextKernel {
     public static final Pattern TRIPLET_LINE_PATTERN = Pattern.compile("^(\\s+)(\\S+)(\\s+)(\\S+)(\\s+)(\\S+)(\\s*)");
     public static final String FILE_SUFFIX = ".tsc";
 
-    private static final String SCLK_KERNEL_IDENTIFIER = "KPL/SCLK";
+    public static final String SCLK_KERNEL_IDENTIFIER = "KPL/SCLK";
+
+    public final static class SpiceConstants {
+        public enum TIME_SYSTEM_CODES {
+                TDB(1),
+                TDT(2);
+
+            public final int val;
+
+            TIME_SYSTEM_CODES(int val) {
+                this.val = val;
+            }
+        }
+    }
 
     public static final String TEXT_FIELD_FILENAME = "FILENAME";
     public static final String TEXT_FIELD_CREATION_DATE = "CREATION_DATE";
