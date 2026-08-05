@@ -13,10 +13,12 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.time.Year;
+import java.util.stream.Collectors;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationMetricsConfig;
+import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import org.apache.commons.lang3.StringUtils;
 
@@ -167,17 +169,17 @@ public class TimeConvert {
      * @param kernelsToLoad  IN a Map of strings that contain the names of SPICE kernels to load
      * @throws TimeConvertException when KernelDatabase.load() fails
      */
-    public static void loadSpiceKernels(Map<String, String> kernelsToLoad) throws TimeConvertException {
+    public static void loadSpiceKernels(List<String> kernelsToLoad) throws TimeConvertException {
         try {
-            for (Map.Entry<String, String> entry : kernelsToLoad.entrySet()) {
-                if (entry.getKey().length() > MAX_SPICE_FILENAME_LEN) {
-                    String kernelFilespecMsg = "Kernel file specification '" + entry.getKey() +
+            for (String kernelPath : kernelsToLoad) {
+                if (kernelPath.length() > MAX_SPICE_FILENAME_LEN) {
+                    String kernelFilespecMsg = "Kernel file specification '" + kernelPath +
                             "' exceeds the maximum length of " + Integer.toString(MAX_SPICE_FILENAME_LEN) +
                             " characters and cannot be loaded.";
                     throw new TimeConvertException(kernelFilespecMsg);
                 }
 
-                KernelDatabase.load(entry.getKey());
+                KernelDatabase.load(kernelPath);
             }
         } catch (SpiceErrorException e) {
             throw new TimeConvertException("Unable to load SPICE kernels " + e.getMessage(), e);
@@ -189,16 +191,92 @@ public class TimeConvert {
      * Loads a single SPICE kernel.
      *
      * @param path the kernel to load
-     * @throws MmtcException if the kernel could not be loaded
+     * @throws TimeConvertException if the kernel could not be loaded
      */
-    public static void loadSpiceKernel(String path) throws MmtcException {
+    public static void loadSpiceKernel(String path) throws TimeConvertException {
         try {
             KernelDatabase.load(path);
         } catch (SpiceErrorException e) {
-            throw new MmtcException("Unable to load SPICE kernel: " + path + " : " + e.getMessage(), e);
+            throw new TimeConvertException("Unable to load SPICE kernel: " + path + " : " + e.getMessage(), e);
         }
     }
 
+    private static Optional<Integer> getSingleVal(int[] vals) {
+        if (vals.length == 0) {
+            return Optional.empty();
+        }
+
+        Set<Integer> uniqueVals = Arrays.stream(vals).boxed().collect(Collectors.toSet());
+
+        if (uniqueVals.size() > 1) {
+            throw new IllegalArgumentException("Input arg has many values; expected a single value");
+        }
+
+        return Optional.of(new ArrayList<>(uniqueVals).get(0));
+    }
+
+    /**
+     * This method verifies that the input SCLK kernel, or other SCLK kernels, that are loaded for use meets MMTC's restrictions.
+     * During any MMTC execution:
+     * - there may be no SCLK kernels currently loaded (in the default web app state, and for many codepaths through the webapp)
+     * - during MMTC CLI 'correlate' processing, just the single input SCLK is loaded for most of the execution
+     *   - but during SCLK-SCET file creation, the new SCLK kernel is temporarily loaded atop the input kernel
+     */
+    public static void validateLoadedSclkKernels(int spacecraftId) throws TimeConvertException {
+        try {
+            final String scIdStr = Integer.toString(Math.abs(spacecraftId));
+
+            // ensure that the parallel time system is TDT (not TDB)
+            {
+                final String parallelTimeSystemVarName = "SCLK01_TIME_SYSTEM_" + scIdStr;
+                Optional<Integer> parallelTimeSystemCode = getSingleVal(CSPICE.gipool(parallelTimeSystemVarName, 0, 100));
+
+                // if the parallel time system code is not set, SPICE will default to using TDB, which MMTC does not support
+                // https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/sclk.html#Parallel%20time%20system%20code%20assignment
+                if (! parallelTimeSystemCode.isPresent()) {
+                    throw new TimeConvertException("Parallel time system is not set to TDT in the loaded SCLK kernel(s).  MMTC only supports TDT as the parallel time system.  Please reference the value of " + parallelTimeSystemVarName);
+                } else if (parallelTimeSystemCode.get() != SclkKernel.SpiceConstants.TIME_SYSTEM_CODES.TDT.val) {
+                    throw new TimeConvertException("Parallel time system is set to TDB in the loaded SCLK kernel(s).  MMTC only supports TDT as the parallel time system.  Please reference the value of " + parallelTimeSystemVarName);
+                }
+            }
+
+            // ensure that the clock in use is a 2-stage clock
+            {
+                final String sclkNumFieldsVarName = "SCLK01_N_FIELDS_" + scIdStr;
+                Integer sclkNumFields = getSingleVal(CSPICE.gipool(sclkNumFieldsVarName, 0, 100))
+                        .orElseThrow(() -> new TimeConvertException("Could not find " + sclkNumFieldsVarName + " in loaded SCLK kernels"));
+
+                if (sclkNumFields != 2) {
+                    throw new TimeConvertException(String.format(
+                            "The loaded SCLK kernel(s) specify a %d-stage clock.  MMTC only supports 2-stage clocks.  Please reference the value of %s",
+                            sclkNumFields,
+                            sclkNumFieldsVarName
+                    ));
+                }
+            }
+
+            // ensure that the SCLK offsets are all zeroes
+            {
+                final String sclkOffsetsVarName = "SCLK01_OFFSETS_" + scIdStr;
+                int[] sclkOffsets = CSPICE.gipool(sclkOffsetsVarName, 0, 100);
+                if (sclkOffsets == null || sclkOffsets.length != 2) {
+                    throw new TimeConvertException(String.format(
+                            "Could not find offsets defined for a 2-stage SCLK.  Please reference the value of %s",
+                            sclkOffsetsVarName
+                    ));
+                }
+
+                if (! (sclkOffsets[0] == 0 && sclkOffsets[1] == 0)) {
+                    throw new TimeConvertException(String.format(
+                            "MMTC supports only 2-stage clocks with offsets defined as 0 for each stage.  Please reference the value of %s",
+                            sclkOffsetsVarName
+                    ));
+                }
+            }
+        } catch (SpiceErrorException | KernelVarNotFoundException e) {
+            throw new TimeConvertException("SCLK kernel validation failed: " + e.getMessage(), e);
+        }
+    }
 
     /**
      * Unload the indicated SPICE kernels.
@@ -206,10 +284,10 @@ public class TimeConvert {
      * @param kernelsToUnload  IN a Map of strings that contain the names of SPICE kernels to unload
      * @throws TimeConvertException if a kernel or kernels could not be removed from the SPICE kernel pool
      */
-    public static void unloadSpiceKernels(Map<String, String> kernelsToUnload) throws TimeConvertException {
+    public static void unloadSpiceKernels(List<String> kernelsToUnload) throws TimeConvertException {
         try {
-            for (Map.Entry<String, String> entry : kernelsToUnload.entrySet()) {
-                KernelDatabase.unload(entry.getKey());
+            for (String kernel : kernelsToUnload) {
+                KernelDatabase.unload(kernel);
             }
         } catch (SpiceErrorException e) {
             throw new TimeConvertException("Unable to unload SPICE kernels: " + e.getMessage(), e);

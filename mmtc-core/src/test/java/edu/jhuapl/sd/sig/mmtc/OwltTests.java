@@ -30,11 +30,12 @@ public class OwltTests {
     static void setup() throws TimeConvertException {
         TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
 
-        Map<String, String> kernelsToLoad = new HashMap<>();
-        kernelsToLoad.put("src/test/resources/nh_kernels/mk/nh_tk_meta_mmtc_test.tm", "mk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/lsk/naif0012.tls", "lsk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc", "sclk");
-        kernelsToLoad.put("src/test/resources/nh_kernels/spk/nh_pred_alleph_od124.bsp", "spk");
+        List<String> kernelsToLoad = Arrays.asList(
+                "src/test/resources/nh_kernels/mk/nh_tk_meta_mmtc_test.tm",
+                "src/test/resources/nh_kernels/lsk/naif0012.tls",
+                "src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc",
+                "src/test/resources/nh_kernels/spk/nh_pred_alleph_od124.bsp"
+        );
         TimeConvert.loadSpiceKernels(kernelsToLoad);
     }
 

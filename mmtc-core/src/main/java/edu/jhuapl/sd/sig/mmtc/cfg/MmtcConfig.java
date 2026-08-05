@@ -465,23 +465,23 @@ public class MmtcConfig {
      * @return a map containing the types and paths of each SPICE kernel
      * @throws MmtcException if the list of kernels to load could not be obtained from configuration data
      */
-    public Map<String, String> getKernelsToLoad() throws MmtcException {
+    public List<String> getKernelsToLoad() throws MmtcException {
         return getKernelsToLoad(true);
     }
 
     /**
      * Creates a container in the form of a map that holds the SPICE kernels to load.
      * @param includeSclkKernel whether to also include the input SCLK kernel or not
-     * @return a map containing the types and paths of each SPICE kernel
+     * @return a list containing the paths of each SPICE kernel to load
      * @throws MmtcException if the list of kernels to load could not be obtained from configuration data
      */
-    public Map<String, String> getKernelsToLoad(boolean includeSclkKernel) throws MmtcException {
+    public List<String> getKernelsToLoad(boolean includeSclkKernel) throws MmtcException {
         // the fact that this is a LinkedHashMap is important, as it means iteration over the map will proceed in insertion-order
-        Map<String, String> kernels = new LinkedHashMap<>();
+        List<String> kernels = new ArrayList<>();
 
         // Input metakernel
         if (timeCorrelationConfig.getConfig().containsKey("spice.kernel.mk.path")) {
-            kernels.put(timeCorrelationConfig.getConfig().getString("spice.kernel.mk.path"), "mk");
+            kernels.add(timeCorrelationConfig.getConfig().getString("spice.kernel.mk.path"));
         }
 
         // Get the path to the SCLK kernel. This will be the highest versioned SCLK kernel that matches
@@ -489,12 +489,12 @@ public class MmtcConfig {
         // is set in the configuration parameters. The inputPathOverride parameter overrides the normal
         // previous SCLK kernel search.
         if (includeSclkKernel) {
-            kernels.put(getInputSclkKernelPath().toString(), "sclk");
+            kernels.add(getInputSclkKernelPath().toString());
         }
 
         // Leap seconds kernel
         if (timeCorrelationConfig.getConfig().containsKey("spice.kernel.lsk.path")) {
-            kernels.put(timeCorrelationConfig.getConfig().getString("spice.kernel.lsk.path"), "lsk");
+            kernels.add(timeCorrelationConfig.getConfig().getString("spice.kernel.lsk.path"));
         }
 
         List<String> illegalCommas = new ArrayList<>();
@@ -508,7 +508,7 @@ public class MmtcConfig {
                 illegalCommas.add(key);
                 break;
             }
-            kernels.put(spk, "spk");
+            kernels.add(spk);
         }
 
         // PCK kernels
@@ -518,7 +518,7 @@ public class MmtcConfig {
                 illegalCommas.add(key);
                 break;
             }
-            kernels.put(pck, "pck");
+            kernels.add(pck);
         }
 
         // FK kernels
@@ -528,7 +528,7 @@ public class MmtcConfig {
                 illegalCommas.add(key);
                 break;
             }
-            kernels.put(fk, "fk");
+            kernels.add(fk);
         }
 
         if (!illegalCommas.isEmpty()) {

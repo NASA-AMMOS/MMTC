@@ -170,7 +170,7 @@ class SclkKernelTest {
 
     @Test
     public void formatTripletTestSciNot() throws IOException, TimeConvertException, TextProductException, SpiceErrorException {
-        SclkKernel sclkKernelWithSciNot = SclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_0002_alt.tsc"));
+        SclkKernel sclkKernelWithSciNot = SclkKernel.read(Paths.get("src/test/resources/SclkKernelTests/new-horizons_0002_alt.tsc"));
 
         CorrelationTriplet lastTriplet = sclkKernelWithSciNot.getLastTriplet();
 
@@ -197,8 +197,8 @@ class SclkKernelTest {
 
     @Test
     public void testEqualKernelsDifferentFormatting() throws IOException, TimeConvertException {
-        SclkKernel sclkKernelTraditional = SclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_0002.tsc"));
-        SclkKernel sclkKernelSciNotation = SclkKernel.read(Paths.get("src/test/resources/nh_kernels/sclk/new-horizons_0002_alt.tsc"));
+        SclkKernel sclkKernelTraditional = SclkKernel.read(Paths.get("src/test/resources/SclkKernelTests/new-horizons_0002.tsc"));
+        SclkKernel sclkKernelSciNotation = SclkKernel.read(Paths.get("src/test/resources/SclkKernelTests/new-horizons_0002_alt.tsc"));
 
         List<CorrelationTriplet> tradTriplets = sclkKernelTraditional.getTriplets();
         List<CorrelationTriplet> sciNotTriplets = sclkKernelSciNotation.getTriplets();

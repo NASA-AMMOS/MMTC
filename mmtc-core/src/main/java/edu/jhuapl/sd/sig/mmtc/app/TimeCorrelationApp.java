@@ -91,6 +91,7 @@ public class TimeCorrelationApp {
         logger.debug("Loading SPICE library");
         TimeConvert.loadSpiceLib();
         TimeConvert.loadSpiceKernels(config.getKernelsToLoad());
+        TimeConvert.validateLoadedSclkKernels(config.getSpacecraftId());
 
         logger.info("SPICE kernels loaded:\n" + String.join("\n", TimeConvert.getLoadedKernelNames()));
 
