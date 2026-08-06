@@ -19,6 +19,7 @@
   <entry key="groundStationMap.path">./src/test/resources/GroundStationMap.csv</entry>
   <entry key="sclkPartitionMap.path">./src/test/resources/SclkPartitionMap.csv</entry>
 
+  <entry key="telemetry.sampleSetBuildingStrategy">SEPARATE_CONSECUTIVE_WINDOWS</entry>
   <entry key="telemetry.samplesPerSet">5</entry>
   <entry key="telemetry.supplementalSampleOffset">1</entry>
 
@@ -98,6 +99,7 @@
   <entry key="filter.dataRate.maxDataRateBps">1000000</entry>
 
   <!-- Output Files -->
+  <entry key="table.runHistoryFile.path">/opt/local/mmtc/output/RunHistoryFile.csv</entry>
   <entry key="table.rawTelemetryTable.path">/opt/local/mmtc/output/RawTlmTable.csv</entry>
   <entry key="table.rawTelemetryTable.dateTimePattern">yyyy-DDD'T'HH:mm:ss.SSSSSS</entry>
   <entry key="table.timeHistoryFile.path">/opt/local/mmtc/output/TimeHistoryFile.csv</entry>

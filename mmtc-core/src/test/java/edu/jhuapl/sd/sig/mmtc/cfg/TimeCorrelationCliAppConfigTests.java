@@ -148,7 +148,6 @@ class TimeCorrelationCliAppConfigTests {
             mockedEnvironment
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/ConfigTests/missingKeys");
-            TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2020-001T00:00:00", "2020-001T23:59:59"));
 
             ArrayList<String> expectedMissingVals = new ArrayList<>();
             expectedMissingVals.add("spacecraft.id");
@@ -158,7 +157,7 @@ class TimeCorrelationCliAppConfigTests {
 
             MmtcException resultingException = assertThrows(
                     MmtcException.class,
-                    config::validate
+                    () -> new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2020-001T00:00:00", "2020-001T23:59:59"))
             );
 
             assertTrue(resultingException.getMessage().startsWith("Failed to validate TimeCorrelationConfigProperties.xml, missing 4 required key(s):"));
@@ -186,11 +185,10 @@ class TimeCorrelationCliAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 					.thenReturn("src/test/resources/ConfigTests/missingSclkScetKey");
-			TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2020-001T00:00:00", "2020-001T23:59:59"));
 
 			MmtcException resultingException = assertThrows(
 					MmtcException.class,
-					config::validate
+                    () -> new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2020-001T00:00:00", "2020-001T23:59:59"))
 			);
 
 			assertEquals("SCLK-SCET operations require the following keys to be set: [product.sclkScetFile.producerId, product.sclkScetFile.scetUtcPrecision]", resultingException.getMessage());
@@ -203,11 +201,10 @@ class TimeCorrelationCliAppConfigTests {
 			mockedEnvironment
 					.when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
 					.thenReturn("src/test/resources/ConfigTests/missingUplinkCmdFileKey");
-			TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2020-001T00:00:00", "2020-001T23:59:59"));
 
 			MmtcException resultingException = assertThrows(
 					MmtcException.class,
-					config::validate
+                    () -> new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("2020-001T00:00:00", "2020-001T23:59:59"))
 			);
 
 			assertEquals("Uplink command file operations require the following keys to be set: [product.uplinkCmdFile.outputDir]", resultingException.getMessage());
