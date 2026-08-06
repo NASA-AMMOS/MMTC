@@ -19,6 +19,7 @@
   <entry key="groundStationMap.path">./src/test/resources/GroundStationMap.csv</entry>
   <entry key="sclkPartitionMap.path">./src/test/resources/SclkPartitionMap.csv</entry>
 
+  <entry key="telemetry.sampleSetBuildingStrategy">SEPARATE_CONSECUTIVE_WINDOWS</entry>
   <entry key="telemetry.samplesPerSet">5</entry>
   <entry key="telemetry.supplementalSampleOffset">1</entry>
   <entry key="telemetry.defaultFrameSizeBits">69200</entry>
@@ -86,6 +87,7 @@
   <entry key="spice.kernel.sclk.kerneldir">./output/sclk</entry>
   <entry key="spice.kernel.sclk.baseName">new-horizons</entry>
   <entry key="spice.kernel.sclk.separator">_</entry>
+  <entry key="spice.kernel.sclk.uniqueKernelCounters">true</entry>
 
   <entry key="spice.kernel.lsk.path">./src/test/resources/nh_kernels/lsk/naif0012.tls</entry>
 
@@ -138,6 +140,7 @@
   <entry key="filter.dataRate.maxDataRateBps">1000000</entry>
 
   <!-- Output Files -->
+  <entry key="table.runHistoryFile.path">/opt/local/mmtc/output/RunHistoryFile.csv</entry>
   <entry key="table.rawTelemetryTable.path">/absolute/path/to/output/RawTlmTable.csv</entry>
   <entry key="table.rawTelemetryTable.dateTimePattern">yyyy-DDD'T'HH:mm:ss.SSSSSS</entry>
   <entry key="table.timeHistoryFile.path">/absolute/path/to/output/TimeHistoryFile.csv</entry>
