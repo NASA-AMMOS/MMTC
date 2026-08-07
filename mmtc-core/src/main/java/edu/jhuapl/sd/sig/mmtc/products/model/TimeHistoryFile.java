@@ -322,4 +322,16 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         generateNewTimeHistRec(ctx, timeHistoryFile, newThfRec);
         timeHistoryFile.writeRecord(newThfRec);
     }
+
+
+    public static int computeInsertIndex(String columnName, List<String> excluded) {
+        int canonicalPos = DEFAULT_COLUMNS.indexOf(columnName);
+        int actualIndex = 0;
+        for (int i = 0; i < canonicalPos; i++) {
+            if (!excluded.contains(DEFAULT_COLUMNS.get(i))) {
+                actualIndex++;
+            }
+        }
+        return actualIndex;
+    }
 }

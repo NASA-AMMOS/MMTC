@@ -27,12 +27,10 @@ public class BuiltInOutputProductMigrationManager {
 
     private static final class NewColumn {
         final String name;
-        final int index;
         final List<String> values;
 
-        NewColumn(String name, int index, List<String> values) {
+        NewColumn(String name, List<String> values) {
             this.name = name;
-            this.index = index;
             this.values = values;
         }
 
@@ -132,7 +130,7 @@ public class BuiltInOutputProductMigrationManager {
                 migrations.get(v).call();
             } catch (Exception e) {
                 // give advice on restoring from backup
-                throw new MmtcException("Failed to migrate output products", e);
+                throw new MmtcException("Failed to migrate built-in output products during migration from version "+v, e);
             }
         }
 
@@ -176,16 +174,16 @@ public class BuiltInOutputProductMigrationManager {
             thf.renameColumn("ClkChgRate(s/s)", "Predicted Clk Chg Rate (s/s)");
 
             List<NewColumn> newColumns = Arrays.asList(
-                new NewColumn("Interpolated Clk Chg Rate (s/s)", 6, summTable.readValuesForColumn("Interpolated Clk Change Rate")),
-                new NewColumn("TD SC (sec)", 19, summTable.readValuesForColumn("TD SC (sec)")),
-                new NewColumn("TD BE (sec)", 20, summTable.readValuesForColumn("TD BE (sec)")),
-                new NewColumn("TF Offset", 21, summTable.readValuesForColumn("TF Offset"))
+                new NewColumn("Interpolated Clk Chg Rate (s/s)",  summTable.readValuesForColumn("Interpolated Clk Change Rate")),
+                new NewColumn("TD SC (sec)", summTable.readValuesForColumn("TD SC (sec)")),
+                new NewColumn("TD BE (sec)", summTable.readValuesForColumn("TD BE (sec)")),
+                new NewColumn("TF Offset", summTable.readValuesForColumn("TF Offset"))
             );
 
             List<String> excluded = config.getTimeHistoryFileExcludeColumns();
             for(NewColumn col : newColumns) {
                 if(!excluded.contains(col.name)) {
-                    thf.addColumnAtIndexWithValues(col.name, col.index, col.values);
+                    thf.addColumnAtIndexWithValues(col.name, TimeHistoryFile.computeInsertIndex(col.name, excluded), col.values);
                     logger.debug("Added new column "+col.name+" to Time History File");
                 } else {
                     logger.debug("New Time History file column "+col.name+" found in configured excluded columns, ignoring.");
