@@ -169,12 +169,45 @@ public class AmpcsTelemetrySourceConfig {
     }
 
     /**
-     * The known size of frames in bits for a particular spacecraft to be used in downlink rate computation
-     * if frameSizeBits is absent from telemetry for any reason
+     *
+     * @return a map of frame sizes (lengths) read from AMPCS to the values that should be used within MMTC (allows handling trellis bits, etc.)
+     */
+    public Map<Integer, Integer> getFrameSizeBytesToBitsMap() {
+        String mapping = timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap");
+        // of form: `1119:8956 ; 1234:5678`
+
+        mapping = mapping.trim();
+        if (mapping.isEmpty()) {
+            throw new IllegalStateException("If the key `telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap` is specified, its value must not be blank");
+        }
+
+        Map<Integer, Integer> frameSizeBytesToBits = new HashMap<>();
+
+        String[] pairs = mapping.split(";");
+
+        for (String bytesToBits : pairs) {
+            String[] bytesAndBits = bytesToBits.split(":");
+            if (bytesAndBits.length != 2) {
+                throw new IllegalStateException("Failed to parse `telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap` value; one element in the list is not a pair of values");
+            }
+            int inputBytes = Integer.parseInt(bytesAndBits[0].trim());
+            int outputBits = Integer.parseInt(bytesAndBits[1].trim());
+
+            if (! frameSizeBytesToBits.containsKey(inputBytes)) {
+                frameSizeBytesToBits.put(inputBytes, outputBits);
+            } else {
+                throw new IllegalStateException("Failed to parse `telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap` value; duplicate key (number of bytes) found");
+            }
+        }
+
+        return Collections.unmodifiableMap(frameSizeBytesToBits);
+    }
+
+    /**
      * @return the default length of downlink frames in bits
      */
-    public int getFrameSizeBits() {
-        return Integer.parseInt(timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.frameSizeBits"));
+    public int getDefaultFrameSizeBits() {
+        return Integer.parseInt(timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.defaultFrameSizeBits"));
     }
 
     /**
@@ -215,6 +248,16 @@ public class AmpcsTelemetrySourceConfig {
      */
     public String getFrameVcfcFieldName() {
         return timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.frame.vcfcFieldName");
+    }
+
+    /**
+     * The name of the field in the CSV metadata output from a chill_get_frames command that contains the
+     * length (in bytes) associated with a frame returned by a query.
+     *
+     * @return the field name of the VCFC in chill_get metadata
+     */
+    public String getFrameLengthFieldName() {
+        return timeCorrelationAppConfig.getString("telemetry.source.plugin.ampcs.frame.lengthFieldName");
     }
 
     /**

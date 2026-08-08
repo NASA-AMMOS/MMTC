@@ -9,6 +9,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class AmpcsTelemetrySourceConfigTest {
@@ -173,6 +177,50 @@ class AmpcsTelemetrySourceConfigTest {
                 AmpcsTelemetrySourceConfig ampcsConfig = new AmpcsTelemetrySourceConfig(config);
 
                 assertEquals("2", ampcsConfig.getActiveRadioId());
+            }
+        }
+    }
+
+    @Test
+    public void testGetFrameSizeConfig() throws Exception {
+        AmpcsTelemetrySourceConfig ampcsConfig = getConfigFromFile("../mmtc-plugin-ampcs/src/test/resources/config/frame-sizes/default-frame-size");
+        assertEquals(8952, ampcsConfig.getDefaultFrameSizeBits());
+
+        ampcsConfig = getConfigFromFile("../mmtc-plugin-ampcs/src/test/resources/config/frame-sizes/default-and-mapping-sizes");
+        assertEquals(8952, ampcsConfig.getDefaultFrameSizeBits());
+        final Map<Integer, Integer> twoMappings = new HashMap<>();
+        twoMappings.put(1119, 8956);
+        twoMappings.put(123, 456);
+        assertEquals(twoMappings, ampcsConfig.getFrameSizeBytesToBitsMap());
+
+        ampcsConfig = getConfigFromFile("../mmtc-plugin-ampcs/src/test/resources/config/frame-sizes/two-mapping-sizes");
+        assertEquals(twoMappings, ampcsConfig.getFrameSizeBytesToBitsMap());
+
+        ampcsConfig = getConfigFromFile("../mmtc-plugin-ampcs/src/test/resources/config/frame-sizes/single-mapping-size");
+        final Map<Integer, Integer> singleMapping = new HashMap<>();
+        singleMapping.put(1119, 8956);
+        assertEquals(singleMapping, ampcsConfig.getFrameSizeBytesToBitsMap());
+
+        AmpcsTelemetrySourceConfig invalidAmpcsConfig = getConfigFromFile("../mmtc-plugin-ampcs/src/test/resources/config/frame-sizes/empty-mapping");
+        IllegalStateException thrown = assertThrows(
+            IllegalStateException.class,
+            () -> invalidAmpcsConfig.getFrameSizeBytesToBitsMap()
+        );
+        assertEquals("If the key `telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap` is specified, its value must not be blank", thrown.getMessage());
+
+    }
+
+    public static AmpcsTelemetrySourceConfig getConfigFromFile(String configFileName) throws Exception {
+        try (TemporaryTkConfigProperties tkConfigProps = TemporaryTkConfigProperties.withTestTkPacketDescriptionFile(configFileName)) {
+            try (MockedStatic<Environment> mockedEnvironment = Mockito.mockStatic(Environment.class, Mockito.CALLS_REAL_METHODS)) {
+                mockedEnvironment
+                        .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
+                        .thenReturn(tkConfigProps.getTestTkConfigDir().toString());
+
+                String[] cliArgs = {"2006-01-20T01:00:00.000Z", "2006-01-20T10:00:00.000Z"};
+                TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(cliArgs));
+
+                return new AmpcsTelemetrySourceConfig(config);
             }
         }
     }

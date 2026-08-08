@@ -6,21 +6,19 @@
 
   <comment>Time correlation configuration properties for test with NH Raw TLM File data</comment>
   <entry key="missionName">New Horizons</entry>
-  <entry key="product.sclkScetFile.missionId">98</entry>
+  <entry key="missionId">98</entry>
   <entry key="spacecraftName">New Horizons</entry>
   <entry key="spacecraft.id">98</entry>
   <entry key="spacecraft.timeDelaySec">0</entry>
   <entry key="spacecraft.frameErtBitOffsetError">0</entry>
+  <entry key="spacecraft.oscillatorIds">1,2</entry> <!-- a list of strings, which can be integers -->
 
   <!-- SCLK modulus used for computing TF Offset in Europa Clipper -->
   <entry key="spacecraft.sclkModulusOverride">50000</entry>
 
-  <entry key="spacecraft.oscillatorIds">1,2</entry> <!-- a list of strings, which can be integers -->
-
   <entry key="groundStationMap.path">./src/test/resources/GroundStationMap.csv</entry>
   <entry key="sclkPartitionMap.path">./src/test/resources/SclkPartitionMap.csv</entry>
 
-  <entry key="telemetry.sampleSetBuildingStrategy">SEPARATE_CONSECUTIVE_WINDOWS</entry>
   <entry key="telemetry.samplesPerSet">5</entry>
   <entry key="telemetry.supplementalSampleOffset">1</entry>
 
@@ -32,8 +30,7 @@
   <entry key="telemetry.source.plugin.rawTlmTable.tableFile.path">/absolute/path/to/RawTelemetryTable_NH_reformatted.csv</entry>
 
   <!-- General options for AMPCS telemetry source plugin -->
-  <entry key="telemetry.source.plugin.ampcs.defaultFrameSizeBits">1119</entry>
-  <entry key="telemetry.source.plugin.ampcs.tkPacket.tkPacketHeaderFineSclkModulus">0</entry>
+  <entry key="telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap">1119:8956 ; 123:456</entry>
   <entry key="telemetry.source.plugin.ampcs.chillTimeoutSec">300</entry>
   <entry key="telemetry.source.plugin.ampcs.tkpacket.apid">123</entry>
   <entry key="telemetry.source.plugin.ampcs.tkpacket.tkPacketSizeBytes">29</entry>
@@ -82,7 +79,6 @@
   <entry key="telemetry.source.plugin.ampcs.oscillators.2.temperature.readField">dn</entry>
 
   <entry key="telemetry.tkOscTempWindowSec">60</entry>
-
   <entry key="telemetry.tkParmWindowSec">60</entry>
 
   <entry key="spice.naifSpacecraftId">-98</entry>
@@ -142,7 +138,6 @@
   <entry key="filter.dataRate.maxDataRateBps">1000000</entry>
 
   <!-- Output Files -->
-  <entry key="table.runHistoryFile.path">/opt/local/mmtc/output/RunHistoryFile.csv</entry>
   <entry key="table.rawTelemetryTable.path">/absolute/path/to/output/RawTlmTable.csv</entry>
   <entry key="table.rawTelemetryTable.dateTimePattern">yyyy-DDD'T'HH:mm:ss.SSSSSS</entry>
   <entry key="table.timeHistoryFile.path">/absolute/path/to/output/TimeHistoryFile.csv</entry>

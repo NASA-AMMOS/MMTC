@@ -26,6 +26,7 @@ import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValsReader;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.SingleChanValReader;
+import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.commons.cli.Option;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -664,4 +665,94 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
      */
     @Override
     public String getActiveRadioId(FrameSample targetSample) {return ampcsConfig.getActiveRadioId();}
+
+    /**
+     * Based on the MMTC AmpcsTelemetrySource configuration, optionally assign a frame size
+     * @param samples
+     * @throws MmtcException
+     */
+    protected void setFrameSize(List<FrameSample> samples) throws MmtcException {
+        try {
+            if (config.containsKey("telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap")) {
+                logger.info("Retrieving sample frame sizes from AMPCS");
+                setFrameSizesFromAmpcs(samples);
+            } else if (config.containsKey("telemetry.source.plugin.ampcs.defaultFrameSizeBits")) {
+                logger.info(String.format("Setting a static sample frame size from AMPCS: %d bits", ampcsConfig.getDefaultFrameSizeBits()));
+                for (FrameSample sample : samples) {
+                    sample.setFrameSizeBits(ampcsConfig.getDefaultFrameSizeBits());
+                }
+            } else {
+                logger.info("No frame size configuration provided; will not set frame sizes on samples");
+            }
+        } catch (IOException e) {
+            throw new MmtcException(e);
+        }
+    }
+
+    private void setFrameSizesFromAmpcs(List<FrameSample> samples) throws IOException {
+        // make sure there's at least one frame before doing work
+        if (samples == null || samples.isEmpty()) {
+            return;
+        }
+
+        final Set<Integer> vcidsToFind = samples.stream().map(FrameSample::getVcid).collect(Collectors.toSet());
+        final Set<Integer> vcfcsToFind = samples.stream().map(FrameSample::getVcfc).collect(Collectors.toSet());
+        final OffsetDateTime beginTime = samples.stream().map(fs -> TimeConvert.parseIsoDoyUtcStr(fs.getErtStr())).min(Comparator.naturalOrder()).orElseThrow(() -> new IllegalStateException("No minimum time found"));
+        final OffsetDateTime endTime = samples.stream().map(fs -> TimeConvert.parseIsoDoyUtcStr(fs.getErtStr())).max(Comparator.naturalOrder()).orElseThrow(() -> new IllegalStateException("No minimum time found"));
+
+        final String vcidsToFindArg = vcidsToFind.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","));
+        final String vcfcsToFindArg = vcfcsToFind.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","));
+        final String beginTimeArg = TimeConvert.timeToIsoUtcString(beginTime);
+        final String endTimeArg = TimeConvert.timeToIsoUtcString(endTime);
+
+        // look up frame metadata over the entire applicable ERT range, and add filters based on VCID and VCFC values
+        String cmd = chillGdsPath + "/bin/chill_get_frames -m";
+        cmd += getChillSessionIdOpt();
+        cmd += " --timeType ERT " + "--beginTime " + beginTimeArg +
+                " --endTime " + endTimeArg + " --vcid " + vcidsToFindArg + " --vcfcs " + vcfcsToFindArg + " --orderBy ERT";
+        if (connectionParms != null) {
+            cmd += " " + connectionParms;
+        }
+        final CSVParser frameMetadata = runSubprocessCsv(cmd);
+
+        final Map<Integer, Integer> recordedFrameSizeBytesToEffectiveSizeBits = ampcsConfig.getFrameSizeBytesToBitsMap();
+
+        // match up chill_get_frames metadata to framesamples based on matching ERT, VCID, and VCFC, then do its frame length lookup and mapping
+        final String FRAME_ERT   = ampcsConfig.getFrameErtFieldName();
+        final String FRAME_VCID   = ampcsConfig.getFrameVcidFieldName();
+        final String FRAME_VCFC   = ampcsConfig.getFrameVcfcFieldName();
+        final String FRAME_LENGTH   = ampcsConfig.getFrameLengthFieldName();
+
+        List<CSVRecord> frameMetadataRecords = frameMetadata.stream().collect(Collectors.toList());
+
+        for (FrameSample fs : samples) {
+            List<CSVRecord> matchingFrameMetadataRecs = frameMetadataRecords.stream().filter(frameMetadataRec -> {
+                final String frameErtStr = frameMetadataRec.get(FRAME_ERT);
+                final Integer frameVcid = Integer.parseInt(frameMetadataRec.get(FRAME_VCID));
+                final Integer frameVcfc = Integer.parseInt(frameMetadataRec.get(FRAME_VCFC));
+
+                return fs.getErtStr().equals(frameErtStr)
+                        && fs.getVcid() == frameVcid
+                        && fs.getVcfc() == frameVcfc;
+            })
+            .collect(Collectors.toList());
+
+            if (matchingFrameMetadataRecs.size() == 0) {
+                logger.warn("Could not find frame size data for: " + fs);
+            } else if (matchingFrameMetadataRecs.size() > 1) {
+                throw new IllegalStateException("Multiple matching frames found for: " + fs);
+            } else {
+                final CSVRecord matchingFrameMetadataRec = matchingFrameMetadataRecs.get(0);
+                final int frameSizeBytesFromAmpcs = Integer.parseInt(matchingFrameMetadataRec.get(FRAME_LENGTH));
+
+                if (! recordedFrameSizeBytesToEffectiveSizeBits.containsKey(frameSizeBytesFromAmpcs)) {
+                    throw new IllegalStateException(String.format("No matching frame size mapping for a %d-bit frame", frameSizeBytesFromAmpcs));
+                }
+
+                fs.setFrameSizeBits(
+                        recordedFrameSizeBytesToEffectiveSizeBits.get(frameSizeBytesFromAmpcs)
+                );
+            }
+        }
+    }
 }

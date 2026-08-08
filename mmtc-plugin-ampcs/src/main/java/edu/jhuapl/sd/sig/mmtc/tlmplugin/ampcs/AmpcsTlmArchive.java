@@ -204,11 +204,6 @@ public class AmpcsTlmArchive extends AmpcsTelemetrySource {
                     sample.setTkDataRateBps(pktrec.getDownlinkDataRate());
                 }
 
-                if (config.containsKey("telemetry.source.plugin.ampcs.frameSizeBits")) {
-                    sample.setFrameSizeBits(ampcsConfig.getFrameSizeBits());
-                    // TODO: MMTC-302 - Try to determine frame size directly first instead of solely relying on configured default
-                }
-
                 samples.add(sample);
             }
 
@@ -298,6 +293,8 @@ public class AmpcsTlmArchive extends AmpcsTelemetrySource {
             logger.error(msg, e);
             throw new MmtcException(msg, e);
         }
+
+        setFrameSize(samples);
 
         return samples;
     }
