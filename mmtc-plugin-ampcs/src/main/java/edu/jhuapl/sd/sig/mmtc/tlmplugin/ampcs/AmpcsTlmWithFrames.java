@@ -93,11 +93,17 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
     }
 
     public List<FrameSample> getSamplesInRange(OffsetDateTime start, OffsetDateTime stop) throws MmtcException {
+        final List<FrameSample> samples;
+
         if (ampcsConfig.isAmpcsTlmWithFramesBatchingEnabled()) {
-            return getSamplesInRangeBatching(start, stop);
+            samples = getSamplesInRangeBatching(start, stop);
         } else {
-            return getSamplesInRangeNonBatching(start, stop);
+            samples = getSamplesInRangeNonBatching(start, stop);
         }
+
+        setFrameSize(samples);
+
+        return samples;
     }
 
     /**
@@ -272,10 +278,6 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
                 if (packetsHaveDownlinkDataRate()) {
                     // TODO: use value from frame csv's bitRate column?
                     sample.setTkDataRateBps(pktRecord.getDownlinkDataRate());
-                }
-                if (config.containsKey("telemetry.source.plugin.ampcs.frameSizeBits")) {
-                    sample.setFrameSizeBits(ampcsConfig.getFrameSizeBits());
-                    // TODO: MMTC-302 - Try to determine frame size directly first instead of solely relying on configured default
                 }
 
                 // Calculate the beginning of the search interval, which is the current sample's ERT minus the
@@ -496,10 +498,6 @@ public class AmpcsTlmWithFrames extends AmpcsTelemetrySource {
                 if (packetsHaveDownlinkDataRate()) {
                     // TODO: use value from frame csv's bitRate column?
                     sample.setTkDataRateBps(pktRecord.getDownlinkDataRate());
-                }
-                if (config.containsKey("telemetry.source.plugin.ampcs.frameSizeBits")) {
-                    sample.setFrameSizeBits(ampcsConfig.getFrameSizeBits());
-                    // TODO: MMTC-302 - Try to determine frame size directly first instead of solely relying on configured default
                 }
 
                 // Calculate the beginning of the search interval, which is the current sample's ERT minus the

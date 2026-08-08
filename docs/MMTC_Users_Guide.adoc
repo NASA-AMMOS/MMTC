@@ -1486,10 +1486,10 @@ The parameters in the table below are only applicable to missions using AMPCS wh
 |===
 |Name |Required |Type |Description
 
-|telemetry.source.plugin.ampcs.frameSizeBits
-|CONDITIONAL
+|telemetry.source.plugin.ampcs.defaultFrameSizeBits
+|OPTIONAL
 |INT
-|The default size of a mission telemetry frame containing time correlation data in bits. This value is used for calculating downlink data rates if the packet parser configuration is not set to read downlink data rates from packets.  This is the entire ‘physical’ size of the transfer frame, including headers, and taking into account encoding schemes.  Also used for reporting.  Must be a positive integer.
+|The default size of a mission telemetry frame containing time correlation data in bits. This value is used if MAPPING variable is not set.  Frame length is used for calculating downlink data rates if the packet parser configuration is not set to read downlink data rates from packets, as well as in reporting.  This is the entire ‘physical’ size of the transfer frame, including headers and trellis bits, and taking into account encoding schemes.  Must be a positive integer.
 
 |telemetry.source.plugin.ampcs.chillTimeoutSec
 |REQUIRED

@@ -145,7 +145,7 @@
     <entry key="telemetry.source.plugin.ampcs.activeRadioId"></entry>
 
     <!-- 'AmpcsTlmWithFrames'-specific configuration -->
-    <entry key="telemetry.source.plugin.ampcs.frameSizeBits"></entry>
+    <entry key="telemetry.source.plugin.ampcs.defaultFrameSizeBits"></entry>
     <entry key="telemetry.source.plugin.ampcs.frame.ertFieldName"></entry>
     <entry key="telemetry.source.plugin.ampcs.frame.dssIdFieldName"></entry>
     <entry key="telemetry.source.plugin.ampcs.frame.vcidFieldName"></entry>

@@ -31,7 +31,7 @@
   <entry key="telemetry.source.plugin.rawTlmTable.tableFile.path">/absolute/path/to/RawTelemetryTable_NH_reformatted.csv</entry>
 
   <!-- General options for AMPCS telemetry source plugin -->
-  <entry key="telemetry.source.plugin.ampcs.frameSizeBits">1119</entry>
+  <entry key="telemetry.source.plugin.ampcs.defaultFrameSizeBits">1119</entry>
   <entry key="telemetry.source.plugin.ampcs.tkPacket.tkPacketHeaderFineSclkModulus">0</entry>
   <entry key="telemetry.source.plugin.ampcs.chillTimeoutSec">300</entry>
   <entry key="telemetry.source.plugin.ampcs.tkpacket.apid">123</entry>
