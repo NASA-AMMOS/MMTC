@@ -208,8 +208,8 @@ public class FrameSample {
 
     /**
      * Optional field to specify this frame's size in bits.  This is used in estimating the downlink data rate (used in
-     * time correlation calculations) IFF the downlink data rate is not set.  If this is not set, then the default
-     * frame size as provided in configuration is used.
+     * time correlation calculations) IFF the downlink data rate is not set.
+     *
      * Usage: time correlation calculations (iff downlink data rate is not set), reporting
      */
     private int frameSizeBits;
