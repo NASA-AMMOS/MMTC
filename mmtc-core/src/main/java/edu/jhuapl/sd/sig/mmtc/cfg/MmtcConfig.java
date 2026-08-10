@@ -1055,6 +1055,14 @@ public class MmtcConfig {
         return sclkKernelDef.resolveLocation(this).findMatchingFilename(sclkKernelFilename);
     }
 
+    public boolean isCreateParameterGroupUpdateFile() {
+        return getBoolean("product.parameterGroupUpdateFile.create", false);
+    }
+
+    public Path getParameterGroupUpdateFilePath() {
+        return Paths.get(getString("product.parameterGroupUpdateFile.path"));
+    }
+
     public enum SclkScetFileLeapSecondSclkRate {
         ONE,
         PRIOR_RATE,
@@ -1164,10 +1172,18 @@ public class MmtcConfig {
      * Gets the Uplink Command file basename, i.e., the first and static part of the filename.
      * For example, given "uplinkCmd1577130458.csv", "uplinkCmd" is the basename.
      *
-     * @return the SCLK/SCET file basename
+     * @return the Uplink Command file basename
      */
     public String getUplinkCmdFileBasename() {
         return timeCorrelationConfig.getConfig().getString("product.uplinkCmdFile.baseName");
+    }
+
+    public boolean getUplinkCmdFileWriteHeaders() {
+        return getBoolean("product.uplinkCmdFile.writeHeaders", false);
+    }
+
+    public String getUplinkCmdFileVersionSuffixMode() {
+        return getString("product.uplinkCmdFile.versionSuffixMode", "appRuntimeTimestamp");
     }
 
     // Config parameters associated with the time correlation (TK) packet.
@@ -1259,6 +1275,10 @@ public class MmtcConfig {
 
     public String getString(String key) {
         return timeCorrelationConfig.getConfig().getString(key);
+    }
+
+    public String getString(String key, String defaultVal) {
+        return timeCorrelationConfig.getConfig().getString(key, defaultVal);
     }
 
     public Boolean getBoolean(String key) {

@@ -5,11 +5,18 @@ import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductPath;
+import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
+import edu.jhuapl.sd.sig.mmtc.products.model.TimeHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
 
@@ -49,4 +56,13 @@ public abstract class AppendedFileOutputProductDefinition extends OutputProductD
      * @throws MmtcException if the product was not successfully written
      */
     public abstract ProductWriteResult appendToProduct(TimeCorrelationContext ctx) throws MmtcException;
+
+    protected static String getFormattedDryRunOutputForTableRow(List<String> headers, TableRecord rec) {
+        List<String> thValues = rec.getValues();
+        String zippedThRow = IntStream.range(0, headers.size())
+                .mapToObj(i -> "\t" + headers.get(i) + "\t:\t"+thValues.get(i))
+                .collect(Collectors.joining("\n"));
+
+        return zippedThRow;
+    }
 }
