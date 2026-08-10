@@ -114,7 +114,7 @@ public class TimeCorrelationApp {
         runHistoryFile = new RunHistoryFile(config.getRunHistoryFilePath(), config.getAllOutputProductDefs());
         runHistoryFile.updateRowsForNewProducts();
         newRunHistoryFileRecord = new TableRecord(runHistoryFile.getHeaders());
-        if (!ctx.config.isDryRun()) {
+        if (! ctx.config.isDryRun()) {
             recordRunHistoryFilePreRunValues();
         }
 

@@ -45,7 +45,7 @@ public class UplinkCommandFileProductDefinition extends EntireFileOutputProductD
     @Override
     public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
         try {
-            UplinkCommand uplinkCommand = UplinkCmdFile.generateNewProduct(ctx);
+            UplinkCommand uplinkCommand = UplinkCmdFile.generateParameterSet(ctx);
             return String.format("[DRY RUN] Generated Uplink Command string: \n\t"+ uplinkCommand);
         } catch (TimeConvertException e) {
             throw new MmtcException("Unable to generate the Uplink Command File: ", e);

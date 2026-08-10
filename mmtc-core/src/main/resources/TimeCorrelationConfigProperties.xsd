@@ -158,6 +158,8 @@
       <xs:enumeration value="product.archive.directory"/>
 
       <xs:enumeration value="product.plugin.outputProductNames"/>
+      <xs:enumeration value="product.parameterGroupUpdateFile.create"/>
+      <xs:enumeration value="product.parameterGroupUpdateFile.path"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="entryKey">

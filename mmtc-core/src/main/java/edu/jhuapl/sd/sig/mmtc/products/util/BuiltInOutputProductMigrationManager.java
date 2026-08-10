@@ -6,6 +6,8 @@ import edu.jhuapl.sd.sig.mmtc.cfg.MigrationConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.products.definition.AppendedFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.definition.ParameterGroupUpdateFileProductDefinition;
+import edu.jhuapl.sd.sig.mmtc.products.model.ParameterGroupUpdateFile;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.products.model.TimeHistoryFile;
 import org.apache.logging.log4j.LogManager;
@@ -234,7 +236,11 @@ public class BuiltInOutputProductMigrationManager {
 
                 for (OutputProductDefinition<?> builtInAppendedProdDef : builtInAppendedProdDefs) {
                     String preRunProdColName = RunHistoryFile.getPreRunProductColNameFor(builtInAppendedProdDef);
-                    rhf.updateColValWhereEqualToOldValue(preRunProdColName, "1", "-");
+
+                    // check if the column exists in the current RHF.  if it does, migrate it.  if it doesn't, then don't, as it was not installed or did not exist (for built-in output products) for the current runtime or version
+                    if (rhf.hasColumn(preRunProdColName)) {
+                        rhf.updateColValWhereEqualToOldValue(preRunProdColName, "1", "-");
+                    }
                 }
             }
 
@@ -264,10 +270,26 @@ public class BuiltInOutputProductMigrationManager {
 
         // No actual migrations yet
 
+        // Update the RHF to include columns for new ParameterGroupUpdateFile introduced in 1.7.0
+        {
+            final GenericCsv rhf = new GenericCsv(config.getRunHistoryFilePath());
+
+            List<String> emptyVals = new ArrayList<>();
+            for (int i = 0; i < rhf.getNumRows(); i++) {
+                emptyVals.add("-");
+            }
+
+            rhf.addColumnAtIndexWithValues("Latest ParameterGroupUpdateFile Line Pre-run", 18, emptyVals);
+            rhf.addColumnAtIndexWithValues("Latest ParameterGroupUpdateFile Line Post-run", 19, emptyVals);
+            rhf.write();
+        }
+
         // Update the RHF's latest entry with the RHF to indicate a migration has occurred to this version
-        final GenericCsv rhf = new GenericCsv(config.getRunHistoryFilePath());
-        rhf.updateLastRowWithColVal("Built-In Output Product Version", "1.7.0");
-        rhf.write();
+        {
+            final GenericCsv rhf = new GenericCsv(config.getRunHistoryFilePath());
+            rhf.updateLastRowWithColVal("Built-In Output Product Version", "1.7.0");
+            rhf.write();
+        }
         logger.info(USER_NOTICE, mmtc170MigrationLogPrefix + "migrated Run History File at " + config.getRunHistoryFilePath());
 
         return null;
