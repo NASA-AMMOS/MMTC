@@ -7,6 +7,7 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductPath;
 import edu.jhuapl.sd.sig.mmtc.products.model.RawTelemetryTable;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
+import edu.jhuapl.sd.sig.mmtc.products.model.TimeHistoryFile;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -35,14 +36,14 @@ public class RawTlmTableProductDefinition extends AppendedFileOutputProductDefin
 
     @Override
     public String getDryRunPrintout(TimeCorrelationContext ctx) {
-        TableRecord rawTlmTableRecord = RawTelemetryTable.calculateUpdatedRawTlmTable(ctx);
-        List<String> rtHeaders = new RawTelemetryTable(ctx.config.getRawTelemetryTablePath()).getHeaders();
-        Collection<String> rtValues = rawTlmTableRecord.getValues();
-        String zippedRtRow = IntStream.range(0, rtHeaders.size())
-                .mapToObj(i -> "\t" + rtHeaders.get(i) + "\t:\t"+new ArrayList<>(rtValues)
-                        .get(i))
-                .collect(Collectors.joining("\n"));
-        return String.format("[DRY RUN] Updated Raw TLM table records: \n%s", zippedRtRow);
+        TableRecord latestRawTlmTableRecord = RawTelemetryTable.calculateNewLatestdRawTlmTableRec(ctx);
+
+        String zippedRow = getFormattedDryRunOutputForTableRow(
+                new RawTelemetryTable(ctx.config.getRawTelemetryTablePath()).getHeaders(),
+                latestRawTlmTableRecord
+        );
+
+        return String.format("[DRY RUN] Updated Raw TLM table records: \n%s", zippedRow);
     }
 
     @Override

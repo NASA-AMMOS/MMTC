@@ -3,7 +3,7 @@ package edu.jhuapl.sd.sig.mmtc.products.definition;
 import java.util.*;
 
 public class BuiltInOutputProductDefinitionFactory implements OutputProductDefinitionFactory {
-    public static final List<String> BUILT_IN_PRODUCT_TYPES = Arrays.asList("SCLK Kernel", "SCLK-SCET File", "Time History File", "Raw Telemetry Table", "Uplink Command File");
+    public static final List<String> BUILT_IN_PRODUCT_TYPES = Arrays.asList("SCLK Kernel", "SCLK-SCET File", "Time History File", "Raw Telemetry Table", "Uplink Command File", "Parameter Update Group File");
 
     @Override
     public List<String> getApplicableTypes() {
@@ -23,6 +23,7 @@ public class BuiltInOutputProductDefinitionFactory implements OutputProductDefin
             case "Raw Telemetry Table": return new RawTlmTableProductDefinition();
             case "Time History File": return new TimeHistoryFileProductDefinition();
             case "Uplink Command File": return new UplinkCommandFileProductDefinition();
+            case "Parameter Update Group File": return new ParameterGroupUpdateFileProductDefinition();
             default:
                 throw new IllegalArgumentException("No such built-in product type: " + type);
         }

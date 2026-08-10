@@ -38,18 +38,19 @@ public class TimeHistoryFileProductDefinition extends AppendedFileOutputProductD
     public String getDryRunPrintout(TimeCorrelationContext ctx) throws MmtcException {
         TimeHistoryFile timeHistFile = new TimeHistoryFile(ctx.config.getTimeHistoryFilePath(), ctx.config.getTimeHistoryFileExcludeColumns());
         TableRecord timeHistRecord = new TableRecord(timeHistFile.getHeaders());
+
         try {
             TimeHistoryFile.generateNewTimeHistRec(ctx, timeHistFile, timeHistRecord);
         } catch (TimeConvertException e) {
             throw new RuntimeException(e);
         }
-        List<String> thHeaders = new TimeHistoryFile(ctx.config.getTimeHistoryFilePath()).getHeaders();
-        Collection<String> thValues = timeHistRecord.getValues();
-        String zippedThRow = IntStream.range(0, thHeaders.size())
-                .mapToObj(i -> "\t" + thHeaders.get(i) + "\t:\t"+new ArrayList<>(thValues)
-                .get(i))
-                .collect(Collectors.joining("\n"));
-        return String.format("[DRY RUN] Updated Time History file records: \n%s", zippedThRow);
+
+        String zippedRow = getFormattedDryRunOutputForTableRow(
+                new TimeHistoryFile(ctx.config.getTimeHistoryFilePath()).getHeaders(),
+                timeHistRecord
+        );
+
+        return String.format("[DRY RUN] Updated Time History file records: \n%s", zippedRow);
     }
 
     @Override
