@@ -20,12 +20,12 @@ import java.text.DecimalFormat;
 public class UplinkCommand {
 
     /**
-     * The course component of the SCLK.
+     * The coarse component of the SCLK.
      */
-    private int sclk_course;
+    private int sclk_coarse;
 
     /**
-     * The ephemris time (TDB) associated with the SCLK.
+     * The ephemeris time (TDB) associated with the SCLK.
      */
     private double et;
 
@@ -45,15 +45,15 @@ public class UplinkCommand {
     private double clkChgRate;
 
     /**
-     * Class constructor that sets the values for the Uplink Comman File record.
-     * @param sclkCourse  IN the course component of the SCLK
+     * Class constructor that sets the values for the Uplink Command File record.
+     * @param sclkCoarse  IN the coarse component of the SCLK
      * @param et          IN the ephemeris time corresponding to the SCLK time
      * @param tdt         IN the TDT corresponding to the SCLK in numeric form
      * @param tdtStr      IN the TDT corresponding to the SCLK calendar string form
      * @param clkChgRate  IN the clock change rate
      */
-    public UplinkCommand(int sclkCourse, double et, double tdt, String tdtStr, double clkChgRate) {
-        this.sclk_course = sclkCourse;
+    public UplinkCommand(int sclkCoarse, double et, double tdt, String tdtStr, double clkChgRate) {
+        this.sclk_coarse = sclkCoarse;
         this.et          = et;
         this.tdt         = tdt;
         this.tdt_str     = tdtStr;
@@ -67,11 +67,31 @@ public class UplinkCommand {
         clkchgfmt.setRoundingMode(RoundingMode.HALF_UP);
 
         String cmd =
-                String.valueOf(sclk_course)           + "," +
+                String.valueOf(sclk_coarse)           + "," +
                         gtfmt.format(et)              + "," +
                         gtfmt.format(tdt)             + "," +
                         tdt_str                       + "," +
                         clkchgfmt.format(clkChgRate);
         return cmd;
+    }
+
+    public int getSclkCoarse() {
+        return sclk_coarse;
+    }
+
+    public double getEt() {
+        return et;
+    }
+
+    public double getTdt() {
+        return tdt;
+    }
+
+    public String getTdtStr() {
+        return tdt_str;
+    }
+
+    public double getClkChgRate() {
+        return clkChgRate;
     }
 }

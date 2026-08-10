@@ -60,7 +60,7 @@ public class RawTelemetryTable extends AbstractTimeCorrelationTable {
      * @param ctx the current time correlation context from which to pull information for the output product
      * @return an updated RawTelemetryTable
      */
-    public static TableRecord calculateUpdatedRawTlmTable(TimeCorrelationContext ctx) {
+    public static TableRecord calculateNewLatestRawTlmTableRec(TimeCorrelationContext ctx) {
         final RawTelemetryTable rawTlmTable = new RawTelemetryTable(ctx.config.getRawTelemetryTablePath());
         TableRecord rawTlmTableRecord = new TableRecord(rawTlmTable.getHeaders());
 

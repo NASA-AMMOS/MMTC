@@ -1461,7 +1461,27 @@ Defaults to 9 digits if key isn't included in config or if the value provided ca
 |product.uplinkCmdFile.baseName
 |OPTIONAL
 |STR
-|The basename of the Uplink Command File. For example, given the filename “uplinkCmd1577130458.csv”, “uplinkCmd” is the basename. Required if product.uplinkCmdFile.create is `true`.
+|The basename of Uplink Command Files. For example, given the filename “uplinkCmd1577130458.csv”, “uplinkCmd” is the basename. Required if product.uplinkCmdFile.create is `true`.
+
+|product.uplinkCmdFile.writeHeaders
+|OPTIONAL
+|BOOL
+|Whether to write headers or not.  If set to `true`, headers will be written to Uplink Command Files.  If set to `false`, they will not be written.  Default value is `false`.
+
+|product.uplinkCmdFile.versionSuffixMode
+|OPTIONAL
+|STR
+|There are two modes, specified as strings, by which MMTC can version uplink command files.  One mode `appRuntimeTimestamp`, which will append an integer timestamp to the end of each file.  The other mode is `sclkVersion` which will append the same SCLK version string as the new kernel that was written with the correlation.  Default value is `appRuntimeTimestamp`.
+
+|product.parameterGroupUpdateFile.create
+|OPTIONAL
+|STR
+|Activates creation of the Parameter Group Update File. Set to `true` if this file is to be created. Valid values are `true` or `false`.  Default value is `false`.
+
+|product.parameterGroupUpdateFile.create
+|CONDITIONAL
+|STR
+|Specifies the path at which the Parameter Group Update File will be written and appended to.  Required `product.parameterGroupUpdateFile.create` is set to `true`.
 
 |product.plugin.outputProductNames
 |OPTIONAL
@@ -1843,9 +1863,15 @@ For example, setting _basename_ to “europaclipper”, _sep_ to “_”, and _s
 
 ==== Uplink Command File
 
-The Uplink Command File is an optional operations product that can be used to uplink time correlation data to the spacecraft. It is a simple CSV formatted text file with a single line in it. It contains five values: SCLK coarse, ground time in ephemeris time in seconds of epoch (ET also called TDB), ground time in TDT in seconds of epoch, the identical ground time TDT as a calendar string, and the clock change rate. The fine time SCLK (i.e., subseconds) is not included in this file because the corresponding ground time is adjusted, by an amount equal to the fine time, to a whole tick SCLK coarse time; in other words, the subseconds are subtracted from the TDB and TDT ground times. The SCLK1, TDT1, and CLKCHGRATE1 values which the flight software uses to compute ground time from SCLK derive from these. It is left to other elements of the space mission ground system to convert the values in this file to the necessary format and load them into a command for uplink. For missions that use this product, it is left to the mission’s GDS to take this file and form its contents into a command that can be uplinked. See Appendix D. for a sample of this file.
+The Uplink Command File is an optional operations product that can be used in the process of planning commands to uplink time correlation data to the spacecraft. If enabled, each successful time correlation will generate a new Uplink Command File. It is a simple CSV formatted text file with a single line in it, with an optional header line. It contains five values: SCLK coarse, ground time in ephemeris time in seconds of epoch (ET also called TDB), ground time in TDT in seconds of epoch, the identical ground time TDT as a calendar string, and the clock change rate. The fine time SCLK (i.e., subseconds) is not included in this file because the corresponding ground time is adjusted, by an amount equal to the fine time, to a whole tick SCLK coarse time; in other words, the subseconds are subtracted from the TDB and TDT ground times. The SCLK1, TDT1, and CLKCHGRATE1 values which the flight software uses to compute ground time from SCLK derive from these. It is left to other elements of the space mission ground system to convert the values in this file to the necessary format and load them into a command for uplink. For missions that use this product, it is left to the mission’s GDS to take this file and form its contents into a command that can be uplinked. See Appendix D. for a sample of this file.
 
 This file is produced if the *product.uplinkCmdFile.create* configuration parameter is set to `true`, or if the `--generate-cmd-file` or `-c` option is provided at the command line. If the command line option is provided, it will override the configuration parameter.
+
+==== Parameter Group Update File
+
+The Parameter Group Update File is an optional operations product that can be used in the process of planning commands to uplink time correlation data to the spacecraft. It is a CSV formatted text file that is appended to with each successful time correlation execution. It contains the same values as an Uplink Command File noted above, with the addition of time correlation execution metadata.  The fine time SCLK (i.e., subseconds) is not included in this file because the corresponding ground time is adjusted, by an amount equal to the fine time, to a whole tick SCLK coarse time; in other words, the subseconds are subtracted from the TDB and TDT ground times. The SCLK1, TDT1, and CLKCHGRATE1 values which the flight software uses to compute ground time from SCLK derive from these. It is left to other elements of the space mission ground system to convert the values in this file to the necessary format and load them into a command for uplink. For missions that use this product, it is left to the mission’s GDS to take this file and form its contents into a command that can be uplinked. See Appendix H for a sample of this file.
+
+This file is produced if the *product.parameterGroupUpdateFile.create* configuration parameter is set to `true`.
 
 ==== Time History File
 
@@ -2360,6 +2386,7 @@ An example of an Uplink Command File as described in <<Uplink Command File>> cre
 398916214,714492283.860548,714492283.861766,23-AUG-2022-02:04:43.861766,1.00000000922
 ----
 
+
 === E. Time History File
 [[appendix_E, Appendix E: Time History File]]
 
@@ -2615,16 +2642,29 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 
 |===
 
-=== H. References
-[[appendix_H, Appendix H: References]]
+=== H. Sample Parameter Group Update File
+[[appendix_H, Appendix H: Sample Parameter Group Update File]]
+
+An example of a Parameter Group Update File as described in <<Parameter Group Update File>> created from New Horizons data.
+
+----
+Run Time,Run ID,Associated SCLK Kernel Version,Coarse SCLK,ET,TDT,TDT Calendar,Clock Change Rate (s/s)
+2026-222T14:05:44.927000,00001,1001,375043344,566009494.949427,566009494.950158,08-DEC-2017-12:51:34.950158,1.00000001771
+2026-222T14:05:49.003000,00002,1002,375140538,566106688.950705,566106688.951407,09-DEC-2017-15:51:28.951407,1.00000001704
+2026-222T14:05:53.285000,00003,1003,375226885,566193035.952154,566193035.952830,10-DEC-2017-15:50:35.952830,1.00000001792
+2026-222T14:05:57.260000,00004,1004,375288078,566254228.953176,566254228.953833,11-DEC-2017-08:50:28.953833,1.00000001779
+----
+
+=== I. References
+[[appendix_I, Appendix I: References]]
 
 1. S. B. Cooper, _“From Mercury to Pluto: A common approach to timekeeping”_, IEEE Aerospace and Electronic Systems Magazine, vol. 21, issue 10, October 2006.
 2. S.B. Cooper, J. R. Jensen, and G. L. Weaver, _“MESSENGER onboard timekeeping accuracy during the first year in orbit at Mercury”_, Proceedings of the 44th Annual Precise Time and Interval (PTTI) Systems and Applications Meeting, Reston, Virginia, November 2012, pp. 361-370.
 3. M. R. Reid & S. B. Cooper, _“The multi-mission time correlation system”_, Proceedings of IEEE Space Mission Challenges in Information Technology (SMC-IT 2019), Caltech, Pasadena, California, July 2019.
 
 
-=== I. Acronyms and Glossary
-[[appendix_I,Appendix I: Acronyms and Glossary]]
+=== J. Acronyms and Glossary
+[[appendix_J,Appendix J: Acronyms and Glossary]]
 
 .Acronyms and Glossary
 [%autowidth]

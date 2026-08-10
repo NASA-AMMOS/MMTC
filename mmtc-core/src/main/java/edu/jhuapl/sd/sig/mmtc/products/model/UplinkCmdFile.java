@@ -39,15 +39,18 @@ public class UplinkCmdFile {
      * @throws IOException if the file cannot be written
      * @return the Path where the new file was written
      */
-    public Path write(UplinkCommand commandString) throws IOException  {
+    public Path write(UplinkCommand commandString, boolean writeHeaders) throws IOException  {
         writer = new BufferedWriter(new FileWriter(filespec));
+        if (writeHeaders) {
+            writer.write("Coarse SCLK,ET,TDT,TDT Calendar,Clock Change Rate (s/s)\n");
+        }
         writer.write(commandString.toString());
         writer.close();
         logger.info(MmtcCli.USER_NOTICE, "Wrote new uplink command file at: " + Paths.get(filespec));
         return Paths.get(filespec);
     }
 
-    public static UplinkCommand generateNewProduct(TimeCorrelationContext ctx) throws TimeConvertException {
+    public static UplinkCommand generateParameterSet(TimeCorrelationContext ctx) throws TimeConvertException {
         final UplinkCommand uplinkCmd = new UplinkCommand(
                 ctx.correlation.target.get().getTargetSample().getTkSclkCoarse(),
                 ctx.correlation.target.get().getTargetSampleEtG(),
@@ -69,19 +72,27 @@ public class UplinkCmdFile {
     public static ProductWriteResult writeNewProduct(TimeCorrelationContext ctx) throws MmtcException {
         String cmdFilespec = "";
         try {
-            final UplinkCommand uplinkCmd = generateNewProduct(ctx);
+            final UplinkCommand uplinkCmd = generateParameterSet(ctx);
 
-            final String cmdFilename = ctx.config.getUplinkCmdFileBasename() +
-                    ctx.appRunTime.toEpochSecond() +
-                    UplinkCmdFile.FILE_SUFFIX;
+            final String newProdVersion;
+            switch(ctx.config.getUplinkCmdFileVersionSuffixMode()) {
+                case "appRuntimeTimestamp":
+                    newProdVersion = Long.toString(ctx.appRunTime.toEpochSecond());
+                    break;
+                case "sclkVersion":
+                    newProdVersion = ctx.newSclkVersionString.get();
+                    break;
+                default:
+                    throw new IllegalStateException("No such mode: " + ctx.config.getUplinkCmdFileVersionSuffixMode());
+            }
 
-            final UplinkCmdFile cmdFile = new UplinkCmdFile(Paths.get(
-                    ctx.config.getUplinkCmdFileDir(), cmdFilename
-            ).toString());
+            final String prodFilename = ctx.config.getUplinkCmdFileBasename() + newProdVersion + UplinkCmdFile.FILE_SUFFIX;
+
+            final UplinkCmdFile cmdFile = new UplinkCmdFile(Paths.get(ctx.config.getUplinkCmdFileDir(), prodFilename).toString());
 
             return new ProductWriteResult(
-                    cmdFile.write(uplinkCmd),
-                    Long.toString(ctx.appRunTime.toEpochSecond())
+                    cmdFile.write(uplinkCmd, ctx.config.getUplinkCmdFileWriteHeaders()),
+                    newProdVersion
             );
         } catch (IOException | TimeConvertException ex) {
             throw new MmtcException("Unable to write the Uplink Command File: " + cmdFilespec, ex);
