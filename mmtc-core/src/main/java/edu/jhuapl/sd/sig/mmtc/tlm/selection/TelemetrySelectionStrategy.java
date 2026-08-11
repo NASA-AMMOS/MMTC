@@ -95,6 +95,9 @@ public abstract class TelemetrySelectionStrategy {
             }
         });
 
+        // ensure frames have unique ERTs before possibly estimating downlink data rate using the ERT values
+        FrameSampleValidator.ensureUniqueErts(samples);
+
         // ensure downlink data rate is present or calculate it if possible, otherwise fail
         ensureSamplesHaveDownlinkDataRate(samples);
 
