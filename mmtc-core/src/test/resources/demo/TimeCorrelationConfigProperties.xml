@@ -116,4 +116,6 @@
   <entry key="product.uplinkCmdFile.baseName">uplinkCmd</entry>
   <entry key="product.sclkScetFile.scetUtcPrecision">6</entry>
   <entry key="product.sclkScetFile.leapSecondSclkRateMode">ONE</entry>
+  <entry key="product.parameterGroupUpdateFile.create">true</entry>
+  <entry key="product.parameterGroupUpdateFile.path">/opt/local/mmtc/output/ParameterGroupUpdateFile.csv</entry>
 </properties>

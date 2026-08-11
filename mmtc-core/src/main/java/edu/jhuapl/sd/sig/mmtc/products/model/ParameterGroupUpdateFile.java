@@ -54,7 +54,11 @@ public class ParameterGroupUpdateFile extends AbstractTimeCorrelationTable {
         final DecimalFormat clkChgFmt = new DecimalFormat("#.00000000000");
 
         newRec.setValue(RUN_TIME,           TimeConvert.timeToIsoUtcString(ctx.appRunTime));
-        newRec.setValue(RUN_ID,             String.format("%05d",ctx.runId.get()));
+        if (ctx.config.isDryRun()) {
+            newRec.setValue(RUN_ID, "-");
+        } else {
+            newRec.setValue(RUN_ID, String.format("%05d", ctx.runId.get()));
+        }
         newRec.setValue(SCLK_VERSION,       ctx.newSclkVersionString.get());
         newRec.setValue(SCLK_COARSE,        Long.toString(ctx.correlation.target.get().getTargetSample().getTkSclkCoarse()));
         newRec.setValue(ET,                 gtFmt.format(ctx.correlation.target.get().getTargetSampleEtG()));
