@@ -171,8 +171,18 @@ public class BuiltInOutputProductMigrationManager {
             final GenericCsv thf = new GenericCsv(config.getTimeHistoryFilePath());
             final GenericCsv summTable = new GenericCsv(summaryTablePath);
 
-            thf.renameColumn("ClkChgRate(s/s)", "Predicted Clk Chg Rate (s/s)");
+            List<String> excluded = config.getTimeHistoryFileExcludeColumns();
 
+            // Don't try to rename if the new or old name is already an excluded column
+            String oldColName = "ClkChgRate(s/s)";
+            String newColName = "Predicted Clk Chg Rate (s/s)";
+            if(!excluded.contains(oldColName) && !excluded.contains(newColName)) {
+                thf.renameColumn(oldColName, newColName);
+            } else {
+                logger.info(String.format("Bypassing renaming of %s to %s, one or both names found in configured THF excluded columns list.",oldColName, newColName));
+            }
+
+            // Handle new columns (respecting configured excluded columns)
             List<NewColumn> newColumns = Arrays.asList(
                 new NewColumn("Interpolated Clk Chg Rate (s/s)",  summTable.readValuesForColumn("Interpolated Clk Change Rate")),
                 new NewColumn("TD SC (sec)", summTable.readValuesForColumn("TD SC (sec)")),
@@ -180,7 +190,6 @@ public class BuiltInOutputProductMigrationManager {
                 new NewColumn("TF Offset", summTable.readValuesForColumn("TF Offset"))
             );
 
-            List<String> excluded = config.getTimeHistoryFileExcludeColumns();
             for(NewColumn col : newColumns) {
                 if(!excluded.contains(col.name)) {
                     thf.addColumnAtIndexWithValues(col.name, TimeHistoryFile.computeInsertIndex(col.name, excluded), col.values);
