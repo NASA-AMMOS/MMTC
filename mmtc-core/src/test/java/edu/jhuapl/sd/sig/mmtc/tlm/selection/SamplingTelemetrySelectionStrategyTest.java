@@ -1,6 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.NoTelemetryFoundException;
+import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
@@ -42,12 +44,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
             );
 
             // throws because we're making the 'filters' fail
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            TelemetryQualityException thrownException = assertThrows(
+                    TelemetryQualityException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::unsatisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("All 365 samples found did not pass filters or validation", thrownException.getMessage());
 
             List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
 
@@ -75,12 +77,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
             );
 
             // throws because there's no telemetry in range
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            NoTelemetryFoundException thrownException = assertThrows(
+                    NoTelemetryFoundException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("No telemetry found within query window", thrownException.getMessage());
 
             List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
 
@@ -111,12 +113,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
             );
 
             // throws because there's no telemetry in range
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            NoTelemetryFoundException thrownException = assertThrows(
+                    NoTelemetryFoundException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("No telemetry found within query window", thrownException.getMessage());
 
             List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
 
@@ -147,12 +149,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
             );
 
             // throws because there's no telemetry in range
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            NoTelemetryFoundException thrownException = assertThrows(
+                    NoTelemetryFoundException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("No telemetry found within query window", thrownException.getMessage());
 
             List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
 
@@ -317,12 +319,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     NH_FINE_TICK_MODULUS
             );
 
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            TelemetryQualityException thrownException = assertThrows(
+                    TelemetryQualityException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::unsatisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("All 365 samples found did not pass filters or validation", thrownException.getMessage());
         }
     }
 
@@ -342,12 +344,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     NH_FINE_TICK_MODULUS
             );
 
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            NoTelemetryFoundException thrownException = assertThrows(
+                    NoTelemetryFoundException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("No telemetry found within query window", thrownException.getMessage());
         }
     }
 
@@ -367,12 +369,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     NH_FINE_TICK_MODULUS
             );
 
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            NoTelemetryFoundException thrownException = assertThrows(
+                    NoTelemetryFoundException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("No telemetry found within query window", thrownException.getMessage());
         }
     }
 
@@ -392,12 +394,12 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     NH_FINE_TICK_MODULUS
             );
 
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            NoTelemetryFoundException thrownException = assertThrows(
+                    NoTelemetryFoundException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("No telemetry found within query window", thrownException.getMessage());
         }
     }
 

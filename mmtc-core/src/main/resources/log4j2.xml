@@ -13,6 +13,7 @@
             <PatternLayout pattern="%m%n"/>
             <Filters>
                 <MarkerFilter marker="USER_NOTICE" onMatch="ACCEPT" onMismatch="NEUTRAL"/>
+                <MarkerFilter marker="LOGFILE_ONLY" onMatch="DENY" onMismatch="NEUTRAL"/>
                 <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
             </Filters>
         </Console>

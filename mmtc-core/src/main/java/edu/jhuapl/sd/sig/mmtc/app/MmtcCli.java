@@ -17,6 +17,7 @@ import java.util.Optional;
 
 public class MmtcCli {
     public static final Marker USER_NOTICE = MarkerManager.getMarker("USER_NOTICE");
+    public static final Marker LOGFILE_ONLY = MarkerManager.getMarker("LOGFILE_ONLY");
 
     private static final Logger logger = LogManager.getLogger();
 
@@ -112,15 +113,25 @@ public class MmtcCli {
         }
 
         cfg.acquireLockFile();
-        boolean failed = false;
+
+        int exitCode = 0;
 
         switch (appInvoc.command) {
             case CORRELATION: {
                 try {
                     new TimeCorrelationApp(appInvoc.args).run();
-                } catch (Exception ex) {
-                    logger.fatal("MMTC correlation run failed.", ex);
-                    failed = true;
+                } catch (NoTelemetryFoundException e) {
+                    logger.fatal(LOGFILE_ONLY, "No telemetry found within the specified time range", e);
+                    logger.fatal("No telemetry found within the specified time range.");
+                    exitCode = 2;
+                } catch (TelemetryQualityException e) {
+                    logger.fatal(LOGFILE_ONLY, "All telemetry found within the query window did not pass filters or validation", e);
+                    logger.fatal("All telemetry found within the query window did not pass filters or validation.");
+                    exitCode = 3;
+                } catch (Exception e) {
+                    // any other exception
+                    logger.fatal("MMTC correlation run failed.", e);
+                    exitCode = 1;
                 }
                 break;
             }
@@ -129,7 +140,7 @@ public class MmtcCli {
                     new TimeCorrelationRollback(appInvoc.args).rollback(Optional.empty());
                 } catch (Exception e) {
                     logger.fatal("Rollback failed.", e);
-                    failed = true;
+                    exitCode = 1;
                 }
                 break;
             }
@@ -138,7 +149,7 @@ public class MmtcCli {
                     new MmtcSandboxCreator(appInvoc.args).create();
                 } catch (Exception e) {
                     logger.fatal("Sandbox creation failed.", e);
-                    failed = true;
+                    exitCode = 1;
                 }
                 break;
             }
@@ -147,7 +158,7 @@ public class MmtcCli {
                     new BuiltInOutputProductMigrationManager(appInvoc.args).migrate();
                 } catch (Exception e) {
                     logger.fatal("Output product migration failed.", e);
-                    failed = true;
+                    exitCode = 1;
                 }
                 break;
             }
@@ -156,7 +167,7 @@ public class MmtcCli {
                     TelemetryCacheUserOperations.precache(appInvoc.args);
                 } catch (Exception e) {
                     logger.fatal("Precaching failed.", e);
-                    failed = true;
+                    exitCode = 1;
                 }
                 break;
             }
@@ -165,20 +176,18 @@ public class MmtcCli {
                     TelemetryCacheUserOperations.logCacheStatistics(appInvoc.args);
                 } catch (Exception e) {
                     logger.fatal("Failed to calculate cache statistics.", e);
-                    failed = true;
+                    exitCode = 1;
                 }
                 break;
             }
             default: {
                 logger.fatal("Unrecognized command: " + appInvoc.command);
-                failed = true;
+                exitCode = 1;
             }
         }
 
         cfg.releaseLockFile();
 
-        if (failed) {
-            System.exit(1);
-        }
+        System.exit(exitCode);
     }
 }

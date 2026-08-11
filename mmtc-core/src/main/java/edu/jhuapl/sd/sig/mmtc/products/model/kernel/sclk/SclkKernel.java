@@ -232,7 +232,7 @@ public class SclkKernel extends TextKernel {
 
         // check that the first section is a text kernel section, and that it has the SCLK kernel identifier
         if (! firstLineStartsWith(linesKernelSections.get(0), SCLK_KERNEL_IDENTIFIER)) {
-            logger.warn("First line of file does not contain " + SCLK_KERNEL_IDENTIFIER);
+            logger.info("First line of file does not contain " + SCLK_KERNEL_IDENTIFIER);
         }
 
         final List<KernelSection> resultingSclkKernelSections = new ArrayList<>();

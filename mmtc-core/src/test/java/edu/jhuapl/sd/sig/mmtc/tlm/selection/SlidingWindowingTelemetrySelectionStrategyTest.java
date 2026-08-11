@@ -1,6 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.NoTelemetryFoundException;
+import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
@@ -189,12 +191,12 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     NH_FINE_TICK_MODULUS
             );
 
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            TelemetryQualityException thrownException = assertThrows(
+                    TelemetryQualityException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::unsatisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("All candidate sample sets failed filters. Only 4 frames from the query interval are left, which is not enough to build another candidate sample set. A sample set requires 5 frames.", thrownException.getMessage());
 
             verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
@@ -216,12 +218,12 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     NH_FINE_TICK_MODULUS
             );
 
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            NoTelemetryFoundException thrownException = assertThrows(
+                    NoTelemetryFoundException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("No telemetry found within query window", thrownException.getMessage());
 
             verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
@@ -243,12 +245,12 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     NH_FINE_TICK_MODULUS
             );
 
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            TelemetryQualityException thrownException = assertThrows(
+                    TelemetryQualityException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("Not enough frames found within the query interval to build a sample set. A sample set requires 5 frames; 4 were found.", thrownException.getMessage());
 
             verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
@@ -270,12 +272,12 @@ class SlidingWindowingTelemetrySelectionStrategyTest extends BaseTelemetrySelect
                     NH_FINE_TICK_MODULUS
             );
 
-            MmtcException thrownException = assertThrows(
-                    MmtcException.class,
+            NoTelemetryFoundException thrownException = assertThrows(
+                    NoTelemetryFoundException.class,
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            assertEquals("Unable to find valid sample set", thrownException.getMessage());
+            assertEquals("No telemetry found within query window", thrownException.getMessage());
 
             verify(tlmSource, times(1)).getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
         }
