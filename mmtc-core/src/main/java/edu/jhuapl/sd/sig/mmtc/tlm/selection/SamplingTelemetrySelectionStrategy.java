@@ -1,6 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.NoTelemetryFoundException;
+import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
@@ -36,8 +38,11 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
             throw new MmtcException("Could not generate any valid telemetry query periods within the input time range.  Please either widen the input query time range or decrease the sampling query width.");
         }
 
+        long totalSampleCountFound = 0;
+
         for (Pair<OffsetDateTime, OffsetDateTime> queryRange : queryRanges) {
             final List<FrameSample> samplesInQueryRange = getSamplesInRange(queryRange.getLeft(), queryRange.getRight());
+            totalSampleCountFound += samplesInQueryRange.size();
 
             if (samplesInQueryRange.size() < config.getSamplesPerSet()) {
                 logger.info(USER_NOTICE, String.format("Only %d samples found in range compared to the necessary %d; continuing...", samplesInQueryRange.size(), config.getSamplesPerSet()));
@@ -56,7 +61,11 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
             }
         }
 
-        throw new MmtcException("Unable to find valid sample set");
+        if (totalSampleCountFound == 0) {
+            throw new NoTelemetryFoundException("No telemetry found within query window");
+        } else {
+            throw new TelemetryQualityException(String.format("All %d samples found did not pass filters or validation", totalSampleCountFound));
+        }
     }
 
     private List<Pair<OffsetDateTime, OffsetDateTime>> generateQueryRanges() throws MmtcException {

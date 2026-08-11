@@ -1,6 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.NoTelemetryFoundException;
+import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
 import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
@@ -82,11 +84,16 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
         final List<FrameSample> samplesInRange = getSamplesInRange(queryStartTime, queryStopTime);
         final int numSamplesInRange = samplesInRange.size();
 
+        if (numSamplesInRange == 0) {
+            throw new NoTelemetryFoundException("No telemetry found within query window");
+        }
+
         int sampleToIndex = numSamplesInRange;
 
         if (numSamplesInRange < samplesPerSet) {
-            logger.error(String.format("Not enough frames found within the query interval to build a sample set. A sample set requires %d frames; %d were found.", samplesPerSet, numSamplesInRange));
-            throw new MmtcException("Unable to find valid sample set");
+            throw new TelemetryQualityException(
+                    String.format("Not enough frames found within the query interval to build a sample set. A sample set requires %d frames; %d were found.", samplesPerSet, numSamplesInRange)
+            );
         }
 
         logger.info(String.format("The query interval contains %d frames. Attempting to find a valid sample set within those frames...", numSamplesInRange));
@@ -117,8 +124,7 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
                             samplesPerSet);
                 }
 
-                logger.error(notEnoughFramesLeftError);
-                throw new MmtcException("Unable to find valid sample set");
+                throw new TelemetryQualityException(notEnoughFramesLeftError);
             }
 
             tcTarget = new TimeCorrelationTarget(sampleSet, config, tk_sclk_fine_tick_modulus);
