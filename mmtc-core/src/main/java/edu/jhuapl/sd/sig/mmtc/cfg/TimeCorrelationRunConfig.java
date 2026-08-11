@@ -367,19 +367,21 @@ public class TimeCorrelationRunConfig extends MmtcConfigWithTlmSource implements
      * @throws MmtcException if the filter entries in the configuration parameters are incomplete
      */
     public Map<String, TimeCorrelationFilter> getFilters() throws MmtcException {
+        // LinkedHashMap used for ordering
         Map<String, TimeCorrelationFilter> filters = new LinkedHashMap<>();
 
         // purposefully disincludes the Contact Filter, as this is handled as a special case elsewhere
+        // in a purposeful order to raise clearer errors first (e.g. nonconsecutive frames will give nonsensical outputs from an ERT or SCLK filter)
         String[] expectedFilterNames = {
-                MIN_DATARATE_FILTER,
-                MAX_DATARATE_FILTER,
-                ERT_FILTER,
                 GROUND_STATION_FILTER,
-                SCLK_FILTER,
+                VCID_FILTER,
                 VALID_FILTER,
                 CONSEC_FRAMES_FILTER,
-                VCID_FILTER,
                 CONSEC_MC_FRAME_FILTER,
+                ERT_FILTER,
+                SCLK_FILTER,
+                MIN_DATARATE_FILTER,
+                MAX_DATARATE_FILTER,
         };
 
         for (String filterName : expectedFilterNames) {

@@ -73,19 +73,24 @@ public class FrameSampleValidator {
         }
 
         // check that the group of samples have unique ERTs among themselves
+        ensureUniqueErts(samples);
+    }
+
+    public static void ensureUniqueErts(final List<FrameSample> samples) throws MmtcException {
+        // check that the group of samples have unique ERTs among themselves
         final List<CdsTimeCode> uniqueErts = samples.stream().map(FrameSample::getErt).distinct().collect(Collectors.toList());
         if (uniqueErts.size() != samples.size()) {
             throw new MmtcException(
                     String.format(
                             "FrameSamples failed validation: repeated ERTs were found among the sample set.  Sample ERTs: %s",
                             uniqueErts.stream().map(cdsErt -> {
-                                try {
-                                    return TimeConvert.cdsToIsoUtc(cdsErt);
-                                } catch (TimeConvertException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            })
-                            .collect(Collectors.toList())
+                                        try {
+                                            return TimeConvert.cdsToIsoUtc(cdsErt);
+                                        } catch (TimeConvertException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    })
+                                    .collect(Collectors.toList())
                     )
             );
         }
