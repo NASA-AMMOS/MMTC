@@ -20,10 +20,7 @@ import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.TelemetrySelectionStrategy;
 
-import edu.jhuapl.sd.sig.mmtc.util.FileUtils;
-import edu.jhuapl.sd.sig.mmtc.util.IsolatingUrlClassLoader;
-import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
-import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
+import edu.jhuapl.sd.sig.mmtc.util.*;
 import org.apache.commons.configuration2.ConfigurationUtils;
 import org.apache.commons.configuration2.FileBasedConfiguration;
 import org.apache.logging.log4j.LogManager;
@@ -1003,22 +1000,21 @@ public class MmtcConfig {
     // todo upgrade this to use Linux's file locking facilities to provide an actual guarantee
     public synchronized void acquireLockFile() throws MmtcException {
         final Path lockFile = getLockFileLocation();
-        final String myPid = String.valueOf(ProcessHandle.current().pid());
+        final String myPid = Environment.getMyPid();
 
         if (Files.exists(lockFile)) {
             try {
                 String lockPid = Files.readAllLines(lockFile).get(0).trim();
-                long pid = Long.parseLong(lockPid);
 
                 // Check if PID in existing lockfile is active. If so, another instance is probably running.
                 // If not, likely left by a stale instance that didn't exit correctly
-                if (ProcessHandle.of(pid).isPresent()) {
+                if (Environment.isPidRunning(lockPid)) {
                     String errorMessage = "Lock file already exists. Is another copy of MMTC running?";
                     logger.fatal(errorMessage);
                     throw new MmtcException(errorMessage);
                 }
 
-                logger.warn("Stale lock file found (PID {} is not running). Removing.", pid);
+                logger.warn("Stale lock file found (PID {} is not running). Removing.", lockPid);
                 Files.delete(lockFile);
             } catch (NumberFormatException | IOException e) {
                 // only warns instead of throws because a corrupted lockfile likely means the original creator isn't still alive
@@ -1042,7 +1038,7 @@ public class MmtcConfig {
 
     public synchronized void releaseLockFile() throws MmtcException {
         final Path lockFile = getLockFileLocation();
-        final String myPid = String.valueOf(ProcessHandle.current().pid());
+        final String myPid = Environment.getMyPid();
 
         if (!Files.exists(lockFile)) {
             logger.warn("Lock file already absent on release, likely cleaned up by shutdown hook.");
