@@ -285,3 +285,39 @@ val demoZip = tasks.register("demoZip") {
     }
     outputs.dir("build/mmtc-demo-tmp")
 }
+
+val mmtcCliContainerImageBuild = tasks.register<Exec>(name="mmtcCliContainerImageBuild") {
+    dependsOn(tasks.getByName("distZip"))
+
+    // should be in current working dir
+
+    executable("podman")
+    args("build", "--target", "mmtc-cli", "--build-arg", "MMTC_VERSION=${project.version}", "--tag", "mmtc:${project.version}")
+}
+
+val mmtcCliContainerImageExport = tasks.register<Exec>(name="mmtcCliContainerImageExport") {
+    dependsOn(mmtcCliContainerImageBuild)
+
+    // should be in current working dir
+
+    executable("podman")
+    args("build", "--target", "mmtc-cli", "--build-arg", "MMTC_VERSION=${project.version}", "--tag", "mmtc:${project.version}")
+}
+
+val mmtcWebAppContainerImageBuild = tasks.register<Exec>(name="mmtcWebAppContainerImageBuild") {
+    dependsOn(tasks.getByName("distZip"))
+
+    // should be in current working dir
+
+    executable("podman")
+    args("build", "--target", "mmtc-webapp", "--build-arg", "MMTC_VERSION=${project.version}", "--tag", "mmtc-web:${project.version}")
+}
+
+val mmtcWebAppContainerImageExport = tasks.register<Exec>(name="mmtcWebAppContainerImageExport") {
+    dependsOn(mmtcWebAppContainerImageBuild)
+
+    // should be in current working dir
+
+    executable("podman")
+    args("build", "--target", "mmtc-webapp", "--build-arg", "MMTC_VERSION=${project.version}", "--tag", "mmtc-web:${project.version}")
+}
