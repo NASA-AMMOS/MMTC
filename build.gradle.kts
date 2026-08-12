@@ -285,3 +285,43 @@ val demoZip = tasks.register("demoZip") {
     }
     outputs.dir("build/mmtc-demo-tmp")
 }
+
+val mmtcCliContainerImageBuild = tasks.register<Exec>(name="mmtcCliContainerImageBuild") {
+    dependsOn(tasks.getByName("distZip"))
+
+    val extraCaCertPath = findProperty("extraCaCertPath") as String?
+
+    executable("podman")
+    if (!extraCaCertPath.isNullOrBlank()) {
+        args("build", ".", "--target", "mmtc-cli", "--build-arg", "MMTC_VERSION=${project.version}", "--tag", "mmtc:${project.version}", "--secret", "id=extra_ca_cert,src=${extraCaCertPath},type=file")
+    } else {
+        args("build", ".", "--target", "mmtc-cli", "--build-arg", "MMTC_VERSION=${project.version}", "--tag", "mmtc:${project.version}")
+    }
+}
+
+val mmtcCliContainerImageExport = tasks.register<Exec>(name="mmtcCliContainerImageExport") {
+    dependsOn(mmtcCliContainerImageBuild)
+
+    executable("bash")
+    args("-c", "podman save mmtc:${project.version} | gzip > build/distributions/mmtc-${project.version}-container-image.tar.gz")
+}
+
+val mmtcWebAppContainerImageBuild = tasks.register<Exec>(name="mmtcWebAppContainerImageBuild") {
+    dependsOn(tasks.getByName("distZip"))
+
+    val extraCaCertPath = findProperty("extraCaCertPath") as String?
+
+    executable("podman")
+    if (!extraCaCertPath.isNullOrBlank()) {
+        args("build", ".", "--target", "mmtc-webapp", "--build-arg", "MMTC_VERSION=${project.version}", "--tag", "mmtc-webapp:${project.version}", "--secret", "id=extra_ca_cert,src=${extraCaCertPath},type=file")
+    } else {
+        args("build", ".", "--target", "mmtc-webapp", "--build-arg", "MMTC_VERSION=${project.version}", "--tag", "mmtc-webapp:${project.version}")
+    }
+}
+
+val mmtcWebAppContainerImageExport = tasks.register<Exec>(name="mmtcWebAppContainerImageExport") {
+    dependsOn(mmtcWebAppContainerImageBuild)
+
+    executable("bash")
+    args("-c", "podman save mmtc-webapp:${project.version} | gzip > build/distributions/mmtc-webapp-${project.version}-container-image.tar.gz")
+}
