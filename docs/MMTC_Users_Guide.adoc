@@ -449,9 +449,9 @@ bin/mmtc [options] <start-time> <stop-time>
 
 See the rest of the User’s Guide for detailed command syntax.
 
-=== Installing from the tar.gz distribution archive
+=== Installing from a compressed distribution archive
 
-MMTC is also distributed as a .tar.gz archive file. This method of installation can be used when RPM installation is not desired or possible.
+MMTC is also distributed as a .zip and a .tar.gz archive file. Either of these methods of installation can be used when RPM installation is not desired or possible.
 
 Extracting the archive file produces the aforementioned directory structure and contents.
 
@@ -474,6 +474,26 @@ MMTC can then be used as desired.  To create a new correlation from the command 
 [source, bash]
 ----
 bin/mmtc [options] <start-time> <stop-time>
+----
+
+See the rest of the User’s Guide for detailed command syntax.
+
+=== Installing and running MMTC via a container image
+
+The project also produces OCI container images, built for use with e.g. podman, Docker, etc.  Two images are produced: one with the MMTC CLI application only, and one with both the CLI application and web application.  These images have MMTC installed under /opt/local/mmtc, with subdirectories matching the 'nominal MMTC installation' description given above.  It is expected that users deploying MMTC with these container images will mount configuration into the container appropriately and configure persistence as desired for logs and output files.
+
+The following example demonstrates running the MMTC CLI from its container image using podman:
+
+[source, bash]
+----
+podman run --it -rm localhost/mmtc:x.y.z 2026-001T00:00:00 2026-007T00:00:00
+----
+
+The following example demonstrates running the MMTC web application from its container image using podman:
+
+[source, bash]
+----
+podman run --it -rm -p 8080:8080 localhost/mmtc-webapp:x.y.z
 ----
 
 See the rest of the User’s Guide for detailed command syntax.
