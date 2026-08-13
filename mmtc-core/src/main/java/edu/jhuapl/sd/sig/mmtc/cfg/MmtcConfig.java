@@ -1005,25 +1005,24 @@ public class MmtcConfig {
         if (Files.exists(lockFile)) {
             try {
                 String lockPid = Files.readAllLines(lockFile).get(0).trim();
+                Integer.parseInt(lockPid);
 
                 // Check if PID in existing lockfile is active. If so, another instance is probably running.
                 // If not, likely left by a stale instance that didn't exit correctly
                 if (Environment.isPidRunning(lockPid)) {
-                    String errorMessage = "Lock file already exists. Is another copy of MMTC running?";
+                    String errorMessage = String.format("Lock file already exists and belongs to an active process. Is another copy of MMTC running with PID %s?", lockPid);
                     logger.fatal(errorMessage);
                     throw new MmtcException(errorMessage);
                 }
 
                 logger.warn("Stale lock file found (PID {} is not running). Removing.", lockPid);
                 Files.delete(lockFile);
-            } catch (NumberFormatException | IOException e) {
-                // only warns instead of throws because a corrupted lockfile likely means the original creator isn't still alive
-                logger.warn("Lock file exists but could not be read. Removing.", e);
-                try {
-                    Files.delete(lockFile);
-                } catch (IOException ex) {
-                    throw new MmtcException(ex);
-                }
+            } catch (NumberFormatException | IOException ex) {
+                // contents of lockfile are not a valid PID and file might be corrupted; we cannot ascertain the state of its creator, so we throw
+                String errorMessage = String.format("Existing lockfile was found at %s but MMTC could not parse its contents to identify if its parent process is still running. " +
+                        "If you are confident this is a mistake, please manually delete the file and try again.", lockFile);
+                logger.fatal(errorMessage);
+                throw new MmtcException(errorMessage, ex);
             }
         }
 
