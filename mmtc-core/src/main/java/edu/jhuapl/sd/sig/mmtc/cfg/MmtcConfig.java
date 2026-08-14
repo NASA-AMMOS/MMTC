@@ -1005,7 +1005,7 @@ public class MmtcConfig {
         if (Files.exists(lockFile)) {
             try {
                 String lockPid = Files.readAllLines(lockFile).get(0).trim();
-                Integer.parseInt(lockPid);
+                Integer.parseInt(lockPid); // Throws a NumberFormatException if this can't be done, indicating a bad lockfile
 
                 // Check if PID in existing lockfile is active. If so, another instance is probably running.
                 // If not, likely left by a stale instance that didn't exit correctly
@@ -1017,19 +1017,21 @@ public class MmtcConfig {
 
                 logger.warn("Stale lock file found (PID {} is not running). Removing.", lockPid);
                 Files.delete(lockFile);
-            } catch (NumberFormatException | IOException ex) {
-                // contents of lockfile are not a valid PID and file might be corrupted; we cannot ascertain the state of its creator, so we throw
+            } catch (NumberFormatException ex) {
+                // Contents of lockfile are not a valid PID and file might be corrupted; we cannot ascertain the state of its creator, so we throw
                 String errorMessage = String.format("Existing lockfile was found at %s but MMTC could not parse its contents to identify if its parent process is still running. " +
-                        "If you are confident this is a mistake, please manually delete the file and try again.", lockFile);
+                        "If you are confident this is a mistake, please manually delete the file and try again.", lockFile.toAbsolutePath());
                 logger.fatal(errorMessage);
                 throw new MmtcException(errorMessage, ex);
+            } catch (IOException ex) {
+                throw new MmtcException("Failed to delete existing lockfile at "+lockFile.toAbsolutePath(), ex);
             }
         }
 
         try {
             Files.write(lockFile, myPid.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            throw new MmtcException(e);
+            throw new MmtcException("Failed to write new lockfile to "+lockFile.toAbsolutePath(),e);
         }
 
         logger.info(String.format("Acquired lockfile at %s.", lockFile.toAbsolutePath()));
@@ -1040,7 +1042,7 @@ public class MmtcConfig {
         final String myPid = Environment.getMyPid();
 
         if (!Files.exists(lockFile)) {
-            logger.warn("Lock file already absent on release, likely cleaned up by shutdown hook.");
+            logger.warn("Lock file already absent on release, likely cleaned up by webapp shutdown hook.");
             return;
         }
 
@@ -1051,7 +1053,7 @@ public class MmtcConfig {
                 return;
             }
             Files.delete(lockFile);
-            logger.info(String.format("Released lockfile at %s.", lockFile.toAbsolutePath()));
+            logger.info("Released lockfile at {}.", lockFile.toAbsolutePath());
         } catch (IOException e) {
             throw new MmtcException(e);
         }
