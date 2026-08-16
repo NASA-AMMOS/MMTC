@@ -10,7 +10,7 @@ ENV TK_CONFIG_PATH=/opt/local/mmtc/conf
 FROM ubi8-base as mmtc-cli
 ARG MMTC_VERSION
 
-ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0
+ENV JAVA_HOME=/usr/lib/jvm/jre-1.8.0
 
 # install Java, optionally using extra CA certs provided at build time
 RUN --mount=type=secret,id=extra_ca_cert,target=/run/secrets/extra-ca-cert.crt \
@@ -35,7 +35,7 @@ ENTRYPOINT ["/opt/local/mmtc/bin/mmtc"]
 FROM ubi8-base as mmtc-webapp
 ARG MMTC_VERSION
 
-ENV JAVA_HOME=/usr/lib/jvm/java-17
+ENV JAVA_HOME=/usr/lib/jvm/jre-17
 
 # install Java, optionally using extra CA certs provided at build time
 RUN --mount=type=secret,id=extra_ca_cert,target=/run/secrets/extra-ca-cert.crt \
