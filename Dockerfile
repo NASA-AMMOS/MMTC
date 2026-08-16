@@ -29,6 +29,7 @@ RUN mkdir -p /opt/local/
 RUN tar -xzf /tmp/mmtc-${MMTC_VERSION}.tar.gz -C /opt/local/
 RUN mv /opt/local/mmtc-${MMTC_VERSION} /opt/local/mmtc
 
+WORKDIR /opt/local/mmtc
 ENTRYPOINT ["/opt/local/mmtc/bin/mmtc"]
 
 # webapp container image
@@ -54,4 +55,5 @@ RUN mkdir -p /opt/local/
 RUN tar -xzf /tmp/mmtc-webapp-${MMTC_VERSION}.tar.gz -C /opt/local/
 RUN mv /opt/local/mmtc-webapp-${MMTC_VERSION} /opt/local/mmtc
 
+WORKDIR /opt/local/mmtc
 ENTRYPOINT ["/opt/local/mmtc/bin/mmtc-webapp"]
