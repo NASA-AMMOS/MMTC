@@ -29,6 +29,8 @@ RUN mkdir -p /opt/local/
 RUN tar -xzf /tmp/mmtc-${MMTC_VERSION}.tar.gz -C /opt/local/
 RUN mv /opt/local/mmtc-${MMTC_VERSION} /opt/local/mmtc
 
+ENTRYPOINT ["/opt/local/mmtc/bin/mmtc"]
+
 # webapp container image
 FROM ubi8-base as mmtc-webapp
 ARG MMTC_VERSION
@@ -51,3 +53,5 @@ COPY build/distributions/mmtc-webapp-${MMTC_VERSION}.tar.gz /tmp/
 RUN mkdir -p /opt/local/
 RUN tar -xzf /tmp/mmtc-webapp-${MMTC_VERSION}.tar.gz -C /opt/local/
 RUN mv /opt/local/mmtc-webapp-${MMTC_VERSION} /opt/local/mmtc
+
+ENTRYPOINT ["/opt/local/mmtc/bin/mmtc-webapp"]
