@@ -1,19 +1,20 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
+import edu.jhuapl.sd.sig.mmtc.automation.AutomationApp;
+import edu.jhuapl.sd.sig.mmtc.autocorrelate.AutocorrelateApp;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationApp;
+import edu.jhuapl.sd.sig.mmtc.products.migration.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.sandbox.MmtcSandboxCreator;
 import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.TelemetryCacheUserOperations;
+import edu.jhuapl.sd.sig.mmtc.trending.TrendingApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class MmtcCli {
     public static final Marker USER_NOTICE = MarkerManager.getMarker("USER_NOTICE");
@@ -22,7 +23,11 @@ public class MmtcCli {
     private static final Logger logger = LogManager.getLogger();
 
     public enum ApplicationCommand {
+        CORRELATE,
         CORRELATION,
+        AUTOCORRELATE,
+        TREND,
+        AUTO,
         ROLLBACK,
         CREATE_SANDBOX,
         MIGRATE,
@@ -48,13 +53,16 @@ public class MmtcCli {
 
         if (Arrays.asList("-h", "--help").contains(cliArgs[0])) {
             final String helpMessage =
-                    "usage: mmtc [correlation|rollback|create-sandbox|migrate|precache|cache-stats] [options] <additional arguments>\n" +
+                    "usage: mmtc <command> [options...] [arguments...]\n" +
                     " -h,--help      Print this message.\n" +
                     " -v,--version   Print the MMTC version.\n" +
                     "\n" +
                     "MMTC can be invoked with one of the following commands:\n" +
-                    "- correlation: run a new correlation (this is the default command if none\n" +
+                    "- correlate | correlation: run a new correlation (this is the default command if none\n" +
                     "is specified)\n" +
+                    "- autocorrelate: automatically run new correlation(s) according to configuration\n" +
+                    "- trend: calculate timekeeping trending information and write to output products according to configuration\n" +
+                    "- auto: run MMTC as a daemon, automatically correlating and/or trending according to configuration\n" +
                     "- rollback: roll back (undo) one or many correlations\n" +
                     "- create-sandbox: create a copy of this MMTC installation to run locally,\n" +
                     "without affecting this installation\n" +
@@ -68,21 +76,12 @@ public class MmtcCli {
             System.exit(0);
         }
 
-        if (cliArgs[0].equalsIgnoreCase("rollback")) {
-            return new ApplicationInvocation(ApplicationCommand.ROLLBACK, removeFirstElement(cliArgs));
-        } else if (cliArgs[0].equalsIgnoreCase("create-sandbox")) {
-            return new ApplicationInvocation(ApplicationCommand.CREATE_SANDBOX, removeFirstElement(cliArgs));
-        } else if (cliArgs[0].equalsIgnoreCase("correlation")) {
-            return new ApplicationInvocation(ApplicationCommand.CORRELATION, removeFirstElement(cliArgs));
-        } else if (cliArgs[0].equalsIgnoreCase("migrate")) {
-            return new ApplicationInvocation(ApplicationCommand.MIGRATE, removeFirstElement(cliArgs));
-        } else if (cliArgs[0].equalsIgnoreCase("precache")) {
-            return new ApplicationInvocation(ApplicationCommand.PRECACHE, removeFirstElement(cliArgs));
-        } else if (cliArgs[0].equalsIgnoreCase("cache-stats")) {
-            return new ApplicationInvocation(ApplicationCommand.CACHE_STATS, removeFirstElement(cliArgs));
-        } else {
+        try {
+            ApplicationCommand appCmd = ApplicationCommand.valueOf(cliArgs[0].toUpperCase().trim().replace("-", "_"));
+            return new ApplicationInvocation(appCmd, removeFirstElement(cliArgs));
+        } catch (IllegalArgumentException e) {
             // to maintain backwards compatibility on MMTC's CLI
-            return new ApplicationInvocation(ApplicationCommand.CORRELATION, cliArgs);
+            return new ApplicationInvocation(ApplicationCommand.CORRELATE, cliArgs);
         }
     }
 
@@ -90,6 +89,21 @@ public class MmtcCli {
         List<String> arrList = new ArrayList<>(Arrays.asList(arr));
         arrList.remove(0);
         return arrList.toArray(new String[arr.length - 1]);
+    }
+
+    @FunctionalInterface
+    private interface RunnableThatThrows {
+        void run() throws Exception;
+    }
+
+    private static class RunnableCommand {
+        public final RunnableThatThrows runnable;
+        public final String generalErrorMessage;
+
+        private RunnableCommand(RunnableThatThrows runnable, String generalErrorMessage) {
+            this.runnable = runnable;
+            this.generalErrorMessage = generalErrorMessage;
+        }
     }
 
     /**
@@ -112,82 +126,120 @@ public class MmtcCli {
             throw new MmtcException("MMTC correlation initialization failed.", e);
         }
 
-        cfg.acquireLockFile();
-
-        int exitCode = 0;
+        final RunnableCommand cmdToCall;
 
         switch (appInvoc.command) {
-            case CORRELATION: {
-                try {
-                    new TimeCorrelationApp(appInvoc.args).run();
-                } catch (NoTelemetryFoundException e) {
-                    logger.fatal(LOGFILE_ONLY, "No telemetry found within the specified time range", e);
-                    logger.fatal("No telemetry found within the specified time range.");
-                    exitCode = 2;
-                } catch (TelemetryQualityException e) {
-                    logger.fatal(LOGFILE_ONLY, "All telemetry found within the query window did not pass filters or validation", e);
-                    logger.fatal("All telemetry found within the query window did not pass filters or validation.");
-                    exitCode = 3;
-                } catch (Exception e) {
-                    // any other exception
-                    logger.fatal("MMTC correlation run failed.", e);
-                    exitCode = 1;
-                }
+            case CORRELATE:
+            case CORRELATION:
+                cmdToCall = new RunnableCommand(
+                        () -> new TimeCorrelationApp(appInvoc.args).run(),
+                        "MMTC correlation run failed."
+                );
+                break;
+            case AUTOCORRELATE: {
+                cmdToCall = new RunnableCommand(
+                        () -> new AutocorrelateApp(appInvoc.args).run(),
+                        "MMTC autocorrelate run failed."
+                );
+                break;
+            }
+            case TREND: {
+                cmdToCall = new RunnableCommand(
+                        () -> new TrendingApp(appInvoc.args).run(),
+                        "Failed to generate new trending products."
+                );
+                break;
+            }
+            case AUTO: {
+                cmdToCall = new RunnableCommand(
+                        () -> new AutomationApp(appInvoc.args).run(),
+                "MMTC auto mode exiting due to a failure."
+                );
                 break;
             }
             case ROLLBACK: {
-                try {
-                    new TimeCorrelationRollback(appInvoc.args).rollback(Optional.empty());
-                } catch (Exception e) {
-                    logger.fatal("Rollback failed.", e);
-                    exitCode = 1;
-                }
+                cmdToCall = new RunnableCommand(
+                        () -> new TimeCorrelationRollback(appInvoc.args).rollback(Optional.empty()),
+                "Rollback failed."
+                );
                 break;
             }
             case CREATE_SANDBOX: {
-                try {
-                    new MmtcSandboxCreator(appInvoc.args).create();
-                } catch (Exception e) {
-                    logger.fatal("Sandbox creation failed.", e);
-                    exitCode = 1;
-                }
+                cmdToCall = new RunnableCommand(
+                        () -> new MmtcSandboxCreator(appInvoc.args).create(),
+                        "Sandbox creation failed."
+                );
                 break;
             }
             case MIGRATE: {
-                try {
-                    new BuiltInOutputProductMigrationManager(appInvoc.args).migrate();
-                } catch (Exception e) {
-                    logger.fatal("Output product migration failed.", e);
-                    exitCode = 1;
-                }
+                cmdToCall = new RunnableCommand(
+                        () -> new BuiltInOutputProductMigrationManager(appInvoc.args).migrate(),
+                        "Output product migration failed."
+                );
                 break;
             }
             case PRECACHE: {
-                try {
-                    TelemetryCacheUserOperations.precache(appInvoc.args);
-                } catch (Exception e) {
-                    logger.fatal("Precaching failed.", e);
-                    exitCode = 1;
-                }
+                cmdToCall = new RunnableCommand(
+                        () -> TelemetryCacheUserOperations.precache(appInvoc.args),
+                        "Precaching failed."
+                );
                 break;
             }
             case CACHE_STATS: {
-                try {
-                    TelemetryCacheUserOperations.logCacheStatistics(appInvoc.args);
-                } catch (Exception e) {
-                    logger.fatal("Failed to calculate cache statistics.", e);
-                    exitCode = 1;
-                }
+                cmdToCall = new RunnableCommand(
+                        () -> TelemetryCacheUserOperations.logCacheStatistics(appInvoc.args),
+                        "Failed to calculate cache statistics."
+                );
                 break;
             }
             default: {
                 logger.fatal("Unrecognized command: " + appInvoc.command);
-                exitCode = 1;
+                System.exit(1);
+
+                // this return shouldn't be necessary, but prevents a warning on the runCommand call that cmdToCall might not have been initialized
+                return;
             }
         }
 
-        cfg.releaseLockFile();
+        System.exit(runCommand(cfg, cmdToCall));
+    }
 
-        System.exit(exitCode);
+    public static int runCommand(MmtcConfig cfg, RunnableCommand command) {
+        try {
+            cfg.acquireLockFile();
+        } catch (MmtcException e) {
+            logger.fatal("Failed to acquire lock file");
+            System.exit(1);
+        }
+
+        int exitCode;
+
+        try {
+            command.runnable.run();
+            exitCode = 0;
+        } catch (NoTelemetryFoundException e) {
+            logger.info(LOGFILE_ONLY, "No telemetry found within the specified time range", e);
+            logger.info(USER_NOTICE, "No telemetry found within the specified time range.");
+            exitCode = 2;
+        } catch (TelemetryQualityException e) {
+            logger.warn(LOGFILE_ONLY, "All telemetry found within the query window did not pass filters or validation", e);
+            logger.warn("All telemetry found within the query window did not pass filters or validation.");
+            exitCode = 3;
+        } catch (MmtcSuccessfulExitException e) {
+            // this is when we're returning 'early' from a command, but it was successful, e.g. printing a version number or CLI help use
+            exitCode = 0;
+        } catch (Exception e) {
+            logger.fatal(command.generalErrorMessage, e);
+            exitCode = 1;
+        }
+
+        try {
+            cfg.releaseLockFile();
+        } catch (MmtcException e) {
+            logger.fatal("Failed to release lock file");
+            System.exit(1);
+        }
+
+        return exitCode;
     }
 }

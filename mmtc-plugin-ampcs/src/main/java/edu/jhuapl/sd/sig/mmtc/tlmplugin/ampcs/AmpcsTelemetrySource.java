@@ -20,12 +20,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;
-import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
-import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValsReader;
-import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.SingleChanValReader;
+import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.OffsetDateTimeRange;
+import edu.jhuapl.sd.sig.mmtc.tlm.range.ScetRange;
+import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.*;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.commons.cli.Option;
 import org.apache.commons.csv.CSVFormat;
@@ -315,7 +315,7 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
             // Get the GNC parameter channels associated with the packet.
             CSVParser channelValues = runSubprocessCsv(queryCmd);
 
-            ChanValsReader channelValuesReader = new ChanValsReader(ampcsConfig, channelConfigs, noEarlierThanScet);
+            TargetScetMultiChanValsReader channelValuesReader = new TargetScetMultiChanValsReader(ampcsConfig, channelConfigs, noEarlierThanScet);
 
             for (CSVRecord channelRow : channelValues) {
                 channelValuesReader.read(channelRow);
@@ -324,21 +324,22 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
             if (gncSclkChannelConfig.isPresent() && tdtSChannelConfig.isPresent()) {
                 // if both the GNC SCLK and TDT(S) channels are specified, their values as measured at the same SCET should be used
 
-                Map<String, Double> sameScetValuesClosestToTarget = channelValuesReader.getPairedValuesForSameScetNoEarlierThan(noEarlierThanScet, gncSclkChannelConfig.get().channelId, tdtSChannelConfig.get().channelId);
-                gnc_parms.setGncsclk(sameScetValuesClosestToTarget.get(gncSclkChannelConfig.get().channelId));
-                gnc_parms.setTdt_s(sameScetValuesClosestToTarget.get(tdtSChannelConfig.get().channelId));
+                ChanValsReader.ChanValsForSameScetResult sameScetValuesClosestToTarget = channelValuesReader.getPairedValuesForSameScetNoEarlierThan(noEarlierThanScet, gncSclkChannelConfig.get().channelId, tdtSChannelConfig.get().channelId);
+                gnc_parms.setGncsclk(sameScetValuesClosestToTarget.chanvalsById.get(gncSclkChannelConfig.get().channelId));
+                gnc_parms.setTdt_s(sameScetValuesClosestToTarget.chanvalsById.get(tdtSChannelConfig.get().channelId));
+                gnc_parms.setCommonScetForGncSclkAndTdtS(sameScetValuesClosestToTarget.commonScet);
             } else {
                 // else, best effort to get whichever was specified
 
-                gncSclkChannelConfig.ifPresent(c -> gnc_parms.setGncsclk(channelValuesReader.getValueFor(c.channelId)));
-                tdtSChannelConfig.ifPresent(c -> gnc_parms.setTdt_s(channelValuesReader.getValueFor(c.channelId)));
+                gncSclkChannelConfig.ifPresent(c -> gnc_parms.setGncsclk(channelValuesReader.getValueClosestToTargetScetFor(c.channelId)));
+                tdtSChannelConfig.ifPresent(c -> gnc_parms.setTdt_s(channelValuesReader.getValueClosestToTargetScetFor(c.channelId)));
             }
 
             // read the rest at the closest time to, but after, the correlation as possible
             // no mission we know of right now downlinks these as channel values, but if they did, this could be used and would return a coherent set of values so long as they were timestamped (SCET-wise) the same as each other
-            sclk1ChannelConfig.ifPresent(c -> gnc_parms.setSclk1(channelValuesReader.getValueFor(c.channelId)));
-            tdt1ChannelConfig.ifPresent(c -> gnc_parms.setTdt1(channelValuesReader.getValueFor(c.channelId)));
-            clkChgRate1ChannelConfig.ifPresent(c -> gnc_parms.setClkchgrate1(channelValuesReader.getValueFor(c.channelId)));
+            sclk1ChannelConfig.ifPresent(c -> gnc_parms.setSclk1(channelValuesReader.getValueClosestToTargetScetFor(c.channelId)));
+            tdt1ChannelConfig.ifPresent(c -> gnc_parms.setTdt1(channelValuesReader.getValueClosestToTargetScetFor(c.channelId)));
+            clkChgRate1ChannelConfig.ifPresent(c -> gnc_parms.setClkchgrate1(channelValuesReader.getValueClosestToTargetScetFor(c.channelId)));
 
             if (gnc_parms.isEmpty()) {
                 logger.warn("No GNC parameters were found in the sampling interval.");
@@ -353,6 +354,70 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
         }
 
         return gnc_parms;
+    }
+
+    /**
+     *
+     * @param scetRange
+     * @return the GNC parameter values within the given SCET range
+     */
+    @Override
+    public List<GncSclkAndTdtSMeasurement> getGncTelemetryPoints(ScetRange scetRange) throws IOException {
+        if (!connectedToAmpcs) {
+            throw new IllegalStateException("Not connected to AMPCS.");
+        }
+
+
+        // Create a bounding time range, looking forward a number of seconds from the given SCET for querying channel values
+        String beginTime = scetRange.getStart().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME).split("\\+")[0];
+        beginTime = beginTime.replace("Z", "");
+
+        String endTime = scetRange.getStop().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME).split("\\+")[0];
+        endTime = endTime.replace("Z", "");
+
+        String queryCmd = chillGdsPath + "/bin/chill_get_chanvals --showColumns";
+        queryCmd += getChillSessionIdOpt();
+
+        queryCmd += String.format(" --timeType SCET --beginTime %s --endTime %s ", beginTime, endTime);
+
+        final Optional<ChanValReadConfig> gncSclkChannelConfig     = ampcsConfig.getGncChanValReadConfig("gncsclk", true);
+        final Optional<ChanValReadConfig> tdtSChannelConfig        = ampcsConfig.getGncChanValReadConfig("tdts", true);
+
+        if (!gncSclkChannelConfig.isPresent()) {
+            throw new IllegalArgumentException("Cannot retrieve paired GNC SCLK and TDT(S) estimates without a channel value read config for gncsclk");
+        }
+        if (!tdtSChannelConfig.isPresent()) {
+            throw new IllegalArgumentException("Cannot retrieve paired GNC SCLK and TDT(S) estimates without a channel value read config for tdts");
+        }
+
+        final List<ChanValReadConfig> channelConfigs = Arrays.asList(gncSclkChannelConfig.get(), tdtSChannelConfig.get());
+
+        queryCmd += "--channelIds " + channelConfigs.stream().map(c -> c.channelId).collect(Collectors.joining(","));
+
+        if (connectionParms != null) {
+            queryCmd += " " + connectionParms;
+        }
+
+        // Get the GNC parameter channels associated with the packet.
+        CSVParser channelValues = runSubprocessCsv(queryCmd);
+
+        final ScetRangeMultiChanValsReader channelValuesReader = new ScetRangeMultiChanValsReader(ampcsConfig, channelConfigs);
+
+        for (CSVRecord channelRow : channelValues) {
+            channelValuesReader.read(channelRow);
+        }
+
+        List<ChanValsReader.ChanValsForSameScetResult> results = channelValuesReader.getPairedValuesForSameScet(gncSclkChannelConfig.get().channelId, tdtSChannelConfig.get().channelId);
+
+        return results.stream()
+                .map(valPair -> {
+                    GncSclkAndTdtSMeasurement meas = new GncSclkAndTdtSMeasurement();
+                    meas.setGncsclk(valPair.chanvalsById.get(gncSclkChannelConfig.get().channelId));
+                    meas.setTdt_s(valPair.chanvalsById.get(tdtSChannelConfig.get().channelId));
+                    meas.setCommonScetForGncSclkAndTdtS(valPair.commonScet);
+                    return meas;
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -568,7 +633,7 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             executorService.shutdownNow();
             p.destroyForcibly();
-            throw new IOException("Error reading process stdout or stderr", e);
+            throw new IOException(String.format("Error reading process stdout or stderr within %d seconds", chillTimeoutSec), e);
         }
 
         // wait for the process to exit, and then ensure its exit value is 0

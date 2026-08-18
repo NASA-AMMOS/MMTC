@@ -4,11 +4,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-// Not threadsafe, but uses AtomicReference for convenience
+// A set-once utility class.
 public class Settable<T> {
     private final AtomicReference<T> val = new AtomicReference<>();
 
-    public void set(T newVal) {
+    public synchronized void set(T newVal) {
         if (newVal == null) {
             throw new IllegalArgumentException("Cannot set value to null.");
         }
@@ -18,11 +18,11 @@ public class Settable<T> {
         }
     }
 
-    public boolean isSet() {
+    public synchronized boolean isSet() {
         return val.get() != null;
     }
 
-    public T get() {
+    public synchronized T get() {
         T v = val.get();
         if (v == null) {
             throw new IllegalStateException("Value not set.");

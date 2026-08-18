@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import org.apache.commons.cli.*;
 

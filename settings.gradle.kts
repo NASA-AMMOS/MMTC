@@ -37,6 +37,12 @@ dependencyResolutionManagement {
             library("jakarta-xml", "jakarta.xml.bind:jakarta.xml.bind-api:3.0.1")
             library("jaxb-impl", "com.sun.xml.bind:jaxb-impl:3.0.1")
 
+            // last to support Java 8
+            library("quartz", "org.quartz-scheduler:quartz:2.4.1")
+
+            // for report generation and sending
+            library("freemarker", "org.freemarker:freemarker:2.3.34")
+
             // this is the last JDBI version to support Java 8
             library("jdbi3-core", "org.jdbi:jdbi3-core:3.39.1")
             library("jdbi3-sqlite", "org.jdbi:jdbi3-sqlite:3.39.1")

@@ -20,6 +20,7 @@ mkdir -p $DIST_DIR
 
 mkdir $DIST_DIR/bin
 cp mmtc-core/bin/mmtc                                                             $DIST_DIR/bin
+cp mmtc-core/bin/mmtc.service                                                     $DIST_DIR/bin
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # BSD sed

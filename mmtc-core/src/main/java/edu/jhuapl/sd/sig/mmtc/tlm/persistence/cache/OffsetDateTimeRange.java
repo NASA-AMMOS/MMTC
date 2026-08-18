@@ -66,4 +66,8 @@ public class OffsetDateTimeRange implements Comparable<OffsetDateTimeRange> {
                 ", stop=" + stop +
                 '}';
     }
+
+    public String getRangeId() {
+        return String.format("%d-%d", start.toInstant().toEpochMilli(), stop.toInstant().toEpochMilli());
+    }
 }

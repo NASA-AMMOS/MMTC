@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.RawTelemetryTableTelemetrySource;
@@ -299,10 +299,10 @@ class TelemetryCacheTest {
     }
 
     private static OffsetDateTime getStart(TimeCorrelationRunConfig config) {
-        return config.getResolvedTargetSampleRange().get().getStart();
+        return config.getResolvedTargetSampleErtRange().get().getStart();
     }
 
     private static OffsetDateTime getStop(TimeCorrelationRunConfig config) {
-        return config.getResolvedTargetSampleRange().get().getStop();
+        return config.getResolvedTargetSampleErtRange().get().getStop();
     }
 }

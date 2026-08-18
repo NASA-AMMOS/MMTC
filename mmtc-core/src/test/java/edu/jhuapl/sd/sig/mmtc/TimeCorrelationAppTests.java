@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationApp;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

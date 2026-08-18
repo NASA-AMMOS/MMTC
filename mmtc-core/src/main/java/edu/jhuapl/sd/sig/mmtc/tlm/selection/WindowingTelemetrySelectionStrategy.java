@@ -3,10 +3,10 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.NoTelemetryFoundException;
 import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
-import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,17 +22,17 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
     private static final Logger logger = LogManager.getLogger();
     private final int windowSlidingIncrement;
 
-    private WindowingTelemetrySelectionStrategy(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus, int windowSlidingIncrement) {
-        super(config, tlmSource, tk_sclk_fine_tick_modulus);
+    private WindowingTelemetrySelectionStrategy(MmtcConfigWithTlmSource config, TelemetrySelectionAndAdjustmentOptions tlmOptions, int windowSlidingIncrement) {
+        super(config, tlmOptions);
         this.windowSlidingIncrement = windowSlidingIncrement;
     }
 
-    public static WindowingTelemetrySelectionStrategy forSeparateConsecutiveWindows(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
-        return new WindowingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus, config.getSamplesPerSet());
+    public static WindowingTelemetrySelectionStrategy forSeparateConsecutiveWindows(MmtcConfigWithTlmSource config, TelemetrySelectionAndAdjustmentOptions tlmOptions) {
+        return new WindowingTelemetrySelectionStrategy(config, tlmOptions, config.getSamplesPerSet());
     }
 
-    public static WindowingTelemetrySelectionStrategy forSlidingWindow(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
-        return new WindowingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus, 1);
+    public static WindowingTelemetrySelectionStrategy forSlidingWindow(MmtcConfigWithTlmSource config, TelemetrySelectionAndAdjustmentOptions tlmOptions) {
+        return new WindowingTelemetrySelectionStrategy(config, tlmOptions, 1);
     }
 
     /**
@@ -59,24 +59,22 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
 
         // Find a valid sample set:
         // 1) Retrieve a list of all samples in range.
-        // 2a) Take the last N samples (i.e. the N samples closest to the end of the list) that have not been
-        //     rejected by filters, where N is the configuration-specified number of samples per sample set.
+        // 2a) Take the first or last N samples that have not been rejected by filters, where N is the configuration-specified number of samples per sample set.
         // 2b) Run this candidate sample set through the filters.
         // 2c) If any filter fails, reject all samples in the candidate sample set.
         // 3) Repeat step 2 until a candidate sample set passes all filters or no samples are left.
         //
-        // Samples in range can be large, so this might not be an efficient approach, but we won't preemptively try
-        // to optimize this without performance data.
+        // Samples in range can be large, so this might not be an efficient approach.  SamplingTelemetrySelectionStrategy provides an alternate implementation.
 
         final OffsetDateTime queryStartTime;
         final OffsetDateTime queryStopTime;
-        if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
-            queryStartTime = config.getResolvedTargetSampleRange().get().getStart();
-            queryStopTime = config.getResolvedTargetSampleRange().get().getStop();
-        } else if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
+        if (tlmOptions.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
+            queryStartTime = tlmOptions.getResolvedTargetSampleErtRange().get().getStart();
+            queryStopTime = tlmOptions.getResolvedTargetSampleErtRange().get().getStop();
+        } else if (tlmOptions.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
             final int targetSampleExactErtSupplementalQueryWindowMin = config.getTargetSampleExactErtSupplementalQueryWindowMin();
-            queryStartTime = config.getResolvedTargetSampleExactErt().get().minus(targetSampleExactErtSupplementalQueryWindowMin, ChronoUnit.MINUTES);
-            queryStopTime = config.getResolvedTargetSampleExactErt().get().plus(targetSampleExactErtSupplementalQueryWindowMin, ChronoUnit.MINUTES);
+            queryStartTime = tlmOptions.getResolvedTargetSampleExactErt().get().minus(targetSampleExactErtSupplementalQueryWindowMin, ChronoUnit.MINUTES);
+            queryStopTime = tlmOptions.getResolvedTargetSampleExactErt().get().plus(targetSampleExactErtSupplementalQueryWindowMin, ChronoUnit.MINUTES);
         } else {
             throw new IllegalStateException();
         }
@@ -88,8 +86,6 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
             throw new NoTelemetryFoundException("No telemetry found within query window");
         }
 
-        int sampleToIndex = numSamplesInRange;
-
         if (numSamplesInRange < samplesPerSet) {
             throw new TelemetryQualityException(
                     String.format("Not enough frames found within the query interval to build a sample set. A sample set requires %d frames; %d were found.", samplesPerSet, numSamplesInRange)
@@ -98,39 +94,54 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
 
         logger.info(String.format("The query interval contains %d frames. Attempting to find a valid sample set within those frames...", numSamplesInRange));
 
+        final TimeCorrelationRunConfig.TargetSampleRangeErtSeekOrder seekOrder = tlmOptions.getTargetSampleRangeErtSeekOrder();
+
+        int sampleFromIndex;
+        int sampleToIndex;
+        switch(seekOrder) {
+            case DESCENDING:
+                sampleFromIndex = numSamplesInRange - samplesPerSet;
+                sampleToIndex = numSamplesInRange;
+                break;
+            case ASCENDING:
+                sampleFromIndex = 0;
+                sampleToIndex = samplesPerSet;
+                break;
+            default:
+                throw new IllegalStateException("Unexpected seek order: " + seekOrder);
+        }
+
         while (true) {
             List<FrameSample> sampleSet;
 
-            int sampleFromIndex = sampleToIndex - samplesPerSet;
-
-            if (sampleFromIndex >= 0) {
+            if (sampleFromIndex >= 0 && sampleToIndex <= numSamplesInRange) {
                 if (samplesPerSet == 1) {
                     logger.info(String.format("Creating new candidate sample set using frame %d", sampleFromIndex + 1));
                 } else {
                     logger.info(String.format("Creating new candidate sample set using frames %d to %d", sampleFromIndex + 1, sampleToIndex));
                 }
                 sampleSet = new ArrayList<>(samplesInRange.subList(sampleFromIndex, sampleToIndex));
-                sampleToIndex -= windowSlidingIncrement;
-            } else {
-                String notEnoughFramesLeftError = "All candidate sample sets failed filters. ";
 
-                if (sampleToIndex == 0) {
-                    notEnoughFramesLeftError += "No frames from the query interval are left, so MMTC can't build another candidate sample set.";
-                } else {
-                    notEnoughFramesLeftError += String.format("Only %d %s from the query interval %s left, which is not enough to build another candidate sample set. A sample set requires %d frames.",
-                            sampleToIndex,
-                            sampleToIndex == 1 ? "frame" : "frames",
-                            sampleToIndex == 1 ? "is" : "are",
-                            samplesPerSet);
+                switch(seekOrder) {
+                    case DESCENDING:
+                        sampleFromIndex -= windowSlidingIncrement;
+                        sampleToIndex -= windowSlidingIncrement;
+                        break;
+                    case ASCENDING:
+                        sampleFromIndex += windowSlidingIncrement;
+                        sampleToIndex += windowSlidingIncrement;
+                        break;
+                    default:
+                        throw new IllegalStateException("Unexpected seek order: " + seekOrder);
                 }
-
-                throw new TelemetryQualityException(notEnoughFramesLeftError);
+            } else {
+                throw new TelemetryQualityException("Not enough frames from the query interval remaining.");
             }
 
-            tcTarget = new TimeCorrelationTarget(sampleSet, config, tk_sclk_fine_tick_modulus);
+            tcTarget = new TimeCorrelationTarget(sampleSet, config, tlmOptions);
 
-            if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
-                final OffsetDateTime desiredTargetFrameErt = config.getResolvedTargetSampleExactErt().get();
+            if (tlmOptions.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
+                final OffsetDateTime desiredTargetFrameErt = tlmOptions.getResolvedTargetSampleExactErt().get();
 
                 if (TimeConvert.parseIsoDoyUtcStr(tcTarget.getTargetSample().getErtStr()).equals(desiredTargetFrameErt)) {
                     logger.info("The candidate sample matches the desired ERT");
@@ -149,5 +160,54 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
         }
 
         return tcTarget;
+    }
+
+    @Override
+    public List<TimeCorrelationTarget> getAll(OffsetDateTime queryStartTimeErt, OffsetDateTime queryStopTimeErt, FilterFunction filterFunction) throws MmtcException {
+        List<TimeCorrelationTarget> results = new ArrayList<>();
+
+        final int samplesPerSet = config.getSamplesPerSet();
+
+        final List<FrameSample> samplesInRange = getSamplesInRange(queryStartTimeErt, queryStopTimeErt);
+        final int numSamplesInRange = samplesInRange.size();
+
+        if (numSamplesInRange == 0) {
+            // todo can I remove this? leaves concerning messages in stdout when trending
+            // logger.warn("No telemetry found within query window");
+            return results;
+        }
+
+        int sampleToIndex = numSamplesInRange;
+
+        if (numSamplesInRange < samplesPerSet) {
+            logger.warn(String.format("Not enough frames found within the query interval to build a sample set. A sample set requires %d frames; %d were found.", samplesPerSet, numSamplesInRange));
+            return results;
+        }
+
+        logger.info(String.format("The query interval contains %d frames.", numSamplesInRange));
+
+        while (true) {
+            List<FrameSample> sampleSet;
+
+            int sampleFromIndex = sampleToIndex - samplesPerSet;
+
+            if (sampleFromIndex >= 0) {
+                if (samplesPerSet == 1) {
+                    logger.info(String.format("Creating new candidate sample set using frame %d", sampleFromIndex + 1));
+                } else {
+                    logger.info(String.format("Creating new candidate sample set using frames %d to %d", sampleFromIndex + 1, sampleToIndex));
+                }
+                sampleSet = new ArrayList<>(samplesInRange.subList(sampleFromIndex, sampleToIndex));
+                sampleToIndex -= windowSlidingIncrement;
+            } else {
+                return results;
+            }
+
+            final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(sampleSet, config, tlmOptions);
+
+            if (filterFunction.apply(tcTarget)) {
+                results.add(tcTarget);
+            }
+        }
     }
 }

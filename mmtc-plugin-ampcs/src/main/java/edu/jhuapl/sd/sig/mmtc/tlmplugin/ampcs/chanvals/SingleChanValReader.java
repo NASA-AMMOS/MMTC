@@ -31,6 +31,10 @@ public class SingleChanValReader {
         this.numericalColToRead = readConfig.readField;
         this.retainAll = readConfig.retainAll;
         this.acceptanceCriterion = readConfig.acceptanceCriterion;
+
+        if (targetScet == null && !readConfig.retainAll) {
+            throw new IllegalStateException("Either the target SCET must be provided, or readConfig.retainAll must be set");
+        }
     }
 
     public void read(CSVRecord channelRow) {
@@ -53,10 +57,12 @@ public class SingleChanValReader {
 
         final OffsetDateTime newScet = TimeConvert.parseIsoDoyUtcStr(channelRow.get(config.getChannelScetFieldName()));
 
-        if (closestScet == null || (Duration.between(newScet, targetScet).abs().compareTo(Duration.between(closestScet, targetScet).abs()) < 0)) {
-            closestScet = newScet;
-            closestValue = newValue;
-            valuesByScet.put(newScet, newValue);
+        if (targetScet != null) {
+            if (closestScet == null || (Duration.between(newScet, targetScet).abs().compareTo(Duration.between(closestScet, targetScet).abs()) < 0)) {
+                closestScet = newScet;
+                closestValue = newValue;
+                valuesByScet.put(newScet, newValue);
+            }
         }
 
         if (retainAll) {

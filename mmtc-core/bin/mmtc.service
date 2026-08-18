@@ -1,0 +1,14 @@
+[Unit]
+Description=mmtc
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/local/mmtc/bin/mmtc auto
+WorkingDirectory=/opt/local/mmtc/
+KillSignal=SIGINT
+User=mmtc
+Group=mmtc
+
+[Install]
+WantedBy=multi-user.target

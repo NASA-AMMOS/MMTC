@@ -2,8 +2,9 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.TestHelper;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.RawTelemetryTableTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -14,9 +15,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -24,7 +23,6 @@ import static org.mockito.Mockito.when;
 public abstract class BaseTelemetrySelectionStrategyTest {
     protected static final String RAW_TLM_TBL_NH_REFORMATTED = "src/test/resources/tables/RawTelemetryTable_NH_reformatted.csv";
     protected static final String RAW_TLM_TBL_NH_EMPTY = "src/test/resources/tables/RawTelemetryTable_NH_empty.csv";
-    protected static final int NH_FINE_TICK_MODULUS = 50_000;
 
     @BeforeAll
     static void setup() throws TimeConvertException {
@@ -42,12 +40,26 @@ public abstract class BaseTelemetrySelectionStrategyTest {
         TestHelper.ensureSpiceIsLoadedAndUnloadAllKernels();
     }
 
+    /*
     protected static TelemetrySource getSpiedRawTelemetrySourceFor(TimeCorrelationRunConfig config, String path) throws Exception {
         RawTelemetryTableTelemetrySource rawTlmTable = new RawTelemetryTableTelemetrySource();
         TimeCorrelationRunConfig spiedConfig = Mockito.spy(config);
         when(spiedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(path);
         rawTlmTable.applyConfiguration(spiedConfig);
         return Mockito.spy(rawTlmTable);
+    }
+
+     */
+
+    protected static TimeCorrelationRunConfig getConfigWithSpiedRawTelemetrySourceFor(TimeCorrelationRunConfig config, String path) throws Exception {
+        TimeCorrelationRunConfig spiedConfig = Mockito.spy(config);
+        when(spiedConfig.getString("telemetry.source.plugin.rawTlmTable.tableFile.path")).thenReturn(path);
+
+        RawTelemetryTableTelemetrySource rawTlmTable = Mockito.spy(new RawTelemetryTableTelemetrySource());
+        rawTlmTable.applyConfiguration(spiedConfig);
+        when(spiedConfig.getTelemetrySource()).thenReturn(rawTlmTable);
+
+        return spiedConfig;
     }
 
     protected static Boolean satisfiedFilters(TimeCorrelationTarget tcTarget) {

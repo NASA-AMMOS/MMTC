@@ -25,10 +25,6 @@ dependencies {
         "configuration" to "precompiledClasses"
     )))
 
-    // provides javax.xml.bind classes
-    implementation(libs.jakarta.xml)
-    implementation(libs.jaxb.impl)
-
     implementation(libs.commons.beanutils)
     implementation(libs.commons.configuration)
     implementation(libs.google.guava)
@@ -49,6 +45,13 @@ dependencies {
     // provides javax.xml.bind classes
     implementation(libs.jakarta.xml)
     implementation(libs.jaxb.impl)
+
+    // for task scheduling
+    implementation(libs.quartz)
+
+    // for templating
+    implementation(libs.freemarker)
+    implementation(libs.jackson.databind)
 
     testImplementation(testlibs.junit.jupiter.api)
     testImplementation(testlibs.junit.jupiter.params)

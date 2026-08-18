@@ -1,8 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.webapp.config;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
-import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
@@ -10,8 +9,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class MmtcWebAppConfig extends MmtcConfigWithTlmSource {

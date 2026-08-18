@@ -2,7 +2,7 @@ package edu.jhuapl.sd.sig.mmtc.filter;
 
 import java.util.List;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,7 +26,7 @@ public class ValidFilter implements TimeCorrelationFilter {
      * @return true if all samples are flagged as valid, false otherwise
      */
 	@Override
-	public boolean process(List<FrameSample> samples, TimeCorrelationRunConfig config) throws MmtcException {
+	public boolean process(List<FrameSample> samples, MmtcConfig config) throws MmtcException {
         if (samples.isEmpty()) {
             logger.warn("Sample Validity Filter failed: attempted to filter an empty sample set.");
             return false;

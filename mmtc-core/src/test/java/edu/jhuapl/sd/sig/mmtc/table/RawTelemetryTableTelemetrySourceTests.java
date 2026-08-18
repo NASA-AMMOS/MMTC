@@ -1,8 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.table;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.ValidFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
@@ -53,7 +53,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         );
 
         try {
-            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
+            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleErtRange().get().getStart(), config.getResolvedTargetSampleErtRange().get().getStop());
             assertEquals(0, samples.size());
         }
         catch (MmtcException ex) {
@@ -70,7 +70,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         loadSpice();
 
         try {
-            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
+            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleErtRange().get().getStart(), config.getResolvedTargetSampleErtRange().get().getStop());
             assertEquals(1, samples.size());
             TimeConvert.unloadSpiceKernels();
         }
@@ -88,7 +88,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         loadSpice();
 
         try {
-            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
+            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleErtRange().get().getStart(), config.getResolvedTargetSampleErtRange().get().getStop());
             assertEquals(0, samples.size());
             TimeConvert.unloadSpiceKernels();
         }
@@ -106,7 +106,7 @@ public class RawTelemetryTableTelemetrySourceTests {
         loadSpice();
 
         try {
-            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop());
+            List<FrameSample> samples = tableTlmSource.getSamplesInRange(config.getResolvedTargetSampleErtRange().get().getStart(), config.getResolvedTargetSampleErtRange().get().getStop());
             assertTrue(samples.size() >= config.getSamplesPerSet());
             TimeConvert.unloadSpiceKernels();
         }

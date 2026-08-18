@@ -1,7 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.correlation;
 
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.CorrelationTriplet;
 import edu.jhuapl.sd.sig.mmtc.util.Settable;
 

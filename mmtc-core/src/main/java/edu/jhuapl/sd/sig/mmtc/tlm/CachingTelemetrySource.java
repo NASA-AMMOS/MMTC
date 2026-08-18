@@ -1,15 +1,17 @@
 package edu.jhuapl.sd.sig.mmtc.tlm;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.OffsetDateTimeRange;
 import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.TelemetryCache;
+import edu.jhuapl.sd.sig.mmtc.tlm.range.ScetRange;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +45,7 @@ public class CachingTelemetrySource implements TelemetrySource {
 
     @Override
     public void checkCorrelationConfiguration(TimeCorrelationRunConfig config) throws MmtcException {
-
+        underlyingTelemetrySource.checkCorrelationConfiguration(config);
     }
 
     @Override
@@ -89,6 +91,11 @@ public class CachingTelemetrySource implements TelemetrySource {
     @Override
     public GncParms getGncTkParms(OffsetDateTime noEarlierThanScet, Double noEarlierThanTdtS) {
         return underlyingTelemetrySource.getGncTkParms(noEarlierThanScet, noEarlierThanTdtS);
+    }
+
+    @Override
+    public List<GncSclkAndTdtSMeasurement> getGncTelemetryPoints(ScetRange scetRange) throws IOException {
+        return underlyingTelemetrySource.getGncTelemetryPoints(scetRange);
     }
 
     public Map<String, String> getCacheStatistics() throws IOException {

@@ -2,24 +2,25 @@ package edu.jhuapl.sd.sig.mmtc.util;
 
 import java.lang.*;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.time.Year;
 import java.util.stream.Collectors;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationMetricsConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.TimekeepingAdjustmentParameters;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
+import edu.jhuapl.sd.sig.mmtc.tlm.FrameSampleMetrics;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.logging.log4j.LogManager;
@@ -73,16 +74,17 @@ public class TimeConvert {
 
     // Formatter for ISO Day Of Year (DOY) format. Assumes UTC.
     public static final DateTimeFormatter ISO_UTC_DOY_FORMAT = DateTimeFormatter.ofPattern("yyyy-DDD'T'HH:mm:ss.SSSSSSSSS").withZone(ZoneOffset.UTC);
-    public static final String ISO_UTC_DOY_FORMAT_NO_SUBSECONDS = "yyyy-DDD'T'HH:mm:ss.";
-
-    // The length of an ISO UTC DOY format date/time string defined above (without the ' ' surrounding the 'T').
-    public static final int ISO_UTC_DOY_FORMAT_LEN = 27;
+    public static final String ISO_UTC_DOY_FORMAT_NO_SUBSECONDS = "yyyy-DDD'T'HH:mm:ss";
 
     public static final long CDS_EPOCH_YEAR      = 1958;
     public static final int  SECONDS_PER_DAY     = 86400;
     public static final int  SECONDS_PER_HOUR    = 3600;
-    public static final int  MSEC_PER_SECOND     = 1000;
-    public static final int  NS_PER_SECOND       = 1000_000_000;
+    public static final int  MS_PER_SECOND       = 1000;
+    public static final int  MS_PER_DAY           = SECONDS_PER_DAY * MS_PER_SECOND;
+    public static final int  NS_PER_SECOND       = 1_000_000_000;
+    public static final int  NS_PER_MS           = 1_000_000;
+
+    public static final MathContext MC = new MathContext(50, RoundingMode.HALF_UP);
 
     // The maximum length of a SPICE file specification. (SPICE does provide a way to load larger file
     // specifications using the concatenation character '+', but this is not supported here.)
@@ -128,12 +130,17 @@ public class TimeConvert {
     }
 
     public static String timeToIsoUtcString(OffsetDateTime t, int subsecondPrecision) {
-        if (! (subsecondPrecision >= 1)) {
-            throw new IllegalArgumentException("Subsecond precision must be 1 or greater");
+        if (! (subsecondPrecision >= 0)) {
+            throw new IllegalArgumentException("Subsecond precision must be 0 or greater");
         }
 
         String subsecondFormat = "";
-        for (int i = 0; i < subsecondPrecision; i++) { subsecondFormat += "S"; }
+        if (subsecondPrecision > 0) {
+            subsecondFormat += ".";
+            for (int i = 0; i < subsecondPrecision; i++) {
+                subsecondFormat += "S";
+            }
+        }
 
         return t.format(DateTimeFormatter.ofPattern(ISO_UTC_DOY_FORMAT_NO_SUBSECONDS + subsecondFormat).withZone(ZoneOffset.UTC));
     }
@@ -519,7 +526,7 @@ public class TimeConvert {
         int daysOfEpoch = (yearOfCdsEpoch * 365) + numLeapDays + doy - 1;
 
         // Compute the milliseconds of the day.
-        int msOfDay = ((hour * SECONDS_PER_HOUR) + (minute * 60) + seconds) * MSEC_PER_SECOND + milliseconds;
+        int msOfDay = ((hour * SECONDS_PER_HOUR) + (minute * 60) + seconds) * MS_PER_SECOND + milliseconds;
 
         // CdsTimeCode defaults to treating the submilliseconds value as tenths-of-microseconds.
         // Convert the microseconds value extracted earlier.
@@ -1309,20 +1316,6 @@ public class TimeConvert {
         return !eq(first, second, epsilon);
     }
 
-    public static class FrameSampleMetrics {
-        public final double tdtG;
-        public final OffsetDateTime scetUtc;
-        public final double scetErrorNanos;
-        public final double owltSec;
-
-        public FrameSampleMetrics(double tdtG, OffsetDateTime scetUtc, double scetErrorNanos, double owltSec) {
-            this.tdtG = tdtG;
-            this.scetUtc = scetUtc;
-            this.scetErrorNanos = scetErrorNanos;
-            this.owltSec = owltSec;
-        }
-    }
-
     /**
      * Computes the SCET error for a given FrameSample, assuming that there is a loaded SCLK kernel
      * which this method will use to perform the SCLK -> SCET (UTC) time conversion
@@ -1333,11 +1326,11 @@ public class TimeConvert {
      * @throws TimeConvertException
      * @throws MmtcException
      */
-    public static FrameSampleMetrics calculateFrameSampleMetrics(TimeCorrelationMetricsConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
+    public static FrameSampleMetrics calculateFrameSampleMetrics(MmtcConfig config, TimekeepingAdjustmentParameters adjustmentParams, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
         final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(
                 Arrays.asList(fs),
                 config,
-                config.getTkSclkFineTickModulus()
+                adjustmentParams
         );
 
         // estimated SCET is the FrameSample's TDT(G) value as converted using the SCLK kernel
@@ -1361,6 +1354,40 @@ public class TimeConvert {
         final String tdtGStr = TimeConvert.tdtToTdtCalStr(tdt, subsecPrecision);
         final String utcStr = TimeConvert.tdtCalStrToUtc(tdtGStr, subsecPrecision);
         return TimeConvert.parseIsoDoyUtcStr(utcStr);
+    }
+
+    public static OffsetDateTime earliest(OffsetDateTime a, OffsetDateTime b) {
+        if (a.isBefore(b)) {
+            return a;
+        }
+        return b;
+    }
+
+    public static Optional<OffsetDateTime> earliestPresent(Optional<OffsetDateTime>... times) {
+        return earliestPresent(Arrays.asList(times));
+    }
+
+    public static Optional<OffsetDateTime> earliestPresent(Collection<Optional<OffsetDateTime>> times) {
+        return times.stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .sorted()
+                .findFirst();
+    }
+
+    public static OffsetDateTime latest(OffsetDateTime a, OffsetDateTime b) {
+        if (a.isAfter(b)) {
+            return a;
+        }
+        return b;
+    }
+
+    public static OffsetDateTime now() {
+        return OffsetDateTime.now(ZoneOffset.UTC);
+    }
+
+    public static BigDecimal numDaysBetween(OffsetDateTime start, OffsetDateTime stop) {
+        return new BigDecimal(Duration.between(start, stop).toHours()).divide(new BigDecimal(24), TimeConvert.MC);
     }
 }
 

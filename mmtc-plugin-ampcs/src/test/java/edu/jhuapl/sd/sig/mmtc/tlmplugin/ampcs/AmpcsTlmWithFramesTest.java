@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.*;
 import org.junit.jupiter.api.Test;
 
