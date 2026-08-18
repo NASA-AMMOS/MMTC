@@ -3,10 +3,10 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.NoTelemetryFoundException;
 import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
-import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,17 +22,17 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
     private static final Logger logger = LogManager.getLogger();
     private final int windowSlidingIncrement;
 
-    private WindowingTelemetrySelectionStrategy(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus, int windowSlidingIncrement) {
-        super(config, tlmSource, tk_sclk_fine_tick_modulus);
+    private WindowingTelemetrySelectionStrategy(MmtcConfigWithTlmSource config, TelemetrySelectionAndAdjustmentOptions tlmOptions, int windowSlidingIncrement) {
+        super(config, tlmOptions);
         this.windowSlidingIncrement = windowSlidingIncrement;
     }
 
-    public static WindowingTelemetrySelectionStrategy forSeparateConsecutiveWindows(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
-        return new WindowingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus, config.getSamplesPerSet());
+    public static WindowingTelemetrySelectionStrategy forSeparateConsecutiveWindows(MmtcConfigWithTlmSource config, TelemetrySelectionAndAdjustmentOptions tlmOptions) {
+        return new WindowingTelemetrySelectionStrategy(config, tlmOptions, config.getSamplesPerSet());
     }
 
-    public static WindowingTelemetrySelectionStrategy forSlidingWindow(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
-        return new WindowingTelemetrySelectionStrategy(config, tlmSource, tk_sclk_fine_tick_modulus, 1);
+    public static WindowingTelemetrySelectionStrategy forSlidingWindow(MmtcConfigWithTlmSource config, TelemetrySelectionAndAdjustmentOptions tlmOptions) {
+        return new WindowingTelemetrySelectionStrategy(config, tlmOptions, 1);
     }
 
     /**
@@ -70,13 +70,13 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
 
         final OffsetDateTime queryStartTime;
         final OffsetDateTime queryStopTime;
-        if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
-            queryStartTime = config.getResolvedTargetSampleRange().get().getStart();
-            queryStopTime = config.getResolvedTargetSampleRange().get().getStop();
-        } else if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
+        if (tlmOptions.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
+            queryStartTime = tlmOptions.getResolvedTargetSampleRange().get().getStart();
+            queryStopTime = tlmOptions.getResolvedTargetSampleRange().get().getStop();
+        } else if (tlmOptions.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
             final int targetSampleExactErtSupplementalQueryWindowMin = config.getTargetSampleExactErtSupplementalQueryWindowMin();
-            queryStartTime = config.getResolvedTargetSampleExactErt().get().minus(targetSampleExactErtSupplementalQueryWindowMin, ChronoUnit.MINUTES);
-            queryStopTime = config.getResolvedTargetSampleExactErt().get().plus(targetSampleExactErtSupplementalQueryWindowMin, ChronoUnit.MINUTES);
+            queryStartTime = tlmOptions.getResolvedTargetSampleExactErt().get().minus(targetSampleExactErtSupplementalQueryWindowMin, ChronoUnit.MINUTES);
+            queryStopTime = tlmOptions.getResolvedTargetSampleExactErt().get().plus(targetSampleExactErtSupplementalQueryWindowMin, ChronoUnit.MINUTES);
         } else {
             throw new IllegalStateException();
         }
@@ -127,10 +127,10 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
                 throw new TelemetryQualityException(notEnoughFramesLeftError);
             }
 
-            tcTarget = new TimeCorrelationTarget(sampleSet, config, tk_sclk_fine_tick_modulus);
+            tcTarget = new TimeCorrelationTarget(sampleSet, config, tlmOptions);
 
-            if (config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
-                final OffsetDateTime desiredTargetFrameErt = config.getResolvedTargetSampleExactErt().get();
+            if (tlmOptions.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.EXACT)) {
+                final OffsetDateTime desiredTargetFrameErt = tlmOptions.getResolvedTargetSampleExactErt().get();
 
                 if (TimeConvert.parseIsoDoyUtcStr(tcTarget.getTargetSample().getErtStr()).equals(desiredTargetFrameErt)) {
                     logger.info("The candidate sample matches the desired ERT");
@@ -149,5 +149,53 @@ public class WindowingTelemetrySelectionStrategy extends TelemetrySelectionStrat
         }
 
         return tcTarget;
+    }
+
+    @Override
+    public List<TimeCorrelationTarget> getAll(OffsetDateTime queryStartTimeErt, OffsetDateTime queryStopTimeErt, FilterFunction filterFunction) throws MmtcException {
+        List<TimeCorrelationTarget> results = new ArrayList<>();
+
+        final int samplesPerSet = config.getSamplesPerSet();
+
+        final List<FrameSample> samplesInRange = getSamplesInRange(queryStartTimeErt, queryStopTimeErt);
+        final int numSamplesInRange = samplesInRange.size();
+
+        if (numSamplesInRange == 0) {
+            logger.warn("No telemetry found within query window");
+            return results;
+        }
+
+        int sampleToIndex = numSamplesInRange;
+
+        if (numSamplesInRange < samplesPerSet) {
+            logger.warn(String.format("Not enough frames found within the query interval to build a sample set. A sample set requires %d frames; %d were found.", samplesPerSet, numSamplesInRange));
+            return results;
+        }
+
+        logger.info(String.format("The query interval contains %d frames.", numSamplesInRange));
+
+        while (true) {
+            List<FrameSample> sampleSet;
+
+            int sampleFromIndex = sampleToIndex - samplesPerSet;
+
+            if (sampleFromIndex >= 0) {
+                if (samplesPerSet == 1) {
+                    logger.info(String.format("Creating new candidate sample set using frame %d", sampleFromIndex + 1));
+                } else {
+                    logger.info(String.format("Creating new candidate sample set using frames %d to %d", sampleFromIndex + 1, sampleToIndex));
+                }
+                sampleSet = new ArrayList<>(samplesInRange.subList(sampleFromIndex, sampleToIndex));
+                sampleToIndex -= windowSlidingIncrement;
+            } else {
+                return results;
+            }
+
+            final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(sampleSet, config, tlmOptions);
+
+            if (filterFunction.apply(tcTarget)) {
+                results.add(tcTarget);
+            }
+        }
     }
 }

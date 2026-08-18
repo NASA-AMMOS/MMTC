@@ -1,10 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.rollback;
 
 import edu.jhuapl.sd.sig.mmtc.app.BuildInfo;
-import edu.jhuapl.sd.sig.mmtc.app.MmtcCli;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
-import edu.jhuapl.sd.sig.mmtc.cfg.RollbackConfig;
+import edu.jhuapl.sd.sig.mmtc.rollback.config.RollbackConfig;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.SclkKernelProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
@@ -12,7 +10,6 @@ import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductLocation;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductPath;
 import edu.jhuapl.sd.sig.mmtc.products.model.RunHistoryFile;
 import edu.jhuapl.sd.sig.mmtc.products.model.TableRecord;
-import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.products.util.FileZipArchiver;
 import edu.jhuapl.sd.sig.mmtc.util.FileUtils;
 import org.apache.logging.log4j.LogManager;

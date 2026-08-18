@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.util.CollectionUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +26,7 @@ public class VcidFilter implements TimeCorrelationFilter {
 	 * @return true if all samples have valid VCIDs (and TK VCIDs) according to the given configuration; false otherwise
 	 */
 	@Override
-	public boolean process(List<FrameSample> samples, TimeCorrelationRunConfig config) throws MmtcException {
+	public boolean process(List<FrameSample> samples, MmtcConfig config) throws MmtcException {
 		if (samples.isEmpty()) {
 			logger.warn("VCID Filter failed: Attempted to filter an empty sample set");
 			return false;

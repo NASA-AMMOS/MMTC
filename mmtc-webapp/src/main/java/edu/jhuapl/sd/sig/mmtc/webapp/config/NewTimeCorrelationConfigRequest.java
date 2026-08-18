@@ -1,13 +1,12 @@
 package edu.jhuapl.sd.sig.mmtc.webapp.config;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfigInputSupplier;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfigInputSupplier;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public class NewTimeCorrelationConfigRequest implements TimeCorrelationRunConfigInputSupplier {
@@ -53,6 +52,7 @@ public class NewTimeCorrelationConfigRequest implements TimeCorrelationRunConfig
                 Optional.ofNullable(targetSampleRangeStartErt),
                 Optional.ofNullable(targetSampleRangeStopErt),
                 Optional.ofNullable(targetSampleExactErt),
+                Optional.empty(),
                 Optional.ofNullable(priorCorrelationExactTdt),
                 testModeOwltEnabled,
                 Optional.of(testModeOwltSec),

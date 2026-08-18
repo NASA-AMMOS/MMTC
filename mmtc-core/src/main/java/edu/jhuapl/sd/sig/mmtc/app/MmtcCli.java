@@ -1,10 +1,13 @@
 package edu.jhuapl.sd.sig.mmtc.app;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.products.util.BuiltInOutputProductMigrationManager;
+import edu.jhuapl.sd.sig.mmtc.autocorrelate.AutocorrelateApp;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationApp;
+import edu.jhuapl.sd.sig.mmtc.products.migration.BuiltInOutputProductMigrationManager;
 import edu.jhuapl.sd.sig.mmtc.rollback.TimeCorrelationRollback;
 import edu.jhuapl.sd.sig.mmtc.sandbox.MmtcSandboxCreator;
 import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.TelemetryCacheUserOperations;
+import edu.jhuapl.sd.sig.mmtc.trending.TrendingApp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -22,12 +25,14 @@ public class MmtcCli {
     private static final Logger logger = LogManager.getLogger();
 
     public enum ApplicationCommand {
-        CORRELATION,
+        CORRELATE,
         ROLLBACK,
         CREATE_SANDBOX,
         MIGRATE,
         PRECACHE,
-        CACHE_STATS
+        CACHE_STATS,
+        TREND,
+        AUTOCORRELATE
     }
 
     private static class ApplicationInvocation {
@@ -53,7 +58,7 @@ public class MmtcCli {
                     " -v,--version   Print the MMTC version.\n" +
                     "\n" +
                     "MMTC can be invoked with one of the following commands:\n" +
-                    "- correlation: run a new correlation (this is the default command if none\n" +
+                    "- [correlate|correlation]: run a new correlation (this is the default command if none\n" +
                     "is specified)\n" +
                     "- rollback: roll back (undo) one or many correlations\n" +
                     "- create-sandbox: create a copy of this MMTC installation to run locally,\n" +
@@ -62,6 +67,7 @@ public class MmtcCli {
                     "- precache: query the configured telemetry source to proactively retrieve\n" +
                     "and store time correlation telemetry into a local cache\n" +
                     "- cache-stats: log statistics about the locally-cached telemetry\n" +
+                    "- trend: calculate and report timekeeping trending information\n" +
                     "\n" +
                     "For more information on any of these commands, run: mmtc <command> --help";
             System.out.println(helpMessage);
@@ -72,17 +78,23 @@ public class MmtcCli {
             return new ApplicationInvocation(ApplicationCommand.ROLLBACK, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("create-sandbox")) {
             return new ApplicationInvocation(ApplicationCommand.CREATE_SANDBOX, removeFirstElement(cliArgs));
+        } else if (cliArgs[0].equalsIgnoreCase("correlate")) {
+            return new ApplicationInvocation(ApplicationCommand.CORRELATE, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("correlation")) {
-            return new ApplicationInvocation(ApplicationCommand.CORRELATION, removeFirstElement(cliArgs));
+            return new ApplicationInvocation(ApplicationCommand.CORRELATE, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("migrate")) {
             return new ApplicationInvocation(ApplicationCommand.MIGRATE, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("precache")) {
             return new ApplicationInvocation(ApplicationCommand.PRECACHE, removeFirstElement(cliArgs));
         } else if (cliArgs[0].equalsIgnoreCase("cache-stats")) {
             return new ApplicationInvocation(ApplicationCommand.CACHE_STATS, removeFirstElement(cliArgs));
+        } else if (cliArgs[0].equalsIgnoreCase("trend")) {
+            return new ApplicationInvocation(ApplicationCommand.TREND, removeFirstElement(cliArgs));
+        } else if (cliArgs[0].equalsIgnoreCase("autocorrelate")) {
+            return new ApplicationInvocation(ApplicationCommand.AUTOCORRELATE, removeFirstElement(cliArgs));
         } else {
             // to maintain backwards compatibility on MMTC's CLI
-            return new ApplicationInvocation(ApplicationCommand.CORRELATION, cliArgs);
+            return new ApplicationInvocation(ApplicationCommand.CORRELATE, cliArgs);
         }
     }
 
@@ -117,16 +129,16 @@ public class MmtcCli {
         int exitCode = 0;
 
         switch (appInvoc.command) {
-            case CORRELATION: {
+            case CORRELATE: {
                 try {
                     new TimeCorrelationApp(appInvoc.args).run();
                 } catch (NoTelemetryFoundException e) {
-                    logger.fatal(LOGFILE_ONLY, "No telemetry found within the specified time range", e);
-                    logger.fatal("No telemetry found within the specified time range.");
+                    logger.info(LOGFILE_ONLY, "No telemetry found within the specified time range", e);
+                    logger.info("No telemetry found within the specified time range.");
                     exitCode = 2;
                 } catch (TelemetryQualityException e) {
-                    logger.fatal(LOGFILE_ONLY, "All telemetry found within the query window did not pass filters or validation", e);
-                    logger.fatal("All telemetry found within the query window did not pass filters or validation.");
+                    logger.warn(LOGFILE_ONLY, "All telemetry found within the query window did not pass filters or validation", e);
+                    logger.warn("All telemetry found within the query window did not pass filters or validation.");
                     exitCode = 3;
                 } catch (Exception e) {
                     // any other exception
@@ -176,6 +188,25 @@ public class MmtcCli {
                     TelemetryCacheUserOperations.logCacheStatistics(appInvoc.args);
                 } catch (Exception e) {
                     logger.fatal("Failed to calculate cache statistics.", e);
+                    exitCode = 1;
+                }
+                break;
+            }
+            case TREND: {
+                try {
+                    new TrendingApp(appInvoc.args).run();
+                } catch (Exception e) {
+                    logger.fatal("Failed to generate new trending products.", e);
+                    exitCode = 1;
+                }
+                break;
+            }
+            case AUTOCORRELATE: {
+                try {
+                    new AutocorrelateApp(appInvoc.args).run();
+                } catch (Exception e) {
+                    // any other exception
+                    logger.fatal("MMTC autocorrelate run failed.", e);
                     exitCode = 1;
                 }
                 break;

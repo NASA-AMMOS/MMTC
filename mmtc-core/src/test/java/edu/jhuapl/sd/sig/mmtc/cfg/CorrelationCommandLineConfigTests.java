@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.cfg;
 
+import edu.jhuapl.sd.sig.mmtc.correlation.config.CorrelationCliConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +10,7 @@ import java.time.format.DateTimeParseException;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CorrelationCommandLineConfigTests {
-    private CorrelationCommandLineConfig config;
+    private CorrelationCliConfig config;
 
     @Test
     @DisplayName("CommandLineConfig.formDateTime Test 1")
@@ -18,7 +19,7 @@ class CorrelationCommandLineConfigTests {
         String args[] = new String[2];
         args[0] = "2019-183T02:14:00.0";
         args[1] = "2019-183T04:016:00.0";
-        CorrelationCommandLineConfig config = new CorrelationCommandLineConfig(args);
+        CorrelationCliConfig config = new CorrelationCliConfig(CorrelationCliConfig.Mode.CORRELATE, args);
 
         String datetimeStr1 = "2019-183T02:14:00.0";
         OffsetDateTime dateTime1 = config.formDateTime(datetimeStr1);

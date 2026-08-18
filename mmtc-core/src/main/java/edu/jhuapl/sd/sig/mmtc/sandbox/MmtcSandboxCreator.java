@@ -1,10 +1,10 @@
 package edu.jhuapl.sd.sig.mmtc.sandbox;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcSandboxCreatorConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.PluginProvidedProductConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationXmlPropertiesConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.sandbox.config.MmtcSandboxCreatorConfig;
+import edu.jhuapl.sd.sig.mmtc.products.definition.PluginProvidedProductConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.base.MmtcXmlPropertiesConfig;
 import edu.jhuapl.sd.sig.mmtc.products.definition.*;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ResolvedProductDirPrefixSuffix;
 import org.apache.commons.io.FileUtils;
@@ -89,9 +89,9 @@ public class MmtcSandboxCreator {
         // Create a new copy of MMTC's configuration directory and contents
         sandboxedTkConfDir = sandboxedMmtcHomeDir.resolve("conf");
         Files.createDirectory(sandboxedTkConfDir);
-        sandboxedTkConfigPath = sandboxedTkConfDir.resolve(TimeCorrelationXmlPropertiesConfig.TIME_COR_CONFIG_PROPERTIES_FILENAME);
+        sandboxedTkConfigPath = sandboxedTkConfDir.resolve(MmtcXmlPropertiesConfig.TIME_COR_CONFIG_PROPERTIES_FILENAME);
         Files.copy(
-                originalTkConfigDir.resolve(TimeCorrelationXmlPropertiesConfig.TIME_COR_CONFIG_PROPERTIES_FILENAME),
+                originalTkConfigDir.resolve(MmtcXmlPropertiesConfig.TIME_COR_CONFIG_PROPERTIES_FILENAME),
                 sandboxedTkConfigPath
         );
         sandboxedTkConfig = parseXml(sandboxedTkConfigPath);

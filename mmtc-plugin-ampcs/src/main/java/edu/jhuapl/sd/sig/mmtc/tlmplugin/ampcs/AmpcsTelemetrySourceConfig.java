@@ -1,6 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 
 import java.nio.file.Path;

@@ -4,22 +4,21 @@ import java.lang.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.time.Year;
 import java.util.stream.Collectors;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationMetricsConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.TimekeepingAdjustmentParameters;
 import edu.jhuapl.sd.sig.mmtc.products.model.kernel.sclk.SclkKernel;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
+import edu.jhuapl.sd.sig.mmtc.tlm.FrameSampleMetrics;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.logging.log4j.LogManager;
@@ -1309,20 +1308,6 @@ public class TimeConvert {
         return !eq(first, second, epsilon);
     }
 
-    public static class FrameSampleMetrics {
-        public final double tdtG;
-        public final OffsetDateTime scetUtc;
-        public final double scetErrorNanos;
-        public final double owltSec;
-
-        public FrameSampleMetrics(double tdtG, OffsetDateTime scetUtc, double scetErrorNanos, double owltSec) {
-            this.tdtG = tdtG;
-            this.scetUtc = scetUtc;
-            this.scetErrorNanos = scetErrorNanos;
-            this.owltSec = owltSec;
-        }
-    }
-
     /**
      * Computes the SCET error for a given FrameSample, assuming that there is a loaded SCLK kernel
      * which this method will use to perform the SCLK -> SCET (UTC) time conversion
@@ -1333,11 +1318,11 @@ public class TimeConvert {
      * @throws TimeConvertException
      * @throws MmtcException
      */
-    public static FrameSampleMetrics calculateFrameSampleMetrics(TimeCorrelationMetricsConfig config, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
+    public static FrameSampleMetrics calculateFrameSampleMetrics(MmtcConfig config, TimekeepingAdjustmentParameters adjustmentParams, FrameSample fs) throws TimeConvertException, MmtcException, SpiceErrorException {
         final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(
                 Arrays.asList(fs),
                 config,
-                config.getTkSclkFineTickModulus()
+                adjustmentParams
         );
 
         // estimated SCET is the FrameSample's TDT(G) value as converted using the SCLK kernel
@@ -1361,6 +1346,24 @@ public class TimeConvert {
         final String tdtGStr = TimeConvert.tdtToTdtCalStr(tdt, subsecPrecision);
         final String utcStr = TimeConvert.tdtCalStrToUtc(tdtGStr, subsecPrecision);
         return TimeConvert.parseIsoDoyUtcStr(utcStr);
+    }
+
+    public static OffsetDateTime earliest(OffsetDateTime a, OffsetDateTime b) {
+        if (a.isBefore(b)) {
+            return a;
+        }
+        return b;
+    }
+
+    public static OffsetDateTime latest(OffsetDateTime a, OffsetDateTime b) {
+        if (a.isAfter(b)) {
+            return a;
+        }
+        return b;
+    }
+
+    public static OffsetDateTime now() {
+        return OffsetDateTime.now(ZoneOffset.UTC);
     }
 }
 

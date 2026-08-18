@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.products.util;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;

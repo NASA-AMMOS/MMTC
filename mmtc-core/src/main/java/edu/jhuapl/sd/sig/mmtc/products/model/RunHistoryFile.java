@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.products.model;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.app.MmtcRollbackException;
+import edu.jhuapl.sd.sig.mmtc.rollback.MmtcRollbackException;
 import edu.jhuapl.sd.sig.mmtc.products.definition.AppendedFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.EntireFileOutputProductDefinition;
 import edu.jhuapl.sd.sig.mmtc.products.definition.OutputProductDefinition;

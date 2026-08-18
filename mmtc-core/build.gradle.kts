@@ -50,6 +50,9 @@ dependencies {
     implementation(libs.jakarta.xml)
     implementation(libs.jaxb.impl)
 
+    // for trending report generation
+    implementation(libs.freemarker)
+
     testImplementation(testlibs.junit.jupiter.api)
     testImplementation(testlibs.junit.jupiter.params)
     testImplementation(testlibs.junit.jupiter.engine)

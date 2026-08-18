@@ -3,9 +3,9 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.NoTelemetryFoundException;
 import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.GroundStationFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -34,13 +34,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             // throws because we're making the 'filters' fail
@@ -51,9 +52,9 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
 
             assertEquals("All 365 samples found did not pass filters or validation", thrownException.getMessage());
 
-            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
+            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(spiedConfig.getTelemetrySource());
 
-            generalQueryPeriodAssertions(config, queriedRanges);
+            generalQueryPeriodAssertions(spiedConfig, queriedRanges);
 
             // query period is once every two days, so should have 365/2 = ~183 query periods
             assertEquals(183, queriedRanges.size());
@@ -67,13 +68,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T04:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T04:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             // throws because there's no telemetry in range
@@ -84,9 +86,9 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
 
             assertEquals("No telemetry found within query window", thrownException.getMessage());
 
-            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
+            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(spiedConfig.getTelemetrySource());
 
-            generalQueryPeriodAssertions(config, queriedRanges);
+            generalQueryPeriodAssertions(spiedConfig, queriedRanges);
 
             // query period is once every two days, so should have 365/2 = ~183 query periods
             assertEquals(1, queriedRanges.size());
@@ -103,13 +105,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T00:00:30.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T00:00:30.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             // throws because there's no telemetry in range
@@ -120,9 +123,9 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
 
             assertEquals("No telemetry found within query window", thrownException.getMessage());
 
-            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
+            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(spiedConfig.getTelemetrySource());
 
-            generalQueryPeriodAssertions(config, queriedRanges);
+            generalQueryPeriodAssertions(spiedConfig, queriedRanges);
 
             // query period is once every two days, so should have 365/2 = ~183 query periods
             assertEquals(1, queriedRanges.size());
@@ -139,13 +142,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T13:00:30.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-001T13:00:30.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             // throws because there's no telemetry in range
@@ -156,9 +160,9 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
 
             assertEquals("No telemetry found within query window", thrownException.getMessage());
 
-            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
+            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(spiedConfig.getTelemetrySource());
 
-            generalQueryPeriodAssertions(config, queriedRanges);
+            generalQueryPeriodAssertions(spiedConfig, queriedRanges);
 
             // query period is once every two days, so should have 365/2 = ~183 query periods
             assertEquals(1, queriedRanges.size());
@@ -175,13 +179,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-6h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-003T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-003T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             // throws because invalid configuration was given to
@@ -201,13 +206,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-12h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-003T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2018-001T00:00:00.000Z", "2018-003T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             // throws because there's no telemetry in range
@@ -216,9 +222,9 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     () -> tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters)
             );
 
-            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
+            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(spiedConfig.getTelemetrySource());
 
-            generalQueryPeriodAssertions(config, queriedRanges);
+            generalQueryPeriodAssertions(spiedConfig, queriedRanges);
 
             // query period is once every 12 hours, so we'd have four of them over two days
             assertEquals(4, queriedRanges.size());
@@ -232,20 +238,21 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-352T00:00:00.000Z", "2017-353T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-352T00:00:00.000Z", "2017-353T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             TimeCorrelationTarget tcTarget = tlmSelecStrat.get(BaseTelemetrySelectionStrategyTest::satisfiedFilters);
 
             // we should have been able to build a valid sample set (i.e. TimeCorrelationTarget) from the first query
-            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
-            generalQueryPeriodAssertions(config, queriedRanges);
+            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(spiedConfig.getTelemetrySource());
+            generalQueryPeriodAssertions(spiedConfig, queriedRanges);
             assertEquals(1, queriedRanges.size());
             assertEquals(OffsetDateTime.parse("2017-12-18T12:00:00Z"), queriedRanges.get(0).getLeft());
             assertEquals(OffsetDateTime.parse("2017-12-19T00:00:00Z"), queriedRanges.get(0).getRight());
@@ -271,22 +278,23 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h-OnlyStation55");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-353T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-353T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             TimeCorrelationTarget tcTarget = tlmSelecStrat.get(
-                    timeCorrelationTarget -> new GroundStationFilter().process(timeCorrelationTarget.getSampleSet(), config)
+                    timeCorrelationTarget -> new GroundStationFilter().process(timeCorrelationTarget.getSampleSet(), spiedConfig)
             );
 
             // we should have been able to build a valid sample set (i.e. TimeCorrelationTarget) from the first query
-            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(tlmSource);
-            generalQueryPeriodAssertions(config, queriedRanges);
+            List<Pair<OffsetDateTime, OffsetDateTime>> queriedRanges = getQueriedRanges(spiedConfig.getTelemetrySource());
+            generalQueryPeriodAssertions(spiedConfig, queriedRanges);
             assertEquals(31, queriedRanges.size());
 
             // the five FrameSamples should be the most recent five ones just before 2017-353
@@ -310,13 +318,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2018-001T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             TelemetryQualityException thrownException = assertThrows(
@@ -335,13 +344,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2020-001T00:00:00.000Z", "2021-001T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2020-001T00:00:00.000Z", "2021-001T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             NoTelemetryFoundException thrownException = assertThrows(
@@ -360,13 +370,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-340T00:00:00.000Z", "2017-341T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                     new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-340T00:00:00.000Z", "2017-341T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             NoTelemetryFoundException thrownException = assertThrows(
@@ -385,13 +396,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_EMPTY);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2006-01-20T01:00:00.000Z", "2018-01-20T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_EMPTY
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             NoTelemetryFoundException thrownException = assertThrows(
@@ -410,13 +422,14 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
                     .when(() -> Environment.getEnvironmentVariable("TK_CONFIG_PATH"))
                     .thenReturn("src/test/resources/TelemetrySelection/Sampling/width-12h-rate-48h");
 
-            final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-353T00:00:00.000Z"));
-            final TelemetrySource tlmSource = getSpiedRawTelemetrySourceFor(config, RAW_TLM_TBL_NH_REFORMATTED);
+            final TimeCorrelationRunConfig spiedConfig = getConfigWithSpiedRawTelemetrySourceFor(
+                    new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig("-T", "0.0", "2017-001T00:00:00.000Z", "2017-353T00:00:00.000Z")),
+                    RAW_TLM_TBL_NH_REFORMATTED
+            );
 
             SamplingTelemetrySelectionStrategy tlmSelecStrat = new SamplingTelemetrySelectionStrategy(
-                    config,
-                    tlmSource,
-                    NH_FINE_TICK_MODULUS
+                    spiedConfig,
+                    spiedConfig
             );
 
             MmtcException thrownException = assertThrows(
@@ -426,7 +439,7 @@ public class SamplingTelemetrySelectionStrategyTest extends BaseTelemetrySelecti
 
             assertEquals("Test exception from filter", thrownException.getMessage());
 
-            verify(tlmSource, times(1)).getSamplesInRange(any(), any());
+            verify(spiedConfig.getTelemetrySource(), times(1)).getSamplesInRange(any(), any());
         }
     }
 

@@ -1,8 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSampleValidator;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -25,19 +25,23 @@ public abstract class TelemetrySelectionStrategy {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private final TelemetrySource tlmSource;
+    protected final MmtcConfigWithTlmSource config;
+    protected final TelemetrySource tlmSource;
 
-    protected final TimeCorrelationRunConfig config;
+    protected final TelemetrySelectionAndAdjustmentOptions tlmOptions;
+
     protected final int tk_sclk_fine_tick_modulus;
 
-
-    public TelemetrySelectionStrategy(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
-        this.tlmSource = tlmSource;
+    public TelemetrySelectionStrategy(MmtcConfigWithTlmSource config, TelemetrySelectionAndAdjustmentOptions tlmOptions) {
         this.config = config;
-        this.tk_sclk_fine_tick_modulus = tk_sclk_fine_tick_modulus;
+        this.tlmOptions = tlmOptions;
+        this.tlmSource = config.getTelemetrySource();
+        this.tk_sclk_fine_tick_modulus = config.getTkSclkFineTickModulus();
     }
 
     public abstract TimeCorrelationTarget get(FilterFunction filterFunction) throws MmtcException;
+
+    public abstract List<TimeCorrelationTarget> getAll(OffsetDateTime queryStartTimeErt, OffsetDateTime queryStopTimeErt, FilterFunction filterFunction) throws MmtcException;
 
     /**
      * Retrieve all samples in the desired time range.

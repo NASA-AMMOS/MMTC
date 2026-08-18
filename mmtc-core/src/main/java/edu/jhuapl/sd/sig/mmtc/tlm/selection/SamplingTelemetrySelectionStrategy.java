@@ -3,10 +3,10 @@ package edu.jhuapl.sd.sig.mmtc.tlm.selection;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.app.NoTelemetryFoundException;
 import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationTarget;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
-import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,10 +21,10 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
 
     private static final Logger logger = LogManager.getLogger();
 
-    public SamplingTelemetrySelectionStrategy(TimeCorrelationRunConfig config, TelemetrySource tlmSource, int tk_sclk_fine_tick_modulus) {
-        super(config, tlmSource, tk_sclk_fine_tick_modulus);
+    public SamplingTelemetrySelectionStrategy(MmtcConfigWithTlmSource config, TelemetrySelectionAndAdjustmentOptions tlmOptions) {
+        super(config, tlmOptions);
 
-        if (! config.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
+        if (! tlmOptions.getTargetSampleInputErtMode().equals(TimeCorrelationRunConfig.TargetSampleInputErtMode.RANGE)) {
             throw new IllegalStateException("This telemetry selection strategy only supports querying over an ERT range for a target sample");
         }
     }
@@ -51,7 +51,7 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
 
             final List<FrameSample> sampleSet = new ArrayList<>(samplesInQueryRange.subList(samplesInQueryRange.size() - config.getSamplesPerSet(), samplesInQueryRange.size()));
 
-            final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(sampleSet, config, tk_sclk_fine_tick_modulus);
+            final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(sampleSet, config, tlmOptions);
 
             if (filterFunction.apply(tcTarget)) {
                 logger.info(USER_NOTICE, "The candidate sample set passed all filters and is valid. MMTC will use it as the sample set for time correlation.");
@@ -69,6 +69,10 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
     }
 
     private List<Pair<OffsetDateTime, OffsetDateTime>> generateQueryRanges() throws MmtcException {
+        return generateQueryRanges(tlmOptions.getResolvedTargetSampleRange().get().getStart(), tlmOptions.getResolvedTargetSampleRange().get().getStop());
+    }
+
+    private List<Pair<OffsetDateTime, OffsetDateTime>> generateQueryRanges(OffsetDateTime queryStart, OffsetDateTime queryStop) throws MmtcException {
         if (! (config.getSamplingSampleSetBuildingStrategyQueryWidthMinutes() <= config.getSamplingSampleSetBuildingStrategySamplingRateMinutes())) {
             throw new MmtcException(String.format(
                     "Sampling telemetry selection strategy requires a query width <= sampling rate, but the configured query width is %d minutes and the sampling rate is %d minutes",
@@ -88,25 +92,56 @@ public class SamplingTelemetrySelectionStrategy extends TelemetrySelectionStrate
         // - does not query telemetry outside the given input start and stop times
         while (true) {
             if (stop == null) {
-                stop = config.getResolvedTargetSampleRange().get().getStop();
+                stop = queryStop;
             } else {
                 stop = stop.minusMinutes(config.getSamplingSampleSetBuildingStrategySamplingRateMinutes());
             }
 
-            if (! stop.isAfter(config.getResolvedTargetSampleRange().get().getStart())) {
+            if (! stop.isAfter(queryStart)) {
                 break;
             }
 
             start = stop.minusMinutes(config.getSamplingSampleSetBuildingStrategyQueryWidthMinutes());
 
-            if (start.isBefore(config.getResolvedTargetSampleRange().get().getStart())) {
+            if (start.isBefore(queryStart)) {
                 // bound query start time to input start time
-                start = config.getResolvedTargetSampleRange().get().getStart();
+                start = queryStart;
             }
 
             queryRanges.add(Pair.of(start, stop));
         }
 
         return queryRanges;
+    }
+
+    @Override
+    public List<TimeCorrelationTarget> getAll(OffsetDateTime queryStartTimeErt, OffsetDateTime queryStopTimeErt, FilterFunction filterFunction) throws MmtcException {
+        List<TimeCorrelationTarget> results = new ArrayList<>();
+
+        // generate all possible query ranges
+        List<Pair<OffsetDateTime, OffsetDateTime>> queryRanges = generateQueryRanges(queryStartTimeErt, queryStopTimeErt);
+
+        if (queryRanges.isEmpty()) {
+            throw new MmtcException("Could not generate any valid telemetry query periods within the input time range.  Please either widen the input query time range or decrease the sampling query width.");
+        }
+
+        for (Pair<OffsetDateTime, OffsetDateTime> queryRange : queryRanges) {
+            final List<FrameSample> samplesInQueryRange = getSamplesInRange(queryRange.getLeft(), queryRange.getRight());
+
+            if (samplesInQueryRange.size() < config.getSamplesPerSet()) {
+                continue;
+            }
+
+            final List<FrameSample> sampleSet = new ArrayList<>(samplesInQueryRange.subList(samplesInQueryRange.size() - config.getSamplesPerSet(), samplesInQueryRange.size()));
+
+            final TimeCorrelationTarget tcTarget = new TimeCorrelationTarget(sampleSet, config, tlmOptions);
+
+            if (filterFunction.apply(tcTarget)) {
+                results.add(tcTarget);
+
+            }
+        }
+
+        return results;
     }
 }

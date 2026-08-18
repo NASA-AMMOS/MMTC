@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
 import edu.jhuapl.sd.sig.mmtc.tlm.TimekeepingPacketParser;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValsReader;
@@ -568,7 +568,7 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
         } catch (ExecutionException | InterruptedException | TimeoutException e) {
             executorService.shutdownNow();
             p.destroyForcibly();
-            throw new IOException("Error reading process stdout or stderr", e);
+            throw new IOException(String.format("Error reading process stdout or stderr within %d seconds", chillTimeoutSec), e);
         }
 
         // wait for the process to exit, and then ensure its exit value is 0

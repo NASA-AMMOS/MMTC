@@ -1,15 +1,14 @@
 package edu.jhuapl.sd.sig.mmtc.tlm;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,7 +50,7 @@ public interface TelemetrySource {
 
     /**
      * This method is called when MMTC configuration has been fully initialized and validated, and provides a chance for
-     * TelemetrySource implementations to save a reference to the entire MMTC edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource instance or parts
+     * TelemetrySource implementations to save a reference to the entire MMTC edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource instance or parts
      * therein.  It also provides an opportunity for TelemetrySource implementations to perform their own initialization or
      * configuration validation before continuing.  A thrown MmtcException from this method will log the issue and
      * prevent further time correlation processing.
@@ -62,7 +61,7 @@ public interface TelemetrySource {
      * <p>
      * This method is called once during an MMTC time correlation invocation, before any correlation processing occurs.
      *
-     * @param config the complete edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource that MMTC will use to run, sourced from a TimeCorrelationConfigProperties.xml file
+     * @param config the complete edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource that MMTC will use to run, sourced from a TimeCorrelationConfigProperties.xml file
      * @throws MmtcException if there is an issue configuring the TelemetrySource, or another issue that indicates time correlation should not proceed
      */
     void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException;
