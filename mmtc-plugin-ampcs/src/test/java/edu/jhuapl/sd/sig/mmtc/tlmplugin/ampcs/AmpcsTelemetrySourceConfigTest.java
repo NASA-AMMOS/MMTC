@@ -1,7 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationCliInputConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.chanvals.ChanValReadConfig;
 import edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs.util.TemporaryTkConfigProperties;
 import edu.jhuapl.sd.sig.mmtc.util.Environment;
@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 

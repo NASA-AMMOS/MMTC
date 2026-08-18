@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
 import org.apache.logging.log4j.LogManager;
@@ -79,7 +79,7 @@ public class ContactFilter {
      *  configurable threshold
      * @throws MmtcException when any conversions fail
      */
-    public boolean process(FrameSample targetSample, TimeCorrelationRunConfig config, Integer sclk_kernel_fine_tick_modulus) throws MmtcException {
+    public boolean process(FrameSample targetSample, MmtcConfig config, Integer sclk_kernel_fine_tick_modulus) throws MmtcException {
         try {
             boolean passesFilter = true;
 
@@ -111,6 +111,13 @@ public class ContactFilter {
             BigDecimal deltaSclk =
                     new BigDecimal(targetSample.getTkSclkCoarse() - sclk_p);
             BigDecimal deltaTdtG = new BigDecimal(tdtG_c - tdtG_p);
+
+            if (deltaTdtG.compareTo(BigDecimal.ZERO) <= 0) {
+                logger.warn("Contact Filter FAILED: Target Sample at ERT " + targetSample.getErtStr() +
+                        " failed Contact Filter due to not having a TDT later than previous time correlation");
+                return false;
+            }
+
             BigDecimal rate = deltaSclk.divide(deltaTdtG, 12, RoundingMode.HALF_UP);       // deltaSclk/deltaTdtG
             BigDecimal adjrate = rate.subtract(BigDecimal.ONE);                                  // subtract 1
 

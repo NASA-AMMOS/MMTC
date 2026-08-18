@@ -161,6 +161,16 @@ public class GenericCsv {
         }
     }
 
+    public List<String> makeNewEmptyColOfTableSize() {
+        List<String> results = new ArrayList<>();
+
+        for (Map<String, String> row : rows) {
+            results.add("-");
+        }
+
+        return results;
+    }
+
     public String getValAt(int rowNum, String colName) {
         return String.valueOf(rows.get(rowNum).get(colName));
     }

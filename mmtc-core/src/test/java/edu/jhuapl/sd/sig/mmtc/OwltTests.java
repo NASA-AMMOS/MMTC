@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc;
 
+import java.time.OffsetDateTime;
 import java.util.*;
 
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static edu.jhuapl.sd.sig.mmtc.util.Owlt.SPICE_EARTH_CENTER_OF_MASS_ID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -23,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 
 public class OwltTests {
-    private static final int SPICE_EARTH_CENTER_OF_MASS_ID = 399;
     private static final int SPICE_NH_SC_ID = -98;
 
     @BeforeAll
@@ -112,7 +113,7 @@ public class OwltTests {
         $ chronos -setup src/test/resources/nh_kernels/mk/nh_tk_meta_mmtc_test.tm src/test/resources/nh_kernels/lsk/naif0012.tls src/test/resources/nh_kernels/sclk/new-horizons_1454.tsc src/test/resources/nh_kernels/spk/nh_pred_alleph_od124.bsp -SC -98 -from UTC -fromType ERT -to UTC -toType LT -time 2016-300T01:02:03.456
                     18513.011          (UTC/LT)
         */
-        Map<String, Double> mapFromTimesToExpectedOwlts = new HashMap<>();
+        Map<String, Double> mapFromTimesToExpectedOwlts = new TreeMap<>();
         mapFromTimesToExpectedOwlts.put("2015-001T01:02:03.456", 16102.381);
         mapFromTimesToExpectedOwlts.put("2015-101T01:02:03.456", 15977.910);
         mapFromTimesToExpectedOwlts.put("2016-029T01:02:03.456", 17691.616);
@@ -121,13 +122,21 @@ public class OwltTests {
         for (Map.Entry<String, Double> entry : mapFromTimesToExpectedOwlts.entrySet()) {
             final String utcTime = entry.getKey();
             final Double expectedOwlt = entry.getValue();
-            final Double calculatedOwlt = Owlt.getDownlinkOwlt(SPICE_EARTH_CENTER_OF_MASS_ID, SPICE_NH_SC_ID, utcTime);
 
             // ensure that the like-for-like (SC to Earth center of mass) expected OWLT and MMTC-calculated OWLT are within 0.001 sec of each other
             assertEquals(
                     expectedOwlt,
-                    calculatedOwlt,
+                    Owlt.getDownlinkOwlt(SPICE_EARTH_CENTER_OF_MASS_ID, SPICE_NH_SC_ID, utcTime),
                     0.001
+            );
+
+            // test that the SCET + OWLT to the center of Earth are as expected given the chronos output
+            // this delta of 1 sec is because we're calculating the OWLT differently here; we're using the SCET at a time to find the OWLT to the Earth at a later time
+            OffsetDateTime scetUtc = TimeConvert.parseIsoDoyUtcStr(utcTime);
+            assertEquals(
+                    scetUtc.plusNanos((long) (expectedOwlt * TimeConvert.NS_PER_SECOND)).toEpochSecond(),
+                    Owlt.scetToCenterOfEarthErt(scetUtc, SPICE_NH_SC_ID).toEpochSecond(),
+                    1
             );
 
             // as an extra step, ensure that when calculating OWLT to e.g. DSS-63, the result is within .1 second of that calculated from the expected OWLT to the Earth center of mass

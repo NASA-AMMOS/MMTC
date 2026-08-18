@@ -18,19 +18,19 @@ class ChanValsReaderTest extends ChanValTest {
         readerConfigs.add(new ChanValReadConfig("ABC-5555", "eu"));
         readerConfigs.add(new ChanValReadConfig("ABC-9999", "dn"));
 
-        ChanValsReader chanValsReader = new ChanValsReader(config, readerConfigs, TimeConvert.parseIsoDoyUtcStr("2024-031T00:00:00"));
+        TargetScetMultiChanValsReader chanValsReader = new TargetScetMultiChanValsReader(config, readerConfigs, TimeConvert.parseIsoDoyUtcStr("2024-031T00:00:00"));
 
         CSVParser csvRecords = parseCsv("/test-chanvals.csv");
 
         csvRecords.forEach(chanValsReader::read);
 
-        assertEquals(22.0, chanValsReader.getValueFor("ABC-2222"));
-        assertEquals(1.00000001234, chanValsReader.getValueFor("ABC-5555"));
-        assertTrue(Double.isNaN(chanValsReader.getValueFor("ABC-9999")));
+        assertEquals(22.0, chanValsReader.getValueClosestToTargetScetFor("ABC-2222"));
+        assertEquals(1.00000001234, chanValsReader.getValueClosestToTargetScetFor("ABC-5555"));
+        assertTrue(Double.isNaN(chanValsReader.getValueClosestToTargetScetFor("ABC-9999")));
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> chanValsReader.getValueFor("ABC-0000"),
+                () -> chanValsReader.getValueClosestToTargetScetFor("ABC-0000"),
                 "No such channel ID in reader: ABC-0000"
         );
     }

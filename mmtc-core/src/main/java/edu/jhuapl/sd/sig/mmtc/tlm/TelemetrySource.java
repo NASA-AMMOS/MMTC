@@ -1,15 +1,17 @@
 package edu.jhuapl.sd.sig.mmtc.tlm;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
+import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.OffsetDateTimeRange;
+import edu.jhuapl.sd.sig.mmtc.tlm.range.ScetRange;
 import org.apache.commons.cli.Option;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,7 +53,7 @@ public interface TelemetrySource {
 
     /**
      * This method is called when MMTC configuration has been fully initialized and validated, and provides a chance for
-     * TelemetrySource implementations to save a reference to the entire MMTC edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource instance or parts
+     * TelemetrySource implementations to save a reference to the entire MMTC edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource instance or parts
      * therein.  It also provides an opportunity for TelemetrySource implementations to perform their own initialization or
      * configuration validation before continuing.  A thrown MmtcException from this method will log the issue and
      * prevent further time correlation processing.
@@ -62,7 +64,7 @@ public interface TelemetrySource {
      * <p>
      * This method is called once during an MMTC time correlation invocation, before any correlation processing occurs.
      *
-     * @param config the complete edu.jhuapl.sd.sig.mmtc.cfg.MmtcConfigWithTlmSource that MMTC will use to run, sourced from a TimeCorrelationConfigProperties.xml file
+     * @param config the complete edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfigWithTlmSource that MMTC will use to run, sourced from a TimeCorrelationConfigProperties.xml file
      * @throws MmtcException if there is an issue configuring the TelemetrySource, or another issue that indicates time correlation should not proceed
      */
     void applyConfiguration(MmtcConfigWithTlmSource config) throws MmtcException;
@@ -143,6 +145,55 @@ public interface TelemetrySource {
      */
     default String getActiveRadioId(FrameSample targetSample) { return "-"; }
 
+    final class GncSclkAndTdtSMeasurement {
+        // these are downlinked samples of the input (GNC SCLK) & output (TDT(S)) of running the above GNC time conversion (onboard the spacecraft)
+        // these should be captured by FSW, and retrieved from telemetry, in coherent/simultaneous sets/pairs, such that any tdt_s value is the result of converting the gncsclk value
+        private double gncsclk;
+        private double tdt_s;
+        private OffsetDateTime commonScetForGncSclkAndTdtS;
+
+        public GncSclkAndTdtSMeasurement() {
+            this.gncsclk     = Double.NaN;
+            this.tdt_s       = Double.NaN;
+            this.commonScetForGncSclkAndTdtS = null;
+        }
+
+        public double getGncSclk()        { return gncsclk; }
+        public double getTdt_s()       { return tdt_s;}
+        public OffsetDateTime getCommonScetForGncSclkAndTdtS() { return commonScetForGncSclkAndTdtS; }
+
+        public void setGncsclk(double gncsclk) {
+            this.gncsclk = gncsclk;
+        }
+        public void setTdt_s(double tdt_s) {
+            this.tdt_s = tdt_s;
+        }
+        public void setCommonScetForGncSclkAndTdtS(OffsetDateTime commonScet) {
+            this.commonScetForGncSclkAndTdtS = commonScet;
+        }
+
+        @Override
+        public String toString() {
+            return "GncSclkAndTdtSMeasurement{" +
+                    "gncsclk=" + gncsclk +
+                    ", tdt_s=" + getTdt_s() +
+                    ", commonScetForGncSclkAndTdtS=" + getCommonScetForGncSclkAndTdtS() +
+                    '}';
+        }
+
+        public boolean isEmpty() {
+            return Stream.of(gncsclk, tdt_s).allMatch(d -> Double.isNaN(d));
+        }
+
+        public GncParms toGncParms() {
+            GncParms gncParms = new GncParms();
+            gncParms.setGncsclk(this.gncsclk);
+            gncParms.setTdt_s(this.tdt_s);
+            gncParms.setCommonScetForGncSclkAndTdtS(this.commonScetForGncSclkAndTdtS);
+            return gncParms;
+        }
+    }
+
     /**
      * Container class for TDT(S) and the related GNC parameters used to compute it onboard.
      */
@@ -157,10 +208,12 @@ public interface TelemetrySource {
         // these should be captured by FSW, and retrieved from telemetry, in coherent/simultaneous sets/pairs, such that any tdt_s value is the result of converting the gncsclk value
         private double gncsclk;
         private double tdt_s;
+        private OffsetDateTime commonScetForGncSclkAndTdtS;
 
         public GncParms() {
             this.gncsclk     = Double.NaN;
             this.tdt_s       = Double.NaN;
+            this.commonScetForGncSclkAndTdtS = null;
             this.sclk1       = Double.NaN;
             this.tdt1        = Double.NaN;
             this.clkchgrate1 = Double.NaN;
@@ -168,6 +221,7 @@ public interface TelemetrySource {
 
         public double getGncSclk()        { return gncsclk; }
         public double getTdt_s()       { return tdt_s;}
+        public OffsetDateTime getCommonScetForGncSclkAndTdtS() { return commonScetForGncSclkAndTdtS; }
         public double getSclk1()       { return sclk1; }
         public double getTdt1()        { return tdt1; }
         public double getClkchgrate1() { return clkchgrate1; }
@@ -177,6 +231,9 @@ public interface TelemetrySource {
         }
         public void setTdt_s(double tdt_s) {
             this.tdt_s = tdt_s;
+        }
+        public void setCommonScetForGncSclkAndTdtS(OffsetDateTime commonScet) {
+            this.commonScetForGncSclkAndTdtS = commonScet;
         }
         public void setSclk1(double sclk1) {
             this.sclk1 = sclk1;
@@ -208,6 +265,18 @@ public interface TelemetrySource {
      */
     default GncParms getGncTkParms(OffsetDateTime noEarlierThanScet, Double noEarlierThanTdtS) {
         return new GncParms();
+    }
+
+    /**
+     * Function to return TDT(S), and the GNC parameters and SCLK value used to compute it onboard.  Returned values
+     * should have been recorded at a SCET deemed 'close enough' to (but not after) the time correlation's SCET,
+     * by the TelemetrySource implementation and/or mission.
+     *
+     * @param scetRange
+     * @return the GNC parameter values within the given SCET range
+     */
+    default List<GncSclkAndTdtSMeasurement> getGncTelemetryPoints(ScetRange scetRange) throws IOException {
+        return Arrays.asList();
     }
 
     final class AdditionalOption {

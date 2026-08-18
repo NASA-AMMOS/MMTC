@@ -4,11 +4,16 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
+import edu.jhuapl.sd.sig.mmtc.tlm.TlmUtils;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -18,6 +23,8 @@ import java.util.*;
  * computed values, along with some raw telemetry.
  */
 public class TimeHistoryFile extends AbstractTimeCorrelationTable {
+    private static final Logger logger = LogManager.getLogger();
+
     public static final String TARGET_FRAME_ENC_SCLK = "Enc_SCLK";
     public static final String TARGET_FRAME_SCLK_COARSE = "Int_SCLK";
     public static final String TDT_G = "TDT(G)";
@@ -56,6 +63,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
     public static final String TDT_S_ERROR = "TDT(S)_Error(ms)";
     public static final String SCLK_FOR_TDT_S = "SCLK_for_TDT(S)";
     public static final String TDT_S_ERROR_WARNING_THRESHOLD = "TDT(S)ErrorWarningThreshold(ms)";
+    public static final String TDT_S_ERROR_THRESHOLD_PREDICTION = "TDT(S) Error Warning Threshold Predicted Violation Time SCET (UTC)";
     public static final String SCLK_1 = "SCLK1";
     public static final String TDT_1 = "TDT1";
     public static final String TDT_1_STRING = "TDT1_Calendar";
@@ -101,6 +109,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
             TDT_S_ERROR,
             SCLK_FOR_TDT_S,
             TDT_S_ERROR_WARNING_THRESHOLD,
+            TDT_S_ERROR_THRESHOLD_PREDICTION,
             SCLK_1,
             TDT_1,
             TDT_1_STRING,
@@ -310,6 +319,58 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         oscTempFormat.setRoundingMode(RoundingMode.HALF_UP);
         oscTempFormat.setGroupingUsed(false);                       // Prevents unwanted addition of commas in large numbers
         newThfRec.setValue(TimeHistoryFile.OSCILLATOR_TEMP_DEGC,      oscTempFormat.format(ctx.ancillary.oscillator_temperature_deg_c.get()));
+
+        setTdtSErrorThresholdPrediction(ctx, timeHistoryFile, newThfRec, equivalent_scet_utc_for_tdt_g_iso_doy);
+    }
+
+    private static void setTdtSErrorThresholdPrediction(TimeCorrelationContext ctx, TimeHistoryFile timeHistoryFile, TableRecord newThfRec, String equivalent_scet_utc_for_tdt_g_iso_doy) throws MmtcException, TimeConvertException {
+        if (! ctx.config.getTdtSErrorWarningThresholdMs().isPresent()) {
+            logger.info("Not calculating predicted threshold violation time, as TDT(S) Error Warning threshold is not set.");
+            return;
+        }
+
+        if (! Files.exists(timeHistoryFile.getPath())) {
+            logger.info("Not calculating predicted threshold violation time, as no prior Time History File exists for a basis to trend TDT(S) Error against.");
+            return;
+        }
+
+        // todo have adjustable lookback minimum?
+        final Optional<CSVRecord> maybeTdtSLookbackRec = timeHistoryFile.getLatestRowWithValueInColumn(TDT_S_ERROR);
+
+        if (! maybeTdtSLookbackRec.isPresent()) {
+            logger.info("Not calculating predicted threshold violation time, as no prior TDT(S) Error value in the Time History File exists to trend against.");
+            return;
+        }
+        final CSVRecord tdtsLookbackRec = maybeTdtSLookbackRec.get();
+
+        if (! ctx.ancillary.gnc.tdt_s_error_ms.isSet()) {
+            logger.info("Not calculating predicted threshold violation time, as no TDT(S) value was computed during this correlation run.");
+            return;
+        }
+
+        final TlmUtils.TrendingAndThresholdInformation tdtSErrorTrendingInfo = TlmUtils.estimateTimeAtWhichThresholdWillBeViolated(
+                new TlmUtils.TlmPoint(
+                        TimeConvert.parseIsoDoyUtcStr(tdtsLookbackRec.get(SCET_UTC)),
+                        new BigDecimal(tdtsLookbackRec.get(TDT_S_ERROR))
+                ),
+                new TlmUtils.TlmPoint(
+                        TimeConvert.parseIsoDoyUtcStr(equivalent_scet_utc_for_tdt_g_iso_doy),
+                        new BigDecimal(ctx.ancillary.gnc.tdt_s_error_ms.get())
+                ),
+                ctx.config.getTdtSErrorWarningThresholdMs().get()
+        );
+
+        if (tdtSErrorTrendingInfo.expectedScetAtWhichThresholdWillBeViolated.isPresent()) {
+            newThfRec.setValue(
+                    TDT_S_ERROR_THRESHOLD_PREDICTION,
+                    TimeConvert.timeToIsoUtcString(tdtSErrorTrendingInfo.expectedScetAtWhichThresholdWillBeViolated.get())
+            );
+        } else {
+            newThfRec.setValue(
+                    TDT_S_ERROR_THRESHOLD_PREDICTION,
+                    "-"
+            );
+        }
     }
 
     /**
@@ -322,7 +383,6 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         generateNewTimeHistRec(ctx, timeHistoryFile, newThfRec);
         timeHistoryFile.writeRecord(newThfRec);
     }
-
 
     public static int computeInsertIndex(String columnName, List<String> excluded) {
         int canonicalPos = DEFAULT_COLUMNS.indexOf(columnName);

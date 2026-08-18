@@ -1,8 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.tlmplugin.ampcs;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.filter.ConsecutiveMasterChannelFrameFilter;
 import edu.jhuapl.sd.sig.mmtc.filter.TimeCorrelationFilter;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -159,7 +159,7 @@ public class AmpcsTlmArchiveTests {
 
                 assertThrows(
                         NoSuchElementException.class,
-                        () -> tlm.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop())
+                        () -> tlm.getSamplesInRange(config.getResolvedTargetSampleErtRange().get().getStart(), config.getResolvedTargetSampleErtRange().get().getStop())
                 );
             }
         }
@@ -183,7 +183,7 @@ public class AmpcsTlmArchiveTests {
 
                 assertThrows(
                         MmtcException.class,
-                        () -> tlm.getSamplesInRange(config.getResolvedTargetSampleRange().get().getStart(), config.getResolvedTargetSampleRange().get().getStop()),
+                        () -> tlm.getSamplesInRange(config.getResolvedTargetSampleErtRange().get().getStart(), config.getResolvedTargetSampleErtRange().get().getStop()),
                         "AmpcsTlmArchive requires a positive packet header fine SCLK modulus to be set"
                 );
             }

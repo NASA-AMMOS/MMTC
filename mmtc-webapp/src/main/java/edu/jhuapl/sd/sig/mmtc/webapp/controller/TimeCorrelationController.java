@@ -1,8 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.webapp.controller;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.app.TimeCorrelationApp;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationApp;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.AncillaryInfo;
 import edu.jhuapl.sd.sig.mmtc.correlation.CorrelationInfo;
 import edu.jhuapl.sd.sig.mmtc.correlation.GeometryInfo;
@@ -22,7 +22,6 @@ import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfigRequest;
 import edu.jhuapl.sd.sig.mmtc.webapp.config.NewTimeCorrelationConfigRequestPreview;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.OutputProductService;
 import edu.jhuapl.sd.sig.mmtc.webapp.service.TelemetryService;
-import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

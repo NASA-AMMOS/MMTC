@@ -67,6 +67,10 @@ public class SclkKernel extends TextKernel {
         return getCoefficientsSection().getTriplets();
     }
 
+    public String getFormattedLastTriplet() throws Exception {
+        return getLastTriplet().format(getCoefficientsFormat());
+    }
+
     public SclkKernel withUpdatedTextField(String fieldName, String fieldVal) {
         List<KernelSection> newSections = new ArrayList<>();
 

@@ -1,8 +1,9 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationCliInputConfig;
-import edu.jhuapl.sd.sig.mmtc.cfg.TimeCorrelationRunConfig;
+import edu.jhuapl.sd.sig.mmtc.app.MmtcSuccessfulExitException;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationCliInputConfig;
+import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.CachingTelemetrySource;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
@@ -42,14 +43,14 @@ public class TelemetryCacheUserOperations {
         if (cmdLine.hasOption("h") || cmdLine.hasOption("help")) {
             final HelpFormatter help = new HelpFormatter();
             final String helpFooter = "\nPrepares ('warms') the MMTC telemetry cache, covering the specified time range.";
-            help.printHelp("mmtc precache [telemetry source options] <start-time> <stop-time>", "", opts, helpFooter);
-            System.exit(0);
+            help.printHelp("mmtc precache [tlm source options...] <start-time> <stop-time>", "", opts, helpFooter);
+            throw new MmtcSuccessfulExitException();
         }
 
         final TimeCorrelationRunConfig config = new TimeCorrelationRunConfig(new TimeCorrelationCliInputConfig(args));
 
-        final OffsetDateTime startTime = config.getResolvedTargetSampleRange().get().getStart();
-        final OffsetDateTime stopTime = config.getResolvedTargetSampleRange().get().getStop();
+        final OffsetDateTime startTime = config.getResolvedTargetSampleErtRange().get().getStart();
+        final OffsetDateTime stopTime = config.getResolvedTargetSampleErtRange().get().getStop();
 
         logger.info(String.format("Querying and caching telemetry from %s to %s...", startTime, stopTime));
         try {

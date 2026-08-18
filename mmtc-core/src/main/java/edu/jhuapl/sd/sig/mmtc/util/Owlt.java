@@ -1,7 +1,8 @@
 package edu.jhuapl.sd.sig.mmtc.util;
 
 import spice.basic.*;
-import java.util.Map;
+
+import java.time.OffsetDateTime;
 
 /**
  * <P>The OWLT class is a static class that provides functions to compute the
@@ -38,27 +39,27 @@ import java.util.Map;
  * </ul>
  */
 public class Owlt {
+    public static final int SPICE_EARTH_CENTER_OF_MASS_ID = 399;
+
     /**
      * Computes the downlink one-way light travel time (OWLT) between a spacecraft and an
-     * Earth ground station in seconds. This value is computed for the given ground time
+     * Earth ground station or body in seconds. This value is computed for the given ground time
      * in Ephemeris Time (ET) seconds of the J2000 epoch. ET is equivalent to Barycentric
      * Dynamical Time (TDB).
      *
-     * @param groundStation IN NAIF ground station name
+     * @param groundStationOrBody IN NAIF ground station name or body name
      * @param naifScId      IN NAIF spacecraft ID
      * @param groundTimeEt  IN ground time for which OWLT is to be computed in ET
      * @return the OWLT in seconds
      * @throws TimeConvertException when a SPICE error occurs
      */
-    public static Double getDownlinkOwlt(int groundStation, int naifScId, Double groundTimeEt)
-            throws TimeConvertException {
-
+    public static Double getDownlinkOwlt(int groundStationOrBody, int naifScId, Double groundTimeEt) throws TimeConvertException {
         double et = groundTimeEt;
         double[] ettarg = new double[1];
         double[] elapsed = new double[1];
 
         try {
-            CSPICE.ltime(et, groundStation, "<-", naifScId, ettarg, elapsed);
+            CSPICE.ltime(et, groundStationOrBody, "<-", naifScId, ettarg, elapsed);
 
         } catch (SpiceErrorException e) {
             throw new TimeConvertException("Error computing one-way light travel time for double time type: " + e.getMessage(), e);
@@ -70,19 +71,17 @@ public class Owlt {
 
     /**
      * Computes the downlink one-way light travel time (OWLT) between a spacecraft and an
-     * Earth ground station in seconds. This value is computed for the given ground time
+     * Earth ground station or body in seconds. This value is computed for the given ground time
      * in UTC which is to be provided in ISO form yyyy-doyThh:mm:ss.ssssss or
      * form yyyy-mm-ddThh:mm:ss.ssssss.
      *
-     * @param groundStation  IN NAIF ground station name
+     * @param groundStationOrBody  IN NAIF ground station name
      * @param naifScId       IN NAIF spacecraft ID
      * @param groundTimeUtc  IN ground time for which OWLT is to be computed in UTC
      * @return the OWLT in seconds
      * @throws TimeConvertException when a SPICE error occurs
      */
-    public static Double getDownlinkOwlt(Integer groundStation, int naifScId, String groundTimeUtc)
-            throws TimeConvertException {
-
+    public static Double getDownlinkOwlt(Integer groundStationOrBody, int naifScId, String groundTimeUtc) throws TimeConvertException {
         double et;
 
         try {
@@ -91,6 +90,32 @@ public class Owlt {
             throw new TimeConvertException("Error computing UTC to ET for one-way light travel time for string time type: " + e.getMessage(), e);
         }
 
-        return getDownlinkOwlt(groundStation, naifScId, et);
+        return getDownlinkOwlt(groundStationOrBody, naifScId, et);
+    }
+
+    // approximate because it is from the center of Earth, not a ground station
+    // only for telemetry querying, not time correlation math
+    public static OffsetDateTime scetToCenterOfEarthErt(OffsetDateTime scetUtc, int naifScId) throws TimeConvertException {
+        double scetEt;
+
+        try {
+            scetEt = CSPICE.str2et(TimeConvert.timeToIsoUtcString(scetUtc, 9));
+        } catch (SpiceErrorException e) {
+            throw new TimeConvertException("Error computing UTC to ET for one-way light travel time for string time type: " + e.getMessage(), e);
+        }
+
+        double[] ettarg = new double[1];
+        double[] elapsed = new double[1];
+
+        try {
+            CSPICE.ltime(scetEt, naifScId, "->", SPICE_EARTH_CENTER_OF_MASS_ID, ettarg, elapsed);
+
+        } catch (SpiceErrorException e) {
+            throw new TimeConvertException("Error computing one-way light travel time for double time type: " + e.getMessage(), e);
+        }
+
+        double ertEt = scetEt + elapsed[0];
+
+        return TimeConvert.tdtToUtc(TimeConvert.etToTdt(ertEt), 9);
     }
 }
