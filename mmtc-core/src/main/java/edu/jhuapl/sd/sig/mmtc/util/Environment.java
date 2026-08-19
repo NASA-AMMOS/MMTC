@@ -14,7 +14,10 @@ public class Environment {
 					new String[]{"/usr/bin/kill", "-0", pid} // kill -0 returns exit code 0 if process exists, doesn't send any signals
 			);
 			return process.waitFor() == 0;
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
+			return true;
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 			return true;
 		}
 	}
