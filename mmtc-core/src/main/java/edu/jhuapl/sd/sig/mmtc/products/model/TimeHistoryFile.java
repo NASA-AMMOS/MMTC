@@ -4,14 +4,22 @@ import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import edu.jhuapl.sd.sig.mmtc.products.definition.util.ProductWriteResult;
 import edu.jhuapl.sd.sig.mmtc.tlm.FrameSample;
+import edu.jhuapl.sd.sig.mmtc.tlm.TlmUtils;
+import edu.jhuapl.sd.sig.mmtc.util.Pair;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
+import org.apache.commons.csv.CSVRecord;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+
+import static edu.jhuapl.sd.sig.mmtc.util.TimeConvert.now;
 
 /**
  * Represents an instance of the Time History File, which consists mostly of
@@ -54,6 +62,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
     public static final String TDT_S = "TDT(S)";
     public static final String TDT_S_STR = "TDT(S)_Calendar";
     public static final String TDT_S_ERROR = "TDT(S)_Error(ms)";
+    public static final String TDT_S_ERROR_THRESHOLD_PREDICTION = "TDT(S) Error Warning Threshold Violation Time SCET (UTC)";
     public static final String SCLK_FOR_TDT_S = "SCLK_for_TDT(S)";
     public static final String TDT_S_ERROR_WARNING_THRESHOLD = "TDT(S)ErrorWarningThreshold(ms)";
     public static final String SCLK_1 = "SCLK1";
@@ -99,6 +108,7 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
             TDT_S,
             TDT_S_STR,
             TDT_S_ERROR,
+            TDT_S_ERROR_THRESHOLD_PREDICTION,
             SCLK_FOR_TDT_S,
             TDT_S_ERROR_WARNING_THRESHOLD,
             SCLK_1,
@@ -310,6 +320,31 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         oscTempFormat.setRoundingMode(RoundingMode.HALF_UP);
         oscTempFormat.setGroupingUsed(false);                       // Prevents unwanted addition of commas in large numbers
         newThfRec.setValue(TimeHistoryFile.OSCILLATOR_TEMP_DEGC,      oscTempFormat.format(ctx.ancillary.oscillator_temperature_deg_c.get()));
+
+        // todo have adjustable minimum lookback minimum?
+        if (ctx.ancillary.gnc.tdt_s_error_ms.isSet() && ctx.config.getTdtSErrorWarningThresholdMs().isPresent()) {
+            Optional<CSVRecord> maybeTdtSLookbackRec = timeHistoryFile.getLatestRowWithValueInColumn(TDT_S_ERROR);
+            if (maybeTdtSLookbackRec.isPresent()) {
+                CSVRecord tdtsLookbackRec = maybeTdtSLookbackRec.get();
+
+                OffsetDateTime timeOfThresholdViolation = TlmUtils.estimateTimeAtWhichThresholdWillBeViolated(
+                        new TlmUtils.TlmPoint(
+                                TimeConvert.parseIsoDoyUtcStr(tdtsLookbackRec.get(SCET_UTC)),
+                                Double.parseDouble(tdtsLookbackRec.get(TDT_S_ERROR))
+                        ),
+                        new TlmUtils.TlmPoint(
+                                TimeConvert.parseIsoDoyUtcStr(equivalent_scet_utc_for_tdt_g_iso_doy),
+                                ctx.ancillary.gnc.tdt_s_error_ms.get()
+                        ),
+                        ctx.config.getTdtSErrorWarningThresholdMs().get()
+                );
+
+                newThfRec.setValue(
+                        TDT_S_ERROR_THRESHOLD_PREDICTION,
+                        TimeConvert.timeToIsoUtcString(timeOfThresholdViolation)
+                );
+            }
+        }
     }
 
     /**
@@ -322,7 +357,6 @@ public class TimeHistoryFile extends AbstractTimeCorrelationTable {
         generateNewTimeHistRec(ctx, timeHistoryFile, newThfRec);
         timeHistoryFile.writeRecord(newThfRec);
     }
-
 
     public static int computeInsertIndex(String columnName, List<String> excluded) {
         int canonicalPos = DEFAULT_COLUMNS.indexOf(columnName);

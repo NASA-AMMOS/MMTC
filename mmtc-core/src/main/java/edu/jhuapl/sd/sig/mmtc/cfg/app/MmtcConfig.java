@@ -1613,11 +1613,23 @@ public class MmtcConfig {
     }
 
     public double getAutocorrelateScetErrorTriggerThreshold() {
-        return Double.parseDouble(getString("autocorrelate.trigger.scetError.threshold"));
+        return getDouble("autocorrelate.trigger.scetError.threshold");
     }
 
     public double getAutocorrelateScetErrorAdvancementDurationHours() {
-        return Double.parseDouble(getString("autocorrelate.trigger.scetError.advancementDurationHours"));
+        return getDouble("autocorrelate.trigger.scetError.advancementDurationHours");
+    }
+
+    public boolean isTrendingHtmlReportEnabled() {
+        return containsKey("trending.report.html.path");
+    }
+
+    public Path getTrendingHtmlReportOutputPath() {
+        return Paths.get(getString("trending.report.html.path"));
+    }
+
+    public double getTrendingScetErrorThreshold() {
+        return getDouble("trending.scetErrorThresholdMs");
     }
 
     private List<String> checkForMissingKeysInGroup(List<String> requiredKeys) {

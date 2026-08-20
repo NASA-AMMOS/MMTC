@@ -10,11 +10,7 @@ import org.apache.commons.csv.CSVRecord;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class AbstractTimeCorrelationTable {
     public static final String RUN_TIME = "Run Time";
@@ -90,6 +86,26 @@ public abstract class AbstractTimeCorrelationTable {
         else {
             return Collections.emptyMap();
         }
+    }
+
+    public List<CSVRecord> getAllRows() throws MmtcException {
+        // Load the table to set up the parser object
+        resetParser();
+
+        return parser.getRecords();
+    }
+
+    public Optional<CSVRecord> getLatestRowWithValueInColumn(String colName) throws MmtcException {
+        for (CSVRecord row : getAllRows()) {
+            if (row.isSet(colName)) {
+                String val = row.get(colName);
+                if (val != null && (!val.isEmpty()) && (!val.equals("-"))) {
+                    return Optional.of(row);
+                }
+            }
+        }
+
+        return Optional.empty();
     }
 
     /**
@@ -303,4 +319,5 @@ public abstract class AbstractTimeCorrelationTable {
     public Path getPath() {
         return file.toPath();
     };
+
 }

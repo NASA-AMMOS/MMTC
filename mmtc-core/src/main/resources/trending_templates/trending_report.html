@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2rem;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1>${title}</h1>
+    <ul>
+        <li>
+            ${ctx.statsSinceLastCorrelation.numSamplesTrended} samples since prior correlation in ${ctx.statsSinceLastCorrelation.currentSclkKernelDescription}, ${ctx.statsSinceLastCorrelation.currentSclkKernelLastTripletAgeDays} days ago.
+        </li>
+    </ul>
+    <h2>Trending Statistics:</h2>
+    <h3>SCET Prediction Error</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Prior SCET (UTC)</td>
+                <td>${ctx.statsSinceLastCorrelation.priorScetUtcForSclkToScetErrorMsCalc}</td>
+            </tr>
+            <tr>
+                <td>Prior SCET (UTC) prediction error</td>
+                <td>${ctx.statsSinceLastCorrelation.priorSclkToScetErrorMs}</td>
+            </tr>
+            <tr>
+                <td>Latest SCET (UTC)</td>
+                <td>${ctx.statsSinceLastCorrelation.latestScetUtcForSclkToScetErrorMsCalc}</td>
+            </tr>
+            <tr>
+                <td>Latest SCET (UTC) prediction error</td>
+                <td>${ctx.statsSinceLastCorrelation.latestSclkToScetErrorMs}</td>
+            </tr>
+            <tr>
+                <td>Configured SCET prediction error threshold</td>
+                <td>${ctx.config.trendingScetErrorThreshold}</td>
+            </tr>
+            <tr>
+                <td>Estimated time at which error will exceed threshold</td>
+                <td>${ctx.statsSinceLastCorrelation.estimatedTimeAtWhichScetErrorThresholdWillBeReached}</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

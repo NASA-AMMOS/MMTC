@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.trending;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.tlm.TlmUtils;
 import edu.jhuapl.sd.sig.mmtc.trending.config.TrendingConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationTarget;
 import edu.jhuapl.sd.sig.mmtc.filter.ContactFilter;
@@ -16,18 +17,22 @@ import edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache.OffsetDateTimeRange;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.SamplingTelemetrySelectionStrategy;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.TelemetrySelectionStrategy;
 import edu.jhuapl.sd.sig.mmtc.tlm.selection.WindowingTelemetrySelectionStrategy;
+import edu.jhuapl.sd.sig.mmtc.trending.report.HtmlReport;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvertException;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import spice.basic.SpiceErrorException;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
@@ -85,33 +90,53 @@ public class TrendingApp {
 
         calculateStatsSinceLastCorrelation();
 
-        // get SCLK-SCET error since last correlation, and subtract it from last correlation
-        // get SCLK-SCET
-        // ctx.statsSinceLastCorrelation.
-
+        generateReports();
     }
-    
+
+    private void generateReports() throws IOException {
+        if (config.isTrendingHtmlReportEnabled()) {
+            new HtmlReport(config, ctx).write();
+        }
+    }
+
     private void calculateStatsSinceLastCorrelation() throws Exception {
         final List<FrameSampleAndMetrics> trendingTelemetry = ctx.trendingTelemetry.get();
 
-/*
-        OffsetDateTime lastCorrelationUtc = TimeConvert.tdtToUtc(ctx.currentSclkKernel.get().getLastTriplet().getTdt(), 6);
-        ctx.statsSinceLastCorrelation.currentSclkKernelDescription.set(config.getInputSclkKernelPath().getFileName().toString());
+        final TrendingStatsSinceLastCorrelation stats = ctx.statsSinceLastCorrelation;
 
-        ctx.statsSinceLastCorrelation.currentSclkKernelLastTripletAgeDays.set(
+        stats.numSamplesTrended.set(trendingTelemetry.size());
+
+        OffsetDateTime lastCorrelationUtc = TimeConvert.tdtToUtc(ctx.currentSclkKernel.get().getLastTriplet().getTdt(), 6);
+        stats.currentSclkKernelDescription.set(config.getInputSclkKernelPath().getFileName().toString());
+
+        stats.currentSclkKernelLastTripletAgeDays.set(
                 Duration.between(
                         lastCorrelationUtc,
                         ctx.appRunTime
-                ).toDays()
+                ).toMinutes() / (60.0 * 24.0)
         );
-        ctx.lastCorrelationUtc.ertUtcForPriorCorrelation(lastCorrelationUtc);
 
-        final FrameSampleAndMetrics mostRecentUsablePoint = trendingTelemetry.get(trendingTelemetry.size() - 1);
-        ctx.statsSinceLastCorrelation.
+        // todo have adjustable minimum lookback for SCET error calc timeframe?
 
+        stats.priorScetUtcForSclkToScetErrorMsCalc.set(trendingTelemetry.get(0).metrics.scetUtc);
+        stats.priorSclkToScetErrorMs.set(trendingTelemetry.get(0).metrics.getScetErrorMs());
 
- */
+        stats.latestScetUtcForSclkToScetErrorMsCalc.set(trendingTelemetry.get(trendingTelemetry.size() - 1).metrics.scetUtc);
+        stats.latestSclkToScetErrorMs.set(trendingTelemetry.get(trendingTelemetry.size() - 1).metrics.getScetErrorMs());
 
+        OffsetDateTime timeOfScetErrorThresholdViolation = TlmUtils.estimateTimeAtWhichThresholdWillBeViolated(
+                new TlmUtils.TlmPoint(
+                        stats.priorScetUtcForSclkToScetErrorMsCalc.get(),
+                        stats.priorSclkToScetErrorMs.get()
+                ),
+                new TlmUtils.TlmPoint(
+                        stats.latestScetUtcForSclkToScetErrorMsCalc.get(),
+                        stats.latestSclkToScetErrorMs.get()
+                ),
+                ctx.config.getTrendingScetErrorThreshold()
+        );
+
+        stats.estimatedTimeAtWhichScetErrorThresholdWillBeReached.set(timeOfScetErrorThresholdViolation);
     }
 
     private void setTrendingPeriod() throws TimeConvertException {
