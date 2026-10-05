@@ -14,6 +14,8 @@ import org.quartz.impl.StdSchedulerFactory;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
+import static edu.jhuapl.sd.sig.mmtc.app.MmtcCli.USER_NOTICE;
+
 public class AutomationApp {
     private static final Logger logger = LogManager.getLogger();
 
@@ -28,7 +30,7 @@ public class AutomationApp {
     }
 
     public void run() throws SchedulerException {
-        logger.info("AutomationApp initialization starting...");
+        logger.info(USER_NOTICE, "AutomationApp initialization starting...");
 
         final Properties quartzProps = new Properties();
         quartzProps.setProperty("org.quartz.scheduler.instanceName", "MmtcAutoScheduler");
@@ -38,7 +40,7 @@ public class AutomationApp {
         final Scheduler scheduler = new StdSchedulerFactory(quartzProps).getScheduler();
 
         if (config.getAutomationConfig().autocorrelate.isEnabled) {
-            logger.info("Scheduling autocorrelate job");
+            logger.info(USER_NOTICE, "Scheduling autocorrelate job");
 
             JobDataMap jobDataMap = new JobDataMap();
             jobDataMap.put("automationAppConfig", this.config);
@@ -52,7 +54,7 @@ public class AutomationApp {
         }
 
         if (config.getAutomationConfig().trending.isEnabled) {
-            logger.info("Scheduling trending job");
+            logger.info(USER_NOTICE, "Scheduling trending job");
 
             JobDataMap jobDataMap = new JobDataMap();
             jobDataMap.put("automationAppConfig", this.config);
@@ -66,7 +68,7 @@ public class AutomationApp {
         }
 
         if (config.getAutomationConfig().autocorrelateAndTrending.isEnabled) {
-            logger.info("Scheduling autocorrelate-and-trending job");
+            logger.info(USER_NOTICE, "Scheduling autocorrelate-and-trending job");
 
             JobDataMap jobDataMap = new JobDataMap();
             jobDataMap.put("automationAppConfig", this.config);
@@ -85,16 +87,19 @@ public class AutomationApp {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
+                logger.info(USER_NOTICE, "Received signal; shutting scheduler down...");
                 // wait for jobs to complete
                 scheduler.shutdown(true);
-            } catch (SchedulerException e) {
+                logger.info(USER_NOTICE, "Scheduler shut down.");
+                config.releaseLockFile();
+            } catch (SchedulerException | MmtcException e) {
                 logger.error(e);
             } finally {
                 shutdownLatch.countDown();
             }
         }));
 
-        logger.info("AutomationApp initialization complete.");
+        logger.info(USER_NOTICE, "AutomationApp initialization complete.");
 
         try {
             shutdownLatch.await();
