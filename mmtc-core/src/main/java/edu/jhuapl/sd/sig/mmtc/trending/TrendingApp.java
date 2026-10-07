@@ -192,8 +192,11 @@ public class TrendingApp {
         scetErrorMetrics.title.set("SCET Error");
         scetErrorMetrics.trendingPeriodId.set("SCET-Error-"+overScetRange.getRangeId());
 
+        // SCET error should only be trended onward from the last SCLK kernel created, so set the min TDT appropriately
+        final double minTdtGExclusive = currentSclkKernelLatestTriplet.getTdt();
+
         TelemetryRetriever tlmRetriever = new TelemetryRetriever(config);
-        final List<FrameSampleAndMetrics> frameSamplesAndMetrics = tlmRetriever.retrieveAllFrameSamplesInRange(getTlmOptions(overScetRange));
+        final List<FrameSampleAndMetrics> frameSamplesAndMetrics = tlmRetriever.retrieveAllFrameSamplesInRange(getTlmOptions(overScetRange, minTdtGExclusive));
 
         if (frameSamplesAndMetrics.isEmpty()) {
             logger.info("No telemetry found over the query period.  Skipping SCET Error statistic calculation.");
@@ -352,7 +355,7 @@ public class TrendingApp {
         return Optional.of(TimeConvert.numDaysBetween(appRunTime, maybeTime.get()));
     }
 
-    private TelemetrySelectionAndAdjustmentOptions getTlmOptions(ScetRange scetRange) throws TimeConvertException {
+    private TelemetrySelectionAndAdjustmentOptions getTlmOptions(ScetRange scetRange, Double minTdtExclusive) throws TimeConvertException {
         final ErtRange ertRange = new ErtRange(
                 Owlt.scetToCenterOfEarthErt(scetRange.getStart(), config.getNaifSpacecraftId()),
                 Owlt.scetToCenterOfEarthErt(scetRange.getStop(), config.getNaifSpacecraftId())
@@ -381,7 +384,7 @@ public class TrendingApp {
 
             @Override
             public Optional<Double> getMinTdtGExclusive() {
-                return Optional.empty();
+                return Optional.of(minTdtExclusive);
             }
 
             @Override
