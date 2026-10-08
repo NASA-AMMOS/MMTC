@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.sandbox.config;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.MmtcSuccessfulExitException;
 import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import org.apache.commons.cli.*;
@@ -26,7 +27,7 @@ public class MmtcSandboxCreatorConfig extends MmtcConfig {
             final HelpFormatter help = new HelpFormatter();
             final String helpFooter = "\nCreates a new MMTC sandbox at the given path, based on the configuration of this MMTC installation.";
             help.printHelp("mmtc create-sandbox <new-sandbox-path>", "", opts, helpFooter);
-            System.exit(0);
+            throw new MmtcSuccessfulExitException();
         }
 
         if (cmdLine.getArgList().size() != 1) {

@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.correlation.config;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcSuccessfulExitException;
 import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.util.TimeConvert;
 import org.apache.commons.cli.*;
@@ -153,7 +154,7 @@ public class CorrelationCliConfig {
             // Print help and exit, regardless of any other arguments
             if (isHelpSet()) {
                 help.printHelp(BASE_CLI_USAGE, opts);
-                System.exit(0);
+                throw new MmtcSuccessfulExitException();
             }
 
             setClockChangeRateMode();

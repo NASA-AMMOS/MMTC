@@ -6,17 +6,16 @@ import edu.jhuapl.sd.sig.mmtc.automation.config.AutomationAppConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.TimeCorrelationContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.quartz.Job;
-import org.quartz.JobDataMap;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+import org.quartz.*;
 
 import java.util.List;
 
 import static edu.jhuapl.sd.sig.mmtc.util.TimeConvert.now;
 
-public class AutocorrelateJob implements Job {
+public class AutocorrelateJob implements InterruptableJob {
     private static final Logger logger = LogManager.getLogger();
+
+    private volatile AutocorrelateApp autocorrelateApp;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -29,7 +28,10 @@ public class AutocorrelateJob implements Job {
         try {
             final AutomationContext ctx = new AutomationContext(automationAppConfig, now());
 
-            List<TimeCorrelationContext> newCorrelations = new AutocorrelateApp().run();
+            autocorrelateApp = new AutocorrelateApp();
+
+            List<TimeCorrelationContext> newCorrelations = this.autocorrelateApp.run();
+
             ctx.timeCorrelationRuns.set(newCorrelations);
             AutomationAppUtils.setAncillaryInfo(automationAppConfig, ctx);
 
@@ -37,6 +39,13 @@ public class AutocorrelateJob implements Job {
         } catch (Exception e) {
             logger.error("AutocorrelateJob encountered an exception", e);
             throw new JobExecutionException(e);
+        }
+    }
+
+    @Override
+    public void interrupt() {
+        if (autocorrelateApp != null) {
+            autocorrelateApp.interrupt();
         }
     }
 }

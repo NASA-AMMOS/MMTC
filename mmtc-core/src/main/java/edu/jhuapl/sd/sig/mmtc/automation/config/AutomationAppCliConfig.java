@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.automation.config;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcSuccessfulExitException;
 import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +44,7 @@ public class AutomationAppCliConfig {
             // Print help and exit, regardless of any other arguments
             if (isHelpSet()) {
                 help.printHelp(BASE_CLI_USAGE, opts);
-                System.exit(0);
+                throw new MmtcSuccessfulExitException();
             }
         } catch (ParseException ex) {
             String msg = "Error parsing command line arguments - Improperly formed command line.";

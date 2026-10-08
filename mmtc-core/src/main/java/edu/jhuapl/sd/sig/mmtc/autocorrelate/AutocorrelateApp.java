@@ -39,6 +39,9 @@ public class AutocorrelateApp {
 
     private final AutocorrelateConfig config;
 
+    // whether this app has been interrupted and should be stopped
+    private volatile boolean interrupted = false;
+
     public AutocorrelateApp(String... args) throws Exception {
         try {
             this.config = new AutocorrelateConfig(new AutocorrelateCliConfig(args));
@@ -60,7 +63,7 @@ public class AutocorrelateApp {
 
         List<TimeCorrelationContext> completedCorrelationRuns = new ArrayList<>();
 
-        while (true) {
+        while (! interrupted) {
             // reconnect to telemetry source
             config.getTelemetrySource().connect();
 
@@ -92,6 +95,10 @@ public class AutocorrelateApp {
                 config.getTelemetrySource().disconnect();
             }
         }
+
+        logger.info("Exiting due to received interrupt.");
+
+        return completedCorrelationRuns;
     }
 
     private Optional<ErtRange> generateNextCorrelationRangeToRun(ErtRange prevRunErtRange, boolean lastRunWasSuccessful) throws Exception {
@@ -263,5 +270,10 @@ public class AutocorrelateApp {
             logger.info("Autocorrelate run failed", e);
             throw e;
         }
+    }
+
+    public void interrupt() {
+        logger.info("Received interrupt");
+        this.interrupted = true;
     }
 }

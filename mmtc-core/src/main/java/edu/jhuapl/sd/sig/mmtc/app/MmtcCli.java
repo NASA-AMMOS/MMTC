@@ -48,7 +48,7 @@ public class MmtcCli {
     private static ApplicationInvocation determineApplicationCommand(String... cliArgs) {
         if (Arrays.asList("-v", "--version").contains(cliArgs[0])) {
             System.out.println(new BuildInfo());
-            System.exit(0);
+            exitWithCode(0);
         }
 
         if (Arrays.asList("-h", "--help").contains(cliArgs[0])) {
@@ -73,7 +73,7 @@ public class MmtcCli {
                     "\n" +
                     "For more information on any of these commands, run: mmtc <command> --help";
             System.out.println(helpMessage);
-            System.exit(0);
+            exitWithCode(0);
         }
 
         try {
@@ -194,14 +194,14 @@ public class MmtcCli {
             }
             default: {
                 logger.fatal("Unrecognized command: " + appInvoc.command);
-                System.exit(1);
+                exitWithCode(1);
 
                 // this return shouldn't be necessary, but prevents a warning on the runCommand call that cmdToCall might not have been initialized
                 return;
             }
         }
 
-        System.exit(runCommand(cfg, cmdToCall));
+        exitWithCode(runCommand(cfg, cmdToCall));
     }
 
     public static int runCommand(MmtcConfig cfg, RunnableCommand command) {
@@ -209,7 +209,7 @@ public class MmtcCli {
             cfg.acquireLockFile();
         } catch (MmtcException e) {
             logger.fatal("Failed to acquire lock file");
-            System.exit(1);
+            exitWithCode(1);
         }
 
         int exitCode;
@@ -237,9 +237,15 @@ public class MmtcCli {
             cfg.releaseLockFile();
         } catch (MmtcException e) {
             logger.fatal("Failed to release lock file");
-            System.exit(1);
+            exitCode = 1;
         }
 
         return exitCode;
+    }
+
+    private static void exitWithCode(int exitCode) {
+        // because we've disabled the log4j2 shutdown hook in the bin/mmtc startup script
+        LogManager.shutdown();
+        System.exit(exitCode);
     }
 }

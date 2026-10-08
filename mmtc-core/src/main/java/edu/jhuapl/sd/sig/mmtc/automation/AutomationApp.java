@@ -87,11 +87,22 @@ public class AutomationApp {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
-                logger.info(USER_NOTICE, "Received signal; shutting scheduler down...");
+                logger.info(USER_NOTICE, "Received signal; stopping app...");
+
+                // interrupt jobs
+                for (JobExecutionContext jobExecutionContext : scheduler.getCurrentlyExecutingJobs()) {
+                    logger.info(USER_NOTICE, String.format("Stopping %s (%s)", jobExecutionContext.getJobDetail().getJobClass().getSimpleName(), jobExecutionContext.getJobDetail().getKey()));
+                    scheduler.interrupt(jobExecutionContext.getFireInstanceId());
+                }
+
                 // wait for jobs to complete
+                logger.info(USER_NOTICE, "Shutting scheduler down...");
                 scheduler.shutdown(true);
                 logger.info(USER_NOTICE, "Scheduler shut down.");
                 config.releaseLockFile();
+
+                // manually shut down log4j2, since we disabled the shutdown hook in the bin/mmtc startup script so we could do it cleanly here after the rest of the logic has finished shutting down
+                LogManager.shutdown();
             } catch (SchedulerException | MmtcException e) {
                 logger.error(e);
             } finally {
