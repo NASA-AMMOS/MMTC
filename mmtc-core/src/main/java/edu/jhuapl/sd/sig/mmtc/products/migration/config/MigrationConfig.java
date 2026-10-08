@@ -1,6 +1,7 @@
 package edu.jhuapl.sd.sig.mmtc.products.migration.config;
 
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.MmtcSuccessfulExitException;
 import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import org.apache.commons.cli.*;
 
@@ -18,7 +19,7 @@ public class MigrationConfig extends MmtcConfig {
             final HelpFormatter help = new HelpFormatter();
             final String helpFooter = "\nInvoke the MMTC migration feature on the console.  Takes no CLI arguments.";
             help.printHelp("mmtc migrate", "", opts, helpFooter);
-            System.exit(0);
+            throw new MmtcSuccessfulExitException();
         }
 
         if (cmdLine.getArgList().size() != 0) {

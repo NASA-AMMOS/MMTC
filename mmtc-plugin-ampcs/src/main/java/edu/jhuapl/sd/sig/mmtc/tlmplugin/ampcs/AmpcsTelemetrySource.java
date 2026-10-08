@@ -602,6 +602,8 @@ public abstract class AmpcsTelemetrySource implements TelemetrySource {
         // Process provides control of native processes started by ProcessBuilder.start and Runtime.exec.
         // getRuntime() returns the runtime object associated with the current Java application.
         String cmds[] = cmd.split(" ");
+
+        // todo consider using `setsid` here, if available in the environment, to give subprocesses a separate process group so ctrl+c in a terminal doesn't simultaneously signal subprocesses along with the main process
         Process p = Runtime.getRuntime().exec(cmds);
 
         // We use an ExecutorService thread pool to concurrently consume both stderr and stdout

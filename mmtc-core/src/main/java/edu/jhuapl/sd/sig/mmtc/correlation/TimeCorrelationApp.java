@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 
 import edu.jhuapl.sd.sig.mmtc.app.BuildInfo;
 import edu.jhuapl.sd.sig.mmtc.app.MmtcException;
+import edu.jhuapl.sd.sig.mmtc.app.MmtcSuccessfulExitException;
 import edu.jhuapl.sd.sig.mmtc.app.TelemetryQualityException;
 import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationCliInputConfig;
 import edu.jhuapl.sd.sig.mmtc.correlation.config.TimeCorrelationRunConfig;
@@ -62,10 +63,11 @@ public class TimeCorrelationApp {
 
             this.managingTlmSourceConnection = true;
             this.config.getTelemetrySource().connect();
+        } catch (MmtcSuccessfulExitException e) {
+            TimeConvert.unloadSpiceKernels();
+            throw e;
         } catch (Exception e) {
-            if (TimeConvert.spiceLibLoaded()) {
-                TimeConvert.unloadSpiceKernels();
-            }
+            TimeConvert.unloadSpiceKernels();
             throw new MmtcException("MMTC correlation initialization failed.", e);
         }
     }
@@ -77,10 +79,11 @@ public class TimeCorrelationApp {
             init();
 
             this.managingTlmSourceConnection = false;
+        } catch (MmtcSuccessfulExitException e) {
+            TimeConvert.unloadSpiceKernels();
+            throw e;
         } catch (Exception e) {
-            if (TimeConvert.spiceLibLoaded()) {
-                TimeConvert.unloadSpiceKernels();
-            }
+            TimeConvert.unloadSpiceKernels();
             throw new MmtcException("MMTC correlation initialization failed.", e);
         }
     }
@@ -340,9 +343,8 @@ public class TimeCorrelationApp {
             if (this.managingTlmSourceConnection) {
                 this.config.getTelemetrySource().disconnect();
             }
-            if (TimeConvert.spiceLibLoaded()) {
-                TimeConvert.unloadSpiceKernels();
-            }
+
+            TimeConvert.unloadSpiceKernels();
         }
     }
 

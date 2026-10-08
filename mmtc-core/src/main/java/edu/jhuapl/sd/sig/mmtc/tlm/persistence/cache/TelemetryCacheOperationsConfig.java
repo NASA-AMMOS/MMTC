@@ -1,5 +1,6 @@
 package edu.jhuapl.sd.sig.mmtc.tlm.persistence.cache;
 
+import edu.jhuapl.sd.sig.mmtc.app.MmtcSuccessfulExitException;
 import edu.jhuapl.sd.sig.mmtc.cfg.app.MmtcConfig;
 import edu.jhuapl.sd.sig.mmtc.tlm.TelemetrySource;
 import org.apache.commons.cli.*;
@@ -20,7 +21,7 @@ public class TelemetryCacheOperationsConfig extends MmtcConfig {
             final HelpFormatter help = new HelpFormatter();
             final String helpFooter = "\nLogs cache statistics from the MMTC telemetry cache.";
             help.printHelp("mmtc cache-stats", "", opts, helpFooter);
-            System.exit(0);
+            throw new MmtcSuccessfulExitException();
         }
     }
 

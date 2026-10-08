@@ -305,7 +305,9 @@ public class TimeConvert {
      * Unload all SPICE kernels.
      */
     public static void unloadSpiceKernels() {
-        KernelDatabase.clear();
+        if (TimeConvert.spiceLibLoaded()) {
+            KernelDatabase.clear();
+        }
     }
 
     /**
