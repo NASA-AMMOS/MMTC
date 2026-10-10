@@ -10,7 +10,7 @@ plugins {
 
 allprojects {
     group = "edu.jhuapl.sd.sig"
-    version = "1.7.0-SNAPSHOT"
+    version = "1.7.0"
 
     repositories {
         maven {
