@@ -98,7 +98,7 @@ Added information on new feature to choose sample set building strategy.
 |Rev H for Rel 1.7.0.
 |Oct 22, 2026
 |Multiple
-|TBD
+|Updates for changes and enhancements to MMTC for 1.7.0, including descriptions of the new trending and autocorrelate commands.
 |===
 
 
@@ -148,10 +148,10 @@ toc::[]
 |===
 
 === Purpose
-The Multi-Mission Time Correlation (MMTC) User’s Guide describes the installation, configuration, and use of the MMTC application. MMTC is intended for inclusion in space mission ground data systems. It is a mission-independent spacecraft time to ground time correlation system. All space missions need to maintain an accurate, and in many cases, an extremely accurate knowledge of time as measured onboard the spacecraft. MMTC provides an automated way of maintaining knowledge of time and produces standard and widely-used time correlation products. This application is normally expected to run in a Mission Operations Center (MOC) or mission support area (MSA.)
+The Multi-Mission Time Correlation (MMTC) User’s Guide describes the installation, configuration, and use of the MMTC application. MMTC is intended for inclusion in space mission ground data systems. It is a mission-independent spacecraft time to ground time correlation system. Many space missions need to maintain accurate knowledge of time as measured onboard the spacecraft. MMTC provides an automated way of establishing and maintaining this knowledge and produces standard and widely-used time correlation products. This application is normally expected to run in a Mission Operations Center (MOC) or mission support area (MSA.)
 
 === Overview
-MMTC is a component of NASA’s Advanced Multi-Mission Operations System (AMMOS). It is intended to run in a MOC or MSA as part of the mission’s Ground Data System (GDS). It functions as a stand-alone system which interfaces to a space mission’s telemetry archive. It does not run in real-time and is not dependent on any other applications.
+MMTC is a component of NASA’s Advanced Multi-Mission Operations System (AMMOS). It is intended to run in a MOC or MSA as part of the mission’s Ground Data System (GDS). It functions as a standalone system which interfaces to a space mission’s telemetry archive. It does not need to be run in real time and is not dependent on any other applications.
 
 === Terminology and Notation
 See glossary in <<appendix_I>>.
@@ -210,9 +210,9 @@ https://doi.org/10.1016/j.pss.2017.02.013
 |===
 
 == Quick Start Guide
-For users who wish to experiment with MMTC's behavior and functionality without investing the time to fully configure and
-implement it for a new mission, an MMTC demo is available in the form of a portable installation that comes packaged with
-example telemetry and configuration from the New Horizons spacecraft in a single .zip file.
+For users who wish to experiment with MMTC's behavior and functionality without investing the time to configure it or
+integrate it into a mission's GDS, an MMTC demo is available in the form of a portable installation that comes packaged with
+example telemetry and configuration from the New Horizons spacecraft in a single zip file.
 
 While this demo can serve as a useful introduction to how MMTC is run and as an example for users writing their own
 configuration files, the demo installation should not be adapted and used as an operational source of time correlation
@@ -389,11 +389,11 @@ circumstances when a time correlation engineer may determine that this is approp
 kernel, which is usually created by hand, normally sets the clock change rate to 1.00000000000.
 
 
-== Installing MMTC
+== Installing or Upgrading MMTC
 
 These are the system requirements to build and/or run MMTC:
 
-* RedHat Enterprise Linux (RHEL) 8
+* RedHat Enterprise Linux (RHEL) 8 or 9
 * Java 8 JDK (build) or JRE (run)
 
 A nominal MMTC installation has the following directory structure and contents:
@@ -404,7 +404,7 @@ A nominal MMTC installation has the following directory structure and contents:
 
 * */conf*
 
-** *log4j2.properties* – configuration parameters for the message logger (see <<Log File>>). This file is specified as an option to the java JRE command itself.
+** *log4j2.xml* – configuration parameters for the message logger (see <<Log File>>). This file is specified as an option to the java JRE command itself.
 ** *properties.dtd* – defines the structure of the XML schema.
 ** *TimeCorrelationConfigProperties.xsd* – the XML schema that defines the time correlation parameters.
 ** *TimeCorrelationConfigProperties.xml* – the time correlation parameters file.
@@ -421,13 +421,15 @@ A nominal MMTC installation has the following directory structure and contents:
 ** This is the directory where output files will be written. This directory is indicated in configuration parameters such as *spice.kernel.sclk.kerneldir* and *product.uplinkCmdFile.outputDir* and can thus be located anywhere in the file system.
 ** A seed SCLK kernel must also be placed here before the first time the MMTC is run.
 
-=== Installing from the RPM
+=== Installing
 
-MMTC is distributed as an RPM for RHEL 8. This is the preferred way of installing MMTC.
+==== Installing from an RPM
+
+MMTC releases include RPMs for RHEL 8 and RHEL 9. This is the preferred way of installing MMTC.
 
 The MMTC RPM is a relocatable RPM; by default, it will install MMTC into /opt/local/mmtc, but this can be overridden with the rpm command’s --prefix flag when installing the RPM.  Installing the RPM produces the aforementioned directory structure and contents at this path.
 
-Note that the MMTC RPM currently does not have special handling for configuration files. [.red]#If configuration files already exist in the conf folder inside the destination directory, the RPM installation will overwrite them.# Before installing the RPM over an existing directory, be sure to back up any custom, modified configurations files (such as TimeCorrelationConfigProperties.xml and log4j2.properties).
+Note that the MMTC RPM currently does not have special handling for configuration files. [.red]#If configuration files already exist in the conf folder inside the destination directory, the RPM installation will overwrite them.# Before installing the RPM over an existing directory, be sure to back up any custom, modified configurations files (such as TimeCorrelationConfigProperties.xml and log4j2.xml).
 
 If a user named “mmtc” does not already exist, the RPM installation will also create the mmtc user and group. All files installed by the RPM are world-readable; however, only the mmtc user and members of the mmtc group can modify configuration files and add or create files (such as new log files or additional telemetry source plugins) in the conf, log, and lib/plugins directories.
 
@@ -438,7 +440,7 @@ After installing the RPM, perform the following steps as needed:
 * Update the configuration files, in particular TimeCorrelationConfigProperties.xml, in the conf folder to suit the mission.
 * Place a seed SCLK kernel file in the output folder.
 
-After upgrading an MMTC installation, run `bin/mmtc migrate` in order to migrate output product structures forward to their new versions, where applicable.  A backup archive in ZIP format will be created, should the prior state of the files be needed.
+After upgrading an MMTC installation, run `bin/mmtc migrate` in order to migrate output product structures forward to their new versions, where applicable.  A backup zip archive will be created to capture the prior state of output files, should they be needed.
 
 MMTC can then be used as desired.  To create a new correlation from the command line, change the working directory to the MMTC installation directory (`/opt/local/mmtc` by default), and then run:
 
@@ -449,7 +451,7 @@ bin/mmtc [options] <start-time> <stop-time>
 
 See the rest of the User’s Guide for detailed command syntax.
 
-=== Installing from a compressed distribution archive
+==== Installing from a compressed distribution archive
 
 MMTC is also distributed as a .zip and a .tar.gz archive file. Either of these methods of installation can be used when RPM installation is not desired or possible.
 
@@ -461,10 +463,10 @@ After the archive file is extracted, some folders and files can be moved elsewhe
 ** Ensure that TimeCorrelationConfigProperties.xml, TimeCorrelationConfigProperties.xsd, and properties.dtd are located in the same folder. Set the *$TK_CONFIG_PATH* environment variable to the path of that folder.
 ** In the TimeCorrelationConfigProperties.xml file, set the *groundStationMap.path* and *sclkPartitionMap.path* properties to specify the paths to GroundStationsMap.csv and SclkPartitionMap.csv, respectively.
 ** In the `bin/mmtc` script, modify the line
-“-Dlog4j.configurationFile=${MMTC_HOME}/conf/log4j2.properties \”
-with the correct path to log4j2.properties.
+“-Dlog4j.configurationFile=${MMTC_HOME}/conf/log4j2.xml \”
+with the correct path to log4j2.xml.
 * The `lib/plugins` folder can be relocated anywhere; simply modify the TimeCorrelationConfigProperties.xml file’s *telemetry.source.pluginDirectory* property to specify the path to the folder.
-* The log folder can be located anywhere; simply modify the log4j2.properties file’s *property.basedir* property to specify the path to the folder.
+* The log folder can be located anywhere; simply modify the log4j2.xml file’s *property.basedir* property to specify the path to the folder.
 * There is no requirement for all output products to be written to the same output folder. Simply ensure that the various output path properties in TimeCorrelationConfigProperties.xml point to the desired output paths.
 
 After upgrading an MMTC installation, run `bin/mmtc migrate` in order to migrate output product structures forward to their new versions, where applicable.  A backup archive in ZIP format will be created, should the prior state of the files be needed.
@@ -478,7 +480,7 @@ bin/mmtc [options] <start-time> <stop-time>
 
 See the rest of the User’s Guide for detailed command syntax.
 
-=== Installing and running MMTC via a container image
+==== Installing and running MMTC via a container image
 
 The project also produces OCI container images, built for use with e.g. podman, Docker, etc.  Two images are produced: one with the MMTC CLI application only, and one with both the CLI application and web application.  These images have MMTC installed under /opt/local/mmtc, with subdirectories matching the 'nominal MMTC installation' description given above.  It is expected that users deploying MMTC with these container images will mount configuration into the container appropriately and configure persistence as desired for logs and output files.
 
@@ -486,19 +488,19 @@ The following example demonstrates running the MMTC CLI from its container image
 
 [source, bash]
 ----
-podman run --it -rm localhost/mmtc:x.y.z 2026-001T00:00:00 2026-007T00:00:00
+podman run --it -rm localhost/mmtc:{revnumber} 2026-001T00:00:00 2026-007T00:00:00
 ----
 
 The following example demonstrates running the MMTC web application from its container image using podman:
 
 [source, bash]
 ----
-podman run --it -rm -p 8080:8080 localhost/mmtc-webapp:x.y.z
+podman run --it -rm -p 8080:8080 localhost/mmtc-webapp:{revnumber}
 ----
 
 See the rest of the User’s Guide for detailed command syntax.
 
-=== Building from source
+==== Building and running from source
 
 MMTC can also be built from source. The MMTC release includes a source distribution bundle that contains a Gradle project to build the MMTC application, as well as sample configuration files and test data.
 
@@ -507,10 +509,6 @@ To build MMTC:
 1. `tar xzf mmtc-{revnumber}.tar.gz`
 2. `cd mmtc-{revnumber}`
 3. `./gradlew clean build`
-
-To build the MMTC RPM, additionally run:
-
-1.	`./gradlew mmtcRpm`
 
 The build automatically produces a Javadoc jar file as well. To examine the Javadoc, extract the jar contents:
 
@@ -540,7 +538,452 @@ Once the environment has been configured, MMTC can be used as desired.  To creat
 bin/mmtc [options] <start-time> <stop-time>
 ----
 
-See the rest of the User’s Guide for detailed command syntax.
+Please see the rest of the User’s Guide for detailed command syntax.
+
+=== Updating
+
+The general process for updating to a new version of MMTC is as follows:
+
+1. Install the new version of MMTC over the current installation, according to method of deployment
+2. Update any configuration in TimeCorrelationConfigProperties.xml as necessary (see the section below)
+3. Migrate your output products forward by running `mmtc migrate`, which will migrate output product structures forward to their new versions, where applicable.  Note that a backup zip archive will be created, should the prior state of the files be needed.
+4. Continue using MMTC as normal
+
+==== Configuration changes
+
+The following table describes the changes to TimeCorrelationConfigProperties.xml introduced in each version of MMTC since 1.6.0.
+
+.TimeCorrelationConfigPropertiesChanges
+[[table2, Table 2: TimeCorrelationConfigProperties.xml changes]]
+[%autowidth]
+|===
+| Change | Prior key name | Key name | Required / Optional | Notes
+5+^|*1.7.0*
+
+|Renamed
+|missionId
+|product.sclkScetFile.missionId
+|optional
+|
+
+|Added
+|N/A
+|product.uplinkCmdFile.writeHeaders
+|optional
+|
+
+|Added
+|N/A
+|product.uplinkCmdFile.versionSuffixMode
+|optional
+|
+
+|Added
+|N/A
+|product.parameterGroupUpdateFile.create
+|optional
+|
+
+|Added
+|N/A
+|product.parameterGroupUpdateFile.path
+|optional
+|
+
+|Renamed
+|telemetry.source.plugin.ampcs.frameSizeBits
+|telemetry.source.plugin.ampcs.defaultFrameSizeBits
+|optional
+|
+
+|Added
+|N/A
+|telemetry.source.plugin.ampcs.frame.vcidFieldName
+|optional
+|
+
+|Added
+|N/A
+|telemetry.source.plugin.ampcs.sessionFilter
+|optional
+|
+
+|Added
+|N/A
+|webapp.leapSecondsKernelPath
+|optional
+|
+
+|Added
+|N/A
+|autocorrelate.trigger.advancementDurationHours
+|optional
+|
+
+|Added
+|N/A
+|autocorrelate.trigger.periodic.enabled
+|optional
+|
+
+|Added
+|N/A
+|autocorrelate.trigger.periodic.minTimeBetweenCorrelationsHours
+|optional
+|
+
+|Added
+|N/A
+|autocorrelate.trigger.scetError.enabled
+|optional
+|
+
+|Added
+|N/A
+|autocorrelate.trigger.scetError.thresholdMs
+|optional
+|
+
+|Added
+|N/A
+|trending.metric.scetError.thresholdMs
+|optional
+|
+
+|Added
+|N/A
+|trending.metric.tdtSError.thresholdMs
+|optional
+|
+
+|Added
+|N/A
+|trending.report.formats.plaintext.enabled
+|optional
+|
+
+|Added
+|N/A
+|trending.report.formats.plaintext.path.directory
+|optional
+|
+
+|Added
+|N/A
+|trending.report.formats.plaintext.path.basename
+|optional
+|
+
+|Added
+|N/A
+|trending.report.formats.plaintext.path.suffix
+|optional
+|
+
+|Added
+|N/A
+|trending.report.formats.html.enabled
+|optional
+|
+
+|Added
+|N/A
+|trending.report.formats.html.path.directory
+|optional
+|
+
+|Added
+|N/A
+|trending.report.formats.html.path.basename
+|optional
+|
+
+|Added
+|N/A
+|trending.report.formats.html.path.suffix
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNDays.enabled
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNDays.numDays
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNDays.scetError.trend
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNDays.scetError.plot
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNDays.tdtSError.trend
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNDays.tdtSError.plot
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNCorrelations.enabled
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNCorrelations.numCorrelations
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNCorrelations.scetError.trend
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNCorrelations.scetError.plot
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNCorrelations.tdtSError.trend
+|optional
+|
+
+|Added
+|N/A
+|trending.report.periods.pastNCorrelations.tdtSError.plot
+|optional
+|
+
+|Added
+|N/A
+|automation.autocorrelate.enabled
+|optional
+|
+
+|Added
+|N/A
+|automation.autocorrelate.runSchedule
+|optional
+|
+
+|Added
+|N/A
+|automation.trending.enabled
+|optional
+|
+
+|Added
+|N/A
+|automation.trending.runSchedule
+|optional
+|
+
+|Added
+|N/A
+|automation.autocorrelate-and-trending.enabled
+|optional
+|
+
+|Added
+|N/A
+|automation.autocorrelate-and-trending.runSchedule
+|optional
+|
+
+
+5+^|*1.6.0*
+
+|Added
+|N/A
+|telemetry.cacheFilePath
+|optional
+|
+
+|Added
+|N/A
+|compute.clkchgrate.mode
+|optional
+|
+
+|Added
+|N/A
+|compute.additionalSmoothingCorrelationRecordInsertion.enabled
+|optional
+|
+
+|Added
+|N/A
+|compute.additionalSmoothingCorrelationRecordInsertion.coarseSclkTickDuration
+|optional
+|
+
+|Added
+|N/A
+|lockfile.path
+|optional
+|
+
+|Added
+|N/A
+|table.timeHistoryFile.create
+|optional
+|
+
+|Added
+|N/A
+|table.timeHistoryFile.oscTempFractionDigits
+|optional
+|
+
+|Added
+|N/A
+|product.plugin.outputProductNames
+|optional
+|
+
+|Added
+|N/A
+|product.archive.directory
+|optional
+|
+
+|Added
+|N/A
+|telemetry.source.plugin.ampcs.additionalChillCliParms
+|optional
+|
+
+|Changed
+|telemetry.tkOscTempWindowSec
+|Same
+|optional
+|Previously was required
+
+|Changed
+|telemetry.tkParmWindowSec
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.source
+|Removed
+|removed
+|Deprecated
+
+|Changed
+|product.sclkScetFile.dir
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.baseName
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.separator
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.suffix
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.scetUtcPrecision
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.datasetId
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.producerId
+|Same
+|optional
+|Previously was required
+
+|Changed
+|table.rawTelemetryTable.uri
+|table.rawTelemetryTable.path
+|required
+|Changed from a URI to a filepath (remove file:// prefix)
+
+|Changed
+|table.summaryTable.uri
+|Removed
+|removed
+|This file is no longer produced by MMTC
+
+|Changed
+|table.timeHistoryFile.uri
+|table.timeHistoryFile.path
+|required
+|Changed from a URI to a filepath (remove file:// prefix)
+
+|Changed
+|table.runHistoryFile.uri
+|table.runHistoryFile.path
+|required
+|Changed from a URI to a filepath (remove file:// prefix)
+
+|Changed
+|product.uplinkCmdFile.create
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.uplinkCmdFile.outputDir
+|Same
+|optional
+|Previously was required
+
+|Changed
+|product.uplinkCmdFile.baseName
+|Same
+|optional
+|Previously was required
+
+|Changed
+|telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri
+|telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path
+|required if using AMPCS
+|Changed from a URI to a filepath (remove file:// prefix)
+
+|===
 
 == Adapting MMTC to a Mission
 
@@ -589,23 +1032,47 @@ Please see Section 7 for more information about telemetry source plugins, includ
 
 === Invoking MMTC
 
-The `./bin/mmtc` Bash wrapper script is used to invoke MMTC. Along with running the application JAR and passing along command line arguments, it sets certain Java system properties based on environment variables described above, namely the location of the SPICE library and the location of the log4j2.properties file that controls MMTC logging. A user might need to edit this script for their particular use.
+The `./bin/mmtc` Bash start script is used to invoke MMTC. Along with running the application .jar and passing along command line arguments, it sets certain Java system properties based on environment variables described above, namely the location of the SPICE library and the location of the log4j2.xml file that controls MMTC logging. A user might need to edit this script for their particular use.
 
-.MMTC start-up script contents
+.MMTC start script contents
 [source, bash]
 ----
 include::../mmtc-core/bin/mmtc[]
 ----
 
-The code block above gives the MMTC start-up Bash script. If possible, missions and users should use this script to launch MMTC (or take it as the basis for a custom script to launch MMTC, if needed.) Note that the script depends upon the standard *$JAVA_HOME* environment variable being already set; on the other hand, if the custom *$MMTC_HOME* and *$TK_CONFIG_PATH* environment variables are not already set, it will derive values for them relative to the current working directory. (As a consequence, users should navigate to the MMTC installation directory, not to the MMTC `bin` directory, before running MMTC.) Also note that the script specifies to look for the log4j2 logging configuration file at `$MMTC_HOME/conf/log4j2.properties`; however, as with the rest of the script, this can be edited as needed.
+The code block above shows the MMTC start script. If possible, missions and users should use this script to launch MMTC (or take it as the basis for a custom script to launch MMTC, if needed.) Note that the script depends upon the standard *$JAVA_HOME* environment variable being already set; on the other hand, if the custom *$MMTC_HOME* and *$TK_CONFIG_PATH* environment variables are not already set, it will derive values for them relative to the current working directory. (As a consequence, users should navigate to the MMTC installation directory, not to the MMTC `bin` directory, before running MMTC.) Also note that the script specifies the path to the log4j2 logging configuration file as `$MMTC_HOME/conf/log4j2.xml`; however, as with the rest of the script, this can be edited as needed.
 
 == Running MMTC
 
-The MMTC CLI is invoked by running the startup script described in <<Invoking MMTC>>.  MMTC can also be operated via its GUI (see <<Web application & graphical user interface>>).
+The MMTC CLI is invoked by running the start script described in <<Invoking MMTC>>.  MMTC can also be operated via its GUI (see <<Web application & graphical user interface>>).
 
 === CLI Arguments and Options
 
-MMTC's default operation creates a new correlation.  It requires at least two arguments: a start time and a stop time in Earth Received Time (ERT) for the data to query from its telemetry source. These are calendar string values in UTC and in ISO of the format:
+The MMTC CLI accepts a command as its first argument.  Run MMTC with `--help` to see the full set of supported commands:
+
+[source, bash]
+----
+$ ./mmtc --help
+
+usage: mmtc <command> [options...] [arguments...]
+ -h,--help      Print this message.
+ -v,--version   Print the MMTC version.
+
+MMTC can be invoked with one of the following commands:
+- correlate | correlation: run a new correlation (this is the default command if none is specified)
+- autocorrelate: automatically run new correlation(s) according to configuration
+- trend: calculate timekeeping trending information and write to output products according to configuration
+- auto: run MMTC as a daemon, automatically correlating and/or trending according to configuration
+- rollback: roll back (undo) one or many correlations
+- create-sandbox: create a copy of this MMTC installation to run locally, without affecting this installation
+- migrate: migrate MMTC's output products from a prior version of MMTC
+- precache: query the configured telemetry source to proactively retrieve and store time correlation telemetry into a local cache
+- cache-stats: log statistics about the locally-cached telemetry
+
+For more information on any of these commands, run: mmtc <command> --help
+----
+
+MMTC's default command, if none is specified, is `correlate`.  The correlate command requires at least two positional arguments: a start time and a stop time in Earth Received Time (ERT) for the data to query from its telemetry source. These are calendar string values in UTC and in ISO of the format:
 
 _yyyy-mm-ddThh:mm:ss.nnn_
 
@@ -628,12 +1095,12 @@ All times are given in the 24-hour clock. Besides the two required arguments, MM
 
 [source, bash]
 ----
-bin/mmtc <start-time> <stop-time> [options]
+bin/mmtc correlate <start-time> <stop-time> [options]
 ----
-or
+or, more simply,
 [source, bash]
 ----
-bin/mmtc [options] <start-time> <stop-time>
+bin/mmtc <start-time> <stop-time> [options]
 ----
 
 For example, assuming the following commands were run using an AMPCS telemetry source:
@@ -659,7 +1126,7 @@ bin/mmtc 2019-183T02:14:00.0 2019-183T04:16:00.0 --clkchgrate-assign 1.000000000
 
 The above example queries all AMPCS sessions for 2 hours and 2 minutes of telemetry beginning on July 2, 2019 (doy 183) at 02:14 UTC. It will assign the clock change rate of the new time correlation to 1.00000000000. The particular value in this example indicates no drift and is equivalent to providing *--clkchgrate-nodrift* with no value.
 
-*Note*: If you get an error message suggesting that SPICE kernels are missing, it could be due to not all required kernels having been provided, but it could also be due to the spacecraft ephemeris SPK kernel not covering the start and stop times provided to MMTC. If this is the case, MMTC cannot compute the essential one-way light travel time (OWLT) and will fail.
+*Note*: If you get an error message suggesting that SPICE kernels are missing, it could be due to not all required kernels having been provided, but it could also be due to the spacecraft ephemeris SPK kernel not covering the start and stop times provided to MMTC. If this is the case, MMTC cannot compute the essential one-way light time (OWLT) and will fail.
 
 .MMTC Correlation Command Line Options
 [[table4, Table 4: MMTC Correlation Command Line Options]]
@@ -728,11 +1195,23 @@ remain unappended. Otherwise runs MMTC normally according to other options and c
 |N/A
 |Prints out a short summary of the command line usage, including these options. If this option is specified, the MMTC will not perform time correlation.
 
+|-s
+|--with-smoothing-record
+|Positive integer
+|Insert an additional 'smoothing' record to ensure continuity in SCLK-TDT relationship, at the given number of SCLK coarse ticks earlier than the new correlation record.  Cannot be used with clkchgrate-compute i. If specified, overrides the related configuration in the configuration file.
+
 |-v
 |--version
 |N/A
 |Prints out the version number of MMTC being accessed. If this option is specified, the MMTC will not perform time correlation as it supersedes all other options except --help
+
+|-x
+|--without-smoothing-record
+|N/A
+|Do not insert an additional 'smoothing' record.  If specified, overrides related configuration in the configuration file.
 |===
+
+For details on the other commands, please reference the appropriate section of this document.
 
 == Inputs
 
@@ -1536,6 +2015,11 @@ The parameters in the table below are only applicable to missions using AMPCS wh
 |INT
 |The number of seconds to wait for each AMPCS chill_get_* query to complete. If a query takes longer, MMTC will terminate and log an error message.
 
+|telemetry.source.plugin.ampcs.additionalChillCliParms
+|OPTIONAL
+|STRING
+|Any additional CLI parameters that should be passed down to the AMPCS CLI tools.
+
 |telemetry.source.plugin.ampcs.tkpacket.apid
 |REQUIRED
 |INT
@@ -2181,15 +2665,15 @@ NOTE: This filter is not applicable and should be turned off when using the AMPC
 
 The MMTC writes processing status messages to a log file, nominally named mmtc.log. Logging is implemented using the Apache Java log4j2 system, which recognizes six levels of logging: FATAL, ERROR, WARNING, INFO, DEBUG, and TRACE. A FATAL or ERROR message indicates that something is seriously wrong. This will usually precede MMTC terminating with a non-zero exit code. A WARNING message does not necessarily indicate a problem, but that something unusual happened and an operator should investigate. INFO messages are normal processing messages. DEBUG and TRACE messages are used for debugging.
 
-The *log4j2.properties* file, which is specified in an option to the MMTC Java invocation (see <<Invoking MMTC>>), configures logging. MMTC ships with a log4j2.properties file that sets the log level to DEBUG; in normal operational venues, missions may wish to change this by setting the *rootLogger.level* property to “info” or higher since the DEBUG log level may produce excessive output. The log4j2.properties file that MMTC ships with also causes log messages to be appended to mmtc.log each time the MMTC is executed, to “roll over” the log file to a new file when it reaches 100MB in size or when a week has elapsed since the log file was started, and to delete the oldest files when there are 5 or more rollover files. For more information about how to customize this rollover behavior and other aspects of logging, consult the Apache Log4j 2 documentation (https://logging.apache.org/log4j/2.x/).
+The *log4j2.xml* file, which is specified in an option to the MMTC Java invocation (see <<Invoking MMTC>>), configures logging. MMTC ships with a log4j2.xml file that sets the log level to DEBUG; in normal operational venues, missions may wish to change this by setting the *rootLogger.level* property to “info” or higher since the DEBUG log level may produce excessive output. The log4j2.xml file that MMTC ships with also causes log messages to be appended to mmtc.log each time the MMTC is executed, to “roll over” the log file to a new file when it reaches 100MB in size or when a week has elapsed since the log file was started, and to delete the oldest files when there are 5 or more rollover files. For more information about how to customize this rollover behavior and other aspects of logging, consult the Apache Log4j2 documentation (https://logging.apache.org/log4j/2.x/).
 
 NOTE: [.red]#Log messages may contain information that missions or users consider sensitive, such as hostnames, filesystem paths, even database credentials passed through to telemetry sources using the --connection-parms command line option, etc.# If log files are being submitted for MMTC troubleshooting, be sure to first remove any sensitive information before sending to others.
 
 == Web application & graphical user interface
 
-MMTC 1.6.0 introduces a web application that is packaged separately alongside the traditional MMTC CLI application.  It can be used to:
+MMTC 1.6.0 introduced a web application that is packaged separately alongside the traditional MMTC CLI application.  It can be used to:
 
-* Plot time correlation telemetry (including their SCET error) and correlation triplets (SCLK kernel records) over time 
+* Plot time correlation telemetry (including SCET error) and correlation triplets (SCLK kernel records) over time
 
 * Create new correlations manually, choosing exactly which telemetry points and prior correlation records to use, along with MMTC's standard correlation options
 
