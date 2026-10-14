@@ -145,10 +145,14 @@ public class TrendingApp {
             );
         }
 
-        if (ctx.reportConfig.isPastNCorrelationsPeriodEnabled()) {
+        if (ctx.reportConfig.isPastCorrelationPeriodEnabled()) {
             // todo for missions configured with a sample set size > 1, this trending period will begin with the next sample set after that,
             // since the ERT query window won't include the full range of the sample set that yielded the original time correlation target
             // we'd need a reliable way to reconstruct the original sample set window for this
+            if (ctx.reportConfig.pastCorrelationConfig.pastNum != 1) {
+                throw new IllegalStateException("Only trending since the past correlation is supported");
+            }
+
             final OffsetDateTime latestScetTimeFromKernel = TimeConvert.tdtToUtc(
                     ctx.currentSclkKernelLatestTriplet.get().getTdt(),
                     6
@@ -159,9 +163,9 @@ public class TrendingApp {
             logger.info(String.format("Calculating trending statistics since the last correlation on %s", lastCorrelation));
             ctx.statsSinceLastCorrelation.set(
                     calculateTrendingStats(
-                            String.format("Trend since last %d correlation", ctx.reportConfig.pastNCorrelationsConfig.pastNum),
+                            "Trend since last correlation",
                             trendingRange,
-                            ctx.reportConfig.pastNCorrelationsConfig
+                            ctx.reportConfig.pastCorrelationConfig
                     )
             );
         }
