@@ -98,7 +98,7 @@ Added information on new feature to choose sample set building strategy.
 |Rev H for Rel 1.7.0.
 |Oct 22, 2026
 |Multiple
-|Updates for changes and enhancements to MMTC for 1.7.0, including descriptions of the new trending and autocorrelate commands.
+|Updates for changes and enhancements to MMTC for 1.7.0, including descriptions of the new autocorrelate, trend, and auto commands.
 |===
 
 
@@ -217,7 +217,7 @@ example telemetry and configuration from the New Horizons spacecraft in a single
 While this demo can serve as a useful introduction to how MMTC is run and as an example for users writing their own
 configuration files, the demo installation should not be adapted and used as an operational source of time correlation
 information and users ready to adapt MMTC to a particular mission should start with a traditional MMTC installation
-(see <<Installing MMTC>>) and refer to <<Adapting MMTC to a Mission>>.
+(see <<Installing or Updating MMTC>>) and refer to <<Adapting MMTC to a Mission>>.
 
 === Unpacking the Demo Components
 Note that the MMTC demo has the same system requirements as a normal MMTC RPM installation (RHEL 8/9 and Java 8).
@@ -259,7 +259,7 @@ At this point, one can also update the table product output paths specified in t
 "Output Files" section of `TimeCorrelationConfigProperties.xml` to the desired
 directory if one prefers some output products not end up in /opt/local/mmtc/output/.
 By default, all SCLK kernels, SCLK/SCET files, and Uplink Command files will go to
-the /output/ directory of the demo installation.
+the `output` directory of the demo installation.
 
 
 === Running the MMTC Demo
@@ -283,10 +283,8 @@ For the former, deleting all SCLK kernels, SCLKSCET files, UplinkCmd files, and 
 four aforementioned .csv table products will return MMTC to a fresh state allowing
 for the same invocation arguments to be used again and to recreate output products.
 
-Alternatively, running MMTC with "rollback" passed in as the first argument will
-initiate the rollback interface. Note that rollback can only return MMTC to the state it was in after a prior run and therefore can't recreate a completely fresh
-state--only the state after the first recorded run at the earliest. See
-<<Output Product Rollback>> for the full documentation on using rollback.
+Alternatively, running MMTC with `rollback` passed in as the command will
+initiate the rollback process.  See <<Output Product Rollback>> for the full documentation on using rollback.
 
 == Basics of Time Correlation
 
@@ -373,7 +371,7 @@ default if no alternate clock change rate mode is specified with command line ar
 MMTC allows the user to assign the value for the clock change rate that will be written to the SCLK kernel and SCLK/SCET
 file and the other products. If the *--clkchgrate-assign* option is included in MMTC's invocation command, then the value
 following the option will be used. The *--clkchgrate-assign* option also accepts the names of presets that users
-can specify in the MMTC configuration file in place of numeric values (see <<table6>>).
+can specify in the MMTC configuration file in place of numeric values (see <<table8>>).
 
 This option should be used
 when there is a discontinuity in time correlations such as after an oscillator switch, after a radio switch (for mission
@@ -389,7 +387,7 @@ circumstances when a time correlation engineer may determine that this is approp
 kernel, which is usually created by hand, normally sets the clock change rate to 1.00000000000.
 
 
-== Installing or Upgrading MMTC
+== Installing or Updating MMTC
 
 These are the system requirements to build and/or run MMTC:
 
@@ -482,20 +480,20 @@ See the rest of the User’s Guide for detailed command syntax.
 
 ==== Installing and running MMTC via a container image
 
-The project also produces OCI container images, built for use with e.g. podman, Docker, etc.  Two images are produced: one with the MMTC CLI application only, and one with both the CLI application and web application.  These images have MMTC installed under /opt/local/mmtc, with subdirectories matching the 'nominal MMTC installation' description given above.  It is expected that users deploying MMTC with these container images will mount configuration into the container appropriately and configure persistence as desired for logs and output files.
+The project also produces OCI container images, built for use with e.g. podman, Docker, etc.  Two images are produced: one with the MMTC CLI application only, and one with both the CLI application and web application.  These images have MMTC installed in `/opt/local/mmtc`, with subdirectories matching the 'nominal MMTC installation' description given above.  It is expected that users deploying MMTC with these container images will mount configuration into the container appropriately and configure persistence as desired for logs and output files.
 
 The following example demonstrates running the MMTC CLI from its container image using podman:
 
 [source, bash]
 ----
-podman run --it -rm localhost/mmtc:{revnumber} 2026-001T00:00:00 2026-007T00:00:00
+podman run --it -rm localhost/mmtc:<version> 2026-001T00:00:00 2026-007T00:00:00
 ----
 
 The following example demonstrates running the MMTC web application from its container image using podman:
 
 [source, bash]
 ----
-podman run --it -rm -p 8080:8080 localhost/mmtc-webapp:{revnumber}
+podman run --it -rm -p 8080:8080 localhost/mmtc-webapp:<version>
 ----
 
 See the rest of the User’s Guide for detailed command syntax.
@@ -540,448 +538,326 @@ bin/mmtc [options] <start-time> <stop-time>
 
 Please see the rest of the User’s Guide for detailed command syntax.
 
-=== Updating
+=== Updating an existing MMTC installation
 
-The general process for updating to a new version of MMTC is as follows:
+The general process for updating to an existing installation of MMTC to a new version is as follows:
 
-1. Install the new version of MMTC over the current installation, according to method of deployment
-2. Update any configuration in TimeCorrelationConfigProperties.xml as necessary (see the section below)
-3. Migrate your output products forward by running `mmtc migrate`, which will migrate output product structures forward to their new versions, where applicable.  Note that a backup zip archive will be created, should the prior state of the files be needed.
-4. Continue using MMTC as normal
+1. Install the new version of MMTC over the current installation, according to method of deployment.
+2. Update any configuration as necessary (see the section below.)
+3. Migrate your output products forward by running `mmtc migrate`, which updates any output product structures forward to their new versions (where applicable.)  Note that this process creates a zip archive of the current state of output products before migration runs, in case the pre-migration state of the files are needed.
+4. Continue using MMTC as normal.
 
-==== Configuration changes
+The following sections describe changes in each MMTC release since 1.6.0.
 
-The following table describes the changes to TimeCorrelationConfigProperties.xml introduced in each version of MMTC since 1.6.0.
+==== MMTC 1.6.0
 
-.TimeCorrelationConfigPropertiesChanges
-[[table2, Table 2: TimeCorrelationConfigProperties.xml changes]]
+===== Features & behavior changes
+
+* Additions & improvements
+** Added optional functionality to compute and insert a 'smoothing' correlation triplet, into SCLK kernels and SCLK-SCET files, to ensure continuity in SCLK-based time conversions
+** Added a dry run CLI option to `correlate` to preview correlation results without affecting the state of output products
+** Added a plugin interface for generating custom post-correlation reports
+** Added a `create-sandbox` command to easily create a local standalone copy of an existing MMTC installation
+** Added a web application for interactive use, including SCET Error plots
+* Defect corrections
+** Fixed validation to not require the specification of output product configuration keys that should be optional
+* Other changes
+** Calculate APPLICABLE_STOP_TIME value to include in SCLK-SCET file headers
+** Left-pad DOY format to fit typical convention in SCLK-SCET product creation timestamp in header
+** Removed Summary Table output product
+** Add output product migration function
+** Misc. general maintenance
+
+
+===== Output product changes
+
+The following changes were made to MMTC's output products in 1.6.0:
+
+* *Summary Table*
+** This output product is now deprecated and may be removed after migrating to 1.6.0.
+* *Time History File*
+** Renamed `ClkChgRate(s/s)` column to `Predicted Clk Chg Rate (s/s)`
+** Adjusted the `Enc_SCLK` column values to be reported as a plain integer instead of in scientific notation
+** Added the following columns, with their values transferred from the Summary Table
+*** `Interpolated Clk Chg Rate (s/s)`
+*** `TD SC (sec)`
+*** `TD BE (sec)`
+*** `TF Offset`
+* *Run History File*
+** Removed columns tracking Summary Table state
+** Added columns to track MMTC version and MMTC output product version information
+** Added a column to track any smoothing triplets that were inserted into SCLK kernels
+** Changed the length of empty CSVs to be reported as `-` instead of `1`
+
+===== Configuration changes
+
+The following table describes the changes in MMTC configuration file structure and/or content changes introduced in this version of MMTC.
+
+Only TimeCorrelationConfigProperties.xml has been changed in this release:
+
+.Changes to TimeCorrelationConfigProperties.xml in MMTC 1.6.0
+[[table3, Table 3: TimeCorrelationConfigProperties.xml changes in MMTC 1.6.0]]
 [%autowidth]
 |===
-| Change | Prior key name | Key name | Required / Optional | Notes
-5+^|*1.7.0*
-
-|Renamed
-|missionId
-|product.sclkScetFile.missionId
-|optional
-|
+| Change | Key name | Required? | Notes
 
 |Added
-|N/A
-|product.uplinkCmdFile.writeHeaders
-|optional
-|
-
-|Added
-|N/A
-|product.uplinkCmdFile.versionSuffixMode
-|optional
-|
-
-|Added
-|N/A
-|product.parameterGroupUpdateFile.create
-|optional
-|
-
-|Added
-|N/A
-|product.parameterGroupUpdateFile.path
-|optional
-|
-
-|Renamed
-|telemetry.source.plugin.ampcs.frameSizeBits
-|telemetry.source.plugin.ampcs.defaultFrameSizeBits
-|optional
-|
-
-|Added
-|N/A
-|telemetry.source.plugin.ampcs.frame.vcidFieldName
-|optional
-|
-
-|Added
-|N/A
-|telemetry.source.plugin.ampcs.sessionFilter
-|optional
-|
-
-|Added
-|N/A
-|webapp.leapSecondsKernelPath
-|optional
-|
-
-|Added
-|N/A
-|autocorrelate.trigger.advancementDurationHours
-|optional
-|
-
-|Added
-|N/A
-|autocorrelate.trigger.periodic.enabled
-|optional
-|
-
-|Added
-|N/A
-|autocorrelate.trigger.periodic.minTimeBetweenCorrelationsHours
-|optional
-|
-
-|Added
-|N/A
-|autocorrelate.trigger.scetError.enabled
-|optional
-|
-
-|Added
-|N/A
-|autocorrelate.trigger.scetError.thresholdMs
-|optional
-|
-
-|Added
-|N/A
-|trending.metric.scetError.thresholdMs
-|optional
-|
-
-|Added
-|N/A
-|trending.metric.tdtSError.thresholdMs
-|optional
-|
-
-|Added
-|N/A
-|trending.report.formats.plaintext.enabled
-|optional
-|
-
-|Added
-|N/A
-|trending.report.formats.plaintext.path.directory
-|optional
-|
-
-|Added
-|N/A
-|trending.report.formats.plaintext.path.basename
-|optional
-|
-
-|Added
-|N/A
-|trending.report.formats.plaintext.path.suffix
-|optional
-|
-
-|Added
-|N/A
-|trending.report.formats.html.enabled
-|optional
-|
-
-|Added
-|N/A
-|trending.report.formats.html.path.directory
-|optional
-|
-
-|Added
-|N/A
-|trending.report.formats.html.path.basename
-|optional
-|
-
-|Added
-|N/A
-|trending.report.formats.html.path.suffix
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNDays.enabled
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNDays.numDays
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNDays.scetError.trend
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNDays.scetError.plot
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNDays.tdtSError.trend
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNDays.tdtSError.plot
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNCorrelations.enabled
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNCorrelations.numCorrelations
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNCorrelations.scetError.trend
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNCorrelations.scetError.plot
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNCorrelations.tdtSError.trend
-|optional
-|
-
-|Added
-|N/A
-|trending.report.periods.pastNCorrelations.tdtSError.plot
-|optional
-|
-
-|Added
-|N/A
-|automation.autocorrelate.enabled
-|optional
-|
-
-|Added
-|N/A
-|automation.autocorrelate.runSchedule
-|optional
-|
-
-|Added
-|N/A
-|automation.trending.enabled
-|optional
-|
-
-|Added
-|N/A
-|automation.trending.runSchedule
-|optional
-|
-
-|Added
-|N/A
-|automation.autocorrelate-and-trending.enabled
-|optional
-|
-
-|Added
-|N/A
-|automation.autocorrelate-and-trending.runSchedule
-|optional
-|
-
-
-5+^|*1.6.0*
-
-|Added
-|N/A
-|telemetry.cacheFilePath
-|optional
-|
-
-|Added
-|N/A
-|compute.clkchgrate.mode
-|optional
-|
-
-|Added
-|N/A
-|compute.additionalSmoothingCorrelationRecordInsertion.enabled
-|optional
-|
-
-|Added
-|N/A
 |compute.additionalSmoothingCorrelationRecordInsertion.coarseSclkTickDuration
 |optional
 |
 
 |Added
-|N/A
+|compute.additionalSmoothingCorrelationRecordInsertion.enabled
+|optional
+|
+
+|Added
+|compute.clkchgrate.mode
+|optional
+|
+
+|Added
 |lockfile.path
 |optional
 |
 
 |Added
-|N/A
-|table.timeHistoryFile.create
-|optional
-|
-
-|Added
-|N/A
-|table.timeHistoryFile.oscTempFractionDigits
-|optional
-|
-
-|Added
-|N/A
-|product.plugin.outputProductNames
-|optional
-|
-
-|Added
-|N/A
 |product.archive.directory
 |optional
 |
 
 |Added
-|N/A
+|product.plugin.outputProductNames
+|optional
+|
+
+|Changed
+|product.sclkScetFile.baseName
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.datasetId
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.dir
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.producerId
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.scetUtcPrecision
+|optional
+|Previously was required
+
+|Changed
+|product.sclkScetFile.separator
+|optional
+|Previously was required
+
+|Removed
+|product.sclkScetFile.source
+|Removed
+|Deprecated
+
+|Changed
+|product.sclkScetFile.suffix
+|optional
+|Previously was required
+
+|Changed
+|product.uplinkCmdFile.create
+|optional
+|Previously was required
+
+|Changed
+|product.uplinkCmdFile.baseName
+|optional
+|Previously was required
+
+|Changed
+|product.uplinkCmdFile.outputDir
+|optional
+|Previously was required
+
+|Changed
+|table.rawTelemetryTable.path
+|required
+|Previously named `table.rawTelemetryTable.uri`.  Changed from a URI to a filepath (remove file:// prefix)
+
+|Changed
+|table.runHistoryFile.path
+|required
+|Previously named `table.runHistoryFile.uri`.  Changed from a URI to a filepath (remove file:// prefix)
+
+|Removed
+|table.summaryTable.uri
+|Removed
+|This file is no longer produced by MMTC
+
+|Added
+|table.timeHistoryFile.create
+|optional
+|
+
+|Changed
+|table.timeHistoryFile.path
+|required
+|Previously named `table.timeHistoryFile.uri`.  Changed from a URI to a filepath (remove file:// prefix)
+
+|Added
+|table.timeHistoryFile.oscTempFractionDigits
+|optional
+|
+
+|Added
+|telemetry.cacheFilePath
+|optional
+|
+
+|Added
 |telemetry.source.plugin.ampcs.additionalChillCliParms
 |optional
 |
 
 |Changed
 |telemetry.tkOscTempWindowSec
-|Same
 |optional
 |Previously was required
 
 |Changed
 |telemetry.tkParmWindowSec
-|Same
 |optional
 |Previously was required
 
 |Changed
-|product.sclkScetFile.source
-|Removed
-|removed
-|Deprecated
-
-|Changed
-|product.sclkScetFile.dir
-|Same
-|optional
-|Previously was required
-
-|Changed
-|product.sclkScetFile.baseName
-|Same
-|optional
-|Previously was required
-
-|Changed
-|product.sclkScetFile.separator
-|Same
-|optional
-|Previously was required
-
-|Changed
-|product.sclkScetFile.suffix
-|Same
-|optional
-|Previously was required
-
-|Changed
-|product.sclkScetFile.scetUtcPrecision
-|Same
-|optional
-|Previously was required
-
-|Changed
-|product.sclkScetFile.datasetId
-|Same
-|optional
-|Previously was required
-
-|Changed
-|product.sclkScetFile.producerId
-|Same
-|optional
-|Previously was required
-
-|Changed
-|table.rawTelemetryTable.uri
-|table.rawTelemetryTable.path
-|required
-|Changed from a URI to a filepath (remove file:// prefix)
-
-|Changed
-|table.summaryTable.uri
-|Removed
-|removed
-|This file is no longer produced by MMTC
-
-|Changed
-|table.timeHistoryFile.uri
-|table.timeHistoryFile.path
-|required
-|Changed from a URI to a filepath (remove file:// prefix)
-
-|Changed
-|table.runHistoryFile.uri
-|table.runHistoryFile.path
-|required
-|Changed from a URI to a filepath (remove file:// prefix)
-
-|Changed
-|product.uplinkCmdFile.create
-|Same
-|optional
-|Previously was required
-
-|Changed
-|product.uplinkCmdFile.outputDir
-|Same
-|optional
-|Previously was required
-
-|Changed
-|product.uplinkCmdFile.baseName
-|Same
-|optional
-|Previously was required
-
-|Changed
-|telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri
 |telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.path
 |required if using AMPCS
-|Changed from a URI to a filepath (remove file:// prefix)
+|Previously named `telemetry.source.plugin.ampcs.tkpacket.tkPacketDescriptionFile.uri`. Changed from a URI to a filepath (remove file:// prefix)
+
+|===
+
+==== MMTC 1.7.0 changes
+
+===== Features & behavior changes
+
+* Additions & improvements
+** Added `trend` function to generate trending reports
+** Added `autocorrelate` function to automate the creation of new correlations
+** Added `auto` function to run MMTC in a daemon mode, to perform trending, automatic correlations, or both
+** Added support for triplet values encoded in scientific notation for input and output SCLK kernels
+** Add configuration to allow customization of uplink command file products
+** Added a new Parameter Group Update File output product
+** Improved telemetry validation and reporting of telemetry quality filter failures
+** Added CLI and web app container images as release artifacts
+** Enhanced MMTC CLI to provide more informative exit statuses
+** Added a column in the Time History File to report the expected time TDT(S) Error may reach a configured threshold
+** Added optional session filtering for improved AMPCS telemetry retrieval
+** Added the capability to read frame length directly from AMPCS
+* Defect corrections
+** Fixed incorrect behavior when using rollback feature to set products to initial state with SCLK kernels with filename prefixes containing numerals
+** Improved Time History File migration to respect any configured excluded columns
+* Other changes
+** Improved lockfile handling
+** Added DSS-23 to default ground station list
+** Misc. general maintenance
+
+===== Output product changes
+
+* *Parameter Group Update File*
+** Introduced in this release
+* *Time History File*
+** Added a new column `TDT(S) Error Warning Threshold Predicted Violation Time SCET (UTC)`
+* *Run History File*
+** Added columns to track state of new Parameter Group Update file
+
+===== Configuration changes
+
+The following table describes the changes in MMTC configuration file structure and/or content changes introduced in this version of MMTC.
+
+Only TimeCorrelationConfigProperties.xml has been changed in this release:
+
+.Changes to TimeCorrelationConfigProperties.xml in MMTC 1.7.0
+[[table4, Table 4: TimeCorrelationConfigProperties.xml changes in MMTC 1.7.0]]
+[%autowidth]
+|===
+| Change | Key name | Required? | Notes
+
+|Added
+|autocorrelate.*
+|optional
+|This key namespace is used to configure MMTC's autocorrelate feature.
+
+|Added
+|automation.*
+|optional
+|This key namespace is used to configure MMTC's automation feature.
+
+|Added
+|product.parameterGroupUpdateFile.create
+|optional
+|
+
+|Added
+|product.parameterGroupUpdateFile.path
+|optional
+|
+
+|Renamed
+|product.sclkScetFile.missionId
+|optional
+|Previously named `missionId`
+
+|Added
+|product.uplinkCmdFile.writeHeaders
+|optional
+|
+
+|Added
+|product.uplinkCmdFile.versionSuffixMode
+|optional
+|
+
+|Renamed
+|telemetry.source.plugin.ampcs.defaultFrameSizeBits
+|optional
+|Previously named `telemetry.source.plugin.ampcs.frameSizeBits`
+
+|Added
+|telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap
+|optional
+|
+
+|Added
+|telemetry.source.plugin.ampcs.frame.lengthFieldName
+|optional
+|
+
+|Added
+|telemetry.source.plugin.ampcs.sessionFilter
+|optional
+|
+
+|Added
+|telemetry.source.plugin.ampcs.session.sessionIdFieldName
+|optional
+|
+
+|Added
+|trending.*
+|optional
+|This key namespace is used to configure MMTC's trending feature.
+
+|Added
+|webapp.leapSecondsKernelPath
+|optional
+|
 
 |===
 
@@ -1042,9 +918,9 @@ include::../mmtc-core/bin/mmtc[]
 
 The code block above shows the MMTC start script. If possible, missions and users should use this script to launch MMTC (or take it as the basis for a custom script to launch MMTC, if needed.) Note that the script depends upon the standard *$JAVA_HOME* environment variable being already set; on the other hand, if the custom *$MMTC_HOME* and *$TK_CONFIG_PATH* environment variables are not already set, it will derive values for them relative to the current working directory. (As a consequence, users should navigate to the MMTC installation directory, not to the MMTC `bin` directory, before running MMTC.) Also note that the script specifies the path to the log4j2 logging configuration file as `$MMTC_HOME/conf/log4j2.xml`; however, as with the rest of the script, this can be edited as needed.
 
-== Running MMTC
+== MMTC Command Line Interface
 
-The MMTC CLI is invoked by running the start script described in <<Invoking MMTC>>.  MMTC can also be operated via its GUI (see <<Web application & graphical user interface>>).
+The MMTC CLI is invoked by running the start script described in <<Invoking MMTC>>.  MMTC can also be operated via its web application, which presents a graphical user interface (see <<Web application>>).
 
 === CLI Arguments and Options
 
@@ -1071,6 +947,8 @@ MMTC can be invoked with one of the following commands:
 
 For more information on any of these commands, run: mmtc <command> --help
 ----
+
+=== Producing a new correlation with MMTC
 
 MMTC's default command, if none is specified, is `correlate`.  The correlate command requires at least two positional arguments: a start time and a stop time in Earth Received Time (ERT) for the data to query from its telemetry source. These are calendar string values in UTC and in ISO of the format:
 
@@ -1129,7 +1007,7 @@ The above example queries all AMPCS sessions for 2 hours and 2 minutes of teleme
 *Note*: If you get an error message suggesting that SPICE kernels are missing, it could be due to not all required kernels having been provided, but it could also be due to the spacecraft ephemeris SPK kernel not covering the start and stop times provided to MMTC. If this is the case, MMTC cannot compute the essential one-way light time (OWLT) and will fail.
 
 .MMTC Correlation Command Line Options
-[[table4, Table 4: MMTC Correlation Command Line Options]]
+[[table5, Table 5: MMTC Correlation Command Line Options]]
 [%autowidth]
 |===
 |Short Option |Long Option |Value(s) |Description
@@ -1142,7 +1020,7 @@ The above example queries all AMPCS sessions for 2 hours and 2 minutes of teleme
 |
 |--clkchgrate-assign
 |A floating-point number (e.g., 1.00000001234) or a string (e.g., *preset1*) corresponding to the name of a preset value
-specified in the configuration file (see Chapter 8, Table 6).
+specified in the configuration file.
 |In a testing environment and in certain operational scenarios, it can be necessary to have the MMTC assign the clock
 change rate of the new time correlation to a value specified by the user rather than computing it. Also, if this option
 is selected, MMTC will not replace the existing clock change rate in the SCLK kernel with an interpolated value. This
@@ -1213,6 +1091,45 @@ remain unappended. Otherwise runs MMTC normally according to other options and c
 
 For details on the other commands, please reference the appropriate section of this document.
 
+=== Producing many new correlations with MMTC
+
+MMTC includes an `autocorrelate` command, which when invoked, will produce zero, one, or many correlations according to the configuration specified via the `autocorrelate.*` keys in TimeCorrelationConfigProperties.xml.  These keys and their values specify conditions under which new correlations will be made when `autocorrelate` is used.  Running `mmtc autocorrelate` will evaluate these conditions based on available telemetry (that passes the configured filters) and the current state of correlations, and when a condition is met, will create a new correlation.  This process will continue until the process has 'caught up' to either realtime or the value of the optional CLI timestamp argument.
+
+== Timekeeping performance monitoring and trending
+
+MMTC reports information useful for monitoring and trending spacecraft timekeeping system performance in products ancillary to the primary SCLK kernel and optional SCLK-SCET files via:
+
+* an optional Time History File, which reports metrics and performance captured at the time of each new correlation
+* a `trend` command that may be used to produce reports capturing certain aspects of timekeeping system performance outside of the workflow of creating new correlations
+
+For more information about the Time History File, see the related sections below in this document.  The rest of this section will describe the `trend` command.
+
+To produce trending reports with MMTC, first set the `trending.*` configuration key values (in TimeCorrelationConfigProperties.xml) as desired, then run `mmtc trend`.  MMTC will write the resulting reports to the configured filepath(s).)
+
+These trending reports:
+
+* Can be generated in plaintext and/or HTML format
+* Can trend either or both of:
+** the error in SCET prediction given an SCLK ('SCET Error') over time
+** the error in on-board TDT(S) estimation ('TDT(S) Error') over time
+* Can trend performance over a predefined historical period (i.e. the past _n_ days), or since the most recent correlation, or both
+
+== Automation
+
+MMTC is designed to be automated in both of the following ways:
+
+* via externally-driven automation that drives, and interfaces with, MMTC through its CLI and/or configuration files
+* and/or via the included automation function
+
+This function can be invoked manually via `mmtc auto`, or as e.g. a systemd service.  MMTC will run in a daemon mode, periodically performing the configured functions, until it is stopped.
+
+The MMTC `auto` function can perform either or both of the following tasks:
+
+* produce updated trending reports
+* run `autocorrelate` to catch up to the current time
+
+These tasks are run on a custom schedule.  This service can be configured via the `automation.*` configuration keys in TimeCorrelationConfigProperties.xml.
+
 == Inputs
 
 Though SPICE SCLK kernel files are one of the primary output products of the MMTC (see <<Output Products>> for details about outputs), MMTC also requires a seed SPICE SCLK kernel file or other previously generated SPICE SCLK kernel file as an input in order to run. It requires other inputs and writes to some other files as well. Upon start-up, tMMTC loads a set of configuration parameters read from a configuration file. It then loads a set of SPICE kernels, which are specified in the configuration parameters. In the course of its processing, it writes to a cumulative Raw Telemetry Table and a cumulative Time History File.
@@ -1238,7 +1155,7 @@ MMTC assumes that an archive of mission telemetry is made available via a teleme
 MMTC may use the following environment variables defined in the host environment.
 
 .MMTC Environment Variables
-[[table5, Table 5: MMTC Environment Variables]]
+[[table6, Table 6: MMTC Environment Variables]]
 [%autowidth]
 |===
 |Name |Required |Description
@@ -1324,7 +1241,7 @@ Some missions will have two or more oscillators. Others will have only one. When
 
 [.underline]#Onboard Time Correlation Data#
 
-The SCLK, TDT(S), and clock change rate values that the flight system uses to compute absolute time from SCLK values are available in channelized telemetry and are queried by SCET using the _chill_get_chanvals_ command. This information can be included in any channelized packet, so long as they have assigned Channel IDs defined in the flight software dictionary. The data is included in the Time History File. If the data is not available in a given query interval, MMTC will continue without them and will write a dash (‘-‘), indicating an empty value, to the Time History File. The associated Channel IDs are included in Table 3.
+The SCLK, TDT(S), and clock change rate values that the flight system uses to compute absolute time from SCLK values are available in channelized telemetry and are queried by SCET using the _chill_get_chanvals_ command. This information can be included in any channelized packet, so long as they have assigned Channel IDs defined in the flight software dictionary. The data is included in the Time History File. If the data is not available in a given query interval, MMTC will continue without them and will write a dash (‘-‘), indicating an empty value, to the Time History File.
 
 ==== The Time Correlation Packet
 
@@ -1339,6 +1256,7 @@ The structure of the TK packet is defined in the TK Packet Description file. Thi
 Please reference the configuration section for the full configuration key names that specify the channel value querying configuration for these parameters.
 
 .Received channelized telemetry values
+[[table7, Table 7: Received channelized telemetry values]]
 [%autowidth]
 |===
 |Item |Data Type |Description
@@ -1463,34 +1381,31 @@ Please note that a single plugin jar may include more than one _TelemetrySource_
 
 === Time Correlation Config Properties
 
-The MMTC Configuration file is an XML file that conforms to the schema TimeCorrelationConfigProperties.xsd, provided
-with the distribution. Table 6 describes the MMTC configuration parameters.
+The primary MMTC configuration is provided in an XML file that conforms to the schema TimeCorrelationConfigProperties.xsd, provided
+with the distribution. Table 8 describes the MMTC configuration parameters.
 
 This file is an XML properties file and contains a set of key/value pairs. Some of these parameters in this file
-are always required and others are only required in certain configurations (see below). Note that not all of the parameters are
-applicable to all missions.
+are always required and others are only required in certain configurations (see below). Note that not all parameters are applicable to all missions.
 
 [.underline]#Configuration File Validation#
 
 On initialization, MMTC checks the active configuration file (found at the path specified by the *$TK_CONFIG_PATH*
 environment variable) for the presence of all keys listed in */conf/examples/TimeCorrelationConfigProperties-base.xml*.
 These keys represent the parameters required by all possible configurations of MMTC, but their presence alone does
-not guarantee a valid MMTC configuration file--additional configuration parameters are required for any real-world application (see Table 6 below
-for a full list of conditionally required keys) and this check only verifies the presence of keys that MMTC will
-never run without.
+not guarantee a valid MMTC configuration file--additional configuration parameters are required for any real-world application, and this check only verifies the presence of keys that MMTC will always require.
 
-Telemetry source plugins may also require additional configuration parameters, and these parameters should be included
+Telemetry source plugins may also require additional configuration parameters; these parameters should be included
 in *$TK_CONFIG_PATH/TimeCorrelationConfigProperties.xml*. By convention, plugin-specific parameters have names that
-begin with `telemetry.source.plugin.<plugin-name>.`. Table 7 describes the configuration parameters that are
-specific to the AMPCS telemetry source plugin that ships with MMTC. If a different telemetry source is used, the
-provider of the telemetry source plugin should include instructions about relevant configuration parameters.
+begin with `telemetry.source.plugin.<plugin-name>.`. This document describes, in a later section, the configuration parameters that are
+specific to the AMPCS telemetry source plugin that MMTC includes. If a different telemetry source is used, the
+provider of the telemetry source plugin should include instructions for the configuration of its own parameters.
 
 === General configuration parameters
 
-The parameters in the table below are generally applicable cross-mission, though not every mission will need to specify every argument.
+The parameters in the table below are generally applicable cross-mission, though not every mission will need to specify every parameter.
 
 .Configuration Parameters
-[[table6, Table 6: Configuration Parameters]]
+[[table8, Table 8: Configuration Parameters]]
 [%autowidth]
 |===
 |Name |Required |Type |Description
@@ -1892,10 +1807,20 @@ Always set this value to false if using the AMPCS telemetry source plugin’s Am
 |The maximum number of fractional/decimal digits to which the oscillator temperature is to be written in the Time History File before rounding takes place.
 Defaults to 9 digits if key isn't included in config or if the value provided can't be parsed.
 
+|product.parameterGroupUpdateFile.create
+|OPTIONAL
+|BOOL
+|Whether to create and/or append to the Parameter Group Update file or not.  If not specified, defaults to `false`.
+
+|product.parameterGroupUpdateFile.path
+|OPTIONAL
+|STR
+|The filepath at which to write the Parameter Group Update file.  Required if product.parameterGroupUpdateFile.create is set to `true`.
+
 |product.sclkScetFile.create
 |REQUIRED
 |BOOL
-|Activates creation of SCLK/SCET files. Set to true if a SCLK/SCET file is to be created. Valid values are “true” or “false”.
+|Whether to create SCLK/SCET files. Set to true if a SCLK/SCET file is to be created. Valid values are “true” or “false”.
 
 |product.sclkScetFile.dir
 |OPTIONAL
@@ -1992,6 +1917,183 @@ Defaults to 9 digits if key isn't included in config or if the value provided ca
 |STR
 |The path to a directory where zip archives of output products will be made before MMTC executes product migration or rollback commands.  If left blank, defaults to a new directory named 'output-archives', created within the same directory as the Run History File location.
 
+4+^|*The following parameters configure MMTC's autocorrelate feature*
+
+|autocorrelate.trigger.advancementDurationHours
+|OPTIONAL
+|INT
+|Sets the minimum ERT duration over which to attempt a correlation, as well as the duration to advance by if no valid time correlation telemetry is identified.  This affects the rate of telemetry retrieval from the archive, and does not affect which correlations are made.  Specified in hours.
+
+|autocorrelate.trigger.periodic.enabled
+|OPTIONAL
+|BOOL
+|Whether to enable the periodic trigger when running autocorrelate, which will allow new correlations up to a certain periodicity as specified by the following key.
+
+|autocorrelate.trigger.periodic.minTimeBetweenCorrelationsHours
+|OPTIONAL
+|INT
+|The minimum time between correlations, specified in hours.  For instance, if it is desired that new correlations should be spaced no more closely than once every 12 hours, this value should be set to `12`.
+
+|autocorrelate.trigger.scetError.enabled
+|OPTIONAL
+|BOOL
+|Whether to enable the SCET Error trigger when running autocorrelate, which will allow new correlations at the time that the prior SCLK kernel fails to predict SCET within the given error threshold (specified by the following key) or as soon afterward as possible.
+
+|autocorrelate.trigger.scetError.thresholdMs
+|OPTIONAL
+|DOUBLE
+|The threshold that will trigger a new correlation, specified in milliseconds, and evaluated as a threshold on the absolute value of the measured error.
+
+4+^|*The following parameters configure MMTC's trending feature*
+
+|trending.metric.scetError.thresholdMs
+|OPTIONAL
+|DOUBLE
+|The absolute SCET Error threshold to evaluate against current trends, specified in milliseconds.
+
+|trending.metric.tdtSError.thresholdMs
+|OPTIONAL
+|DOUBLE
+|The absolute TDT(S) Error threshold to evaluate against current trends, specified in milliseconds.
+
+|trending.report.formats.plaintext.enabled
+|OPTIONAL
+|BOOL
+|Whether a plaintext report should be generated.
+
+|trending.report.formats.plaintext.path.directory
+|OPTIONAL
+|STRING
+|The output directory for the plaintext report.
+
+|trending.report.formats.plaintext.path.basename
+|OPTIONAL
+|STRING
+|The output file's basename to use when writing a plaintext report.
+
+|trending.report.formats.plaintext.path.suffix
+|OPTIONAL
+|STRING
+|The output file's suffix to use when writing a plaintext report.
+
+|trending.report.formats.plaintext.path.timestampMode
+|OPTIONAL
+|STRING
+|One of the strings 'none', 'prepend', or 'append'.  If 'none' is specified, a timestamp will not be added to the output filename.  If 'prepend' is specified, a timestamp will be prepended to the output filename in front of the basename.  If 'append' is specified, a timestamp will be placed between the given basename and suffix.  If not specified, 'none' is used.
+
+|trending.report.formats.html.enabled
+|OPTIONAL
+|BOOL
+|Whether an HTML report should be generated.
+
+|trending.report.formats.html.path.directory
+|OPTIONAL
+|STRING
+|The output directory for the HTML report.
+
+|trending.report.formats.html.path.basename
+|OPTIONAL
+|STRING
+|The output file's basename to use when writing an HTML report.
+
+|trending.report.formats.html.path.suffix
+|OPTIONAL
+|STRING
+|The output file's suffix to use when writing an HTML report.
+
+|trending.report.formats.html.path.timestampMode
+|OPTIONAL
+|STRING
+|One of the strings 'none', 'prepend', or 'append'.  If 'none' is specified, a timestamp will not be added to the output filename.  If 'prepend' is specified, a timestamp will be prepended to the output filename in front of the basename.  If 'append' is specified, a timestamp will be placed between the given basename and suffix.  If not specified, 'none' is used.
+
+|trending.report.periods.pastNDays.enabled
+|OPTIONAL
+|BOOL
+|Whether to calculate and include the "past n days" section in trending reports.
+
+|trending.report.periods.pastNDays.numDays
+|OPTIONAL
+|INT
+|The length of time to report on; effectively serves as a sliding window looking back from the time of report generation.  Specified as an integer number of days.
+
+|trending.report.periods.pastNDays.scetError.trend
+|OPTIONAL
+|BOOL
+|Whether to trend SCET Error in the "past n days" section of the report.
+
+|trending.report.periods.pastNDays.scetError.plot
+|OPTIONAL
+|BOOL
+|Whether to include a SCET Error plot in the "past n days" section of an HTML report.
+
+|trending.report.periods.pastNDays.tdtSError.trend
+|OPTIONAL
+|BOOL
+|Whether to trend TDT(S) Error in the "past n days" section of the report.
+
+|trending.report.periods.pastNDays.tdtSError.plot
+|OPTIONAL
+|BOOL
+|Whether to include a TDT(S) Error plot in the "past n days" section of an HTML report.
+
+|trending.report.periods.pastCorrelation.enabled
+|OPTIONAL
+|BOOL
+|Whether to calculate and include the "since last correlation" section in trending reports.
+
+|trending.report.periods.pastCorrelation.scetError.trend
+|OPTIONAL
+|BOOL
+|Whether to trend SCET Error in the "since last correlation" section of the report.
+
+|trending.report.periods.pastCorrelation.scetError.plot
+|OPTIONAL
+|BOOL
+|Whether to include a SCET Error plot in the "since last correlation" section of an HTML report.
+
+|trending.report.periods.pastCorrelation.tdtSError.trend
+|OPTIONAL
+|BOOL
+|Whether to trend TDT(S) Error in the "since last correlation" section of the report.
+
+|trending.report.periods.pastCorrelation.tdtSError.plot
+|OPTIONAL
+|BOOL
+|Whether to include a TDT(S) Error plot in the "past n days" section of an HTML report.
+
+4+^|*The following parameters configure MMTC's automation feature*
+
+|automation.autocorrelate.enabled
+|OPTIONAL
+|BOOL
+|Whether the automation service should run the autocorrelate function
+
+|automation.autocorrelate.runSchedule
+|OPTIONAL
+|STR
+|The https://www.quartz-scheduler.org/documentation/quartz-2.4.x/tutorials/tutorial-lesson-06.html[cron-like Quartz Job Scheduler expression] to configure the schedule with which to run the autocorrelate function
+
+|automation.trending.enabled
+|OPTIONAL
+|BOOL
+|Whether the automation service should run the trending function
+
+|automation.trending.runSchedule
+|OPTIONAL
+|STR
+|The https://www.quartz-scheduler.org/documentation/quartz-2.4.x/tutorials/tutorial-lesson-06.html[cron-like Quartz Job Scheduler expression] to configure the schedule with which to run the trending function
+
+|automation.autocorrelate-and-trending.enabled
+|OPTIONAL
+|BOOL
+|Whether the automation service should run the autocorrelate and trending function
+
+|automation.autocorrelate-and-trending.runSchedule
+|OPTIONAL
+|STR
+|The https://www.quartz-scheduler.org/documentation/quartz-2.4.x/tutorials/tutorial-lesson-06.html[cron-like Quartz Job Scheduler expression] to configure the schedule with which to run the autocorrelate and trending function
+
+
 |===
 
 ==== AMPCS-specific configuration parameters
@@ -2000,15 +2102,20 @@ The parameters in the table below are only applicable to missions using AMPCS wh
 
 
 .AMPCS Telemetry Source Plugin Configuration Parameters
-[[table7, Table 7: AMPCS Telemetry Source Plugin Configuration Parameters]]
+[[table9, Table 9: AMPCS Telemetry Source Plugin Configuration Parameters]]
 [%autowidth]
 |===
 |Name |Required |Type |Description
 
+|telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap
+|OPTIONAL
+|STR
+|This parameter may be used to provide one or more mappings from AMPCS-reported transfer frame length (size) in bytes to the 'physical' size of a transfer frame, including headers and trellis bits, and taking into account encoding schemes.  For instance, if AMPCS reports a frame length of x bytes, and MMTC should consider these frames as having a physical size of y bits, the mapping would be provided as `x:y`.  Multiple mappings can be provided separated by semicolons, e.g. `x:y ; a:b`.
+
 |telemetry.source.plugin.ampcs.defaultFrameSizeBits
 |OPTIONAL
 |INT
-|The default size of a mission telemetry frame containing time correlation data in bits. This value is used if MAPPING variable is not set.  Frame length is used for calculating downlink data rates if the packet parser configuration is not set to read downlink data rates from packets, as well as in reporting.  This is the entire ‘physical’ size of the transfer frame, including headers and trellis bits, and taking into account encoding schemes.  Must be a positive integer.
+|The default size of a mission telemetry frame containing time correlation data in bits. This value is used if the `telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap` parameter is not set.  Frame length is used for calculating downlink data rates if the packet parser configuration is not set to read downlink data rates from packets, as well as in reporting.  This is the entire ‘physical’ size of the transfer frame, including headers and trellis bits, and taking into account encoding schemes.  Must be a positive integer.
 
 |telemetry.source.plugin.ampcs.chillTimeoutSec
 |REQUIRED
@@ -2059,6 +2166,11 @@ The parameters in the table below are only applicable to missions using AMPCS wh
 |CONDITIONAL
 |STR
 |The name of the CSV field output by chill_get_frames that contains the target frame Virtual Channel Frame Count (VCFC). Applicable only if telemetry.source.name is set to AmpcsTlmWithFrames.
+
+|telemetry.source.plugin.ampcs.frame.lengthFieldName
+|CONDITIONAL
+|STR
+|The name of the CSV field output by chill_get_frames that contains the target frame length.  Required if using `telemetry.source.plugin.ampcs.frameSizeBytesToBitsMap`.
 
 |telemetry.source.plugin.ampcs.session.sessionIdFieldName
 |CONDITIONAL
@@ -2263,7 +2375,7 @@ The Input SCLK kernel is the SCLK kernel that MMTC created the previous time tha
 
 Because the SCLK kernel is created with every run and the input SCLK kernel is different for every run, this kernel should not be included in the metakernel.
 
-A manually created “seed” SCLK kernel with at least one time correlation record must exist the very first time that the MMTC runs. See the NAIF document _SCLK – Reference for the SPICE spacecraft clock subsystem and the Spacecraft Clock Kernel (SCLK)_ (Table 2) for what this file contains and how it must be formatted. The MMTC currently requires that the parallel time system used in the correlation records is TDT (and not TDB.)  The time correlation record will typically define SCLK=0. The “seed” kernel will also contain other information about the spacecraft clock and the first clock partition. See Appendix I. for an example of a seed SCLK Kernel.
+A manually created “seed” SCLK kernel with at least one time correlation record must exist the very first time that the MMTC runs. See the NAIF document _SCLK – Reference for the SPICE spacecraft clock subsystem and the Spacecraft Clock Kernel (SCLK)_ for what this file contains and how it must be formatted. The MMTC currently requires that the parallel time system used in the correlation records is TDT (and not TDB.)  The time correlation record will typically define SCLK=0. The “seed” kernel will also contain other information about the spacecraft clock and the first clock partition. See Appendix I. for an example of a seed SCLK Kernel.
 
 Since the SCLK kernel is both an input and an output of MMTC, the input SCLK kernel must be in the same directory to which the new SCLK kernel will be written, which is the location indicated in the *spice.kernel.sclk.kerneldir* configuration parameter. MMTC reads the latest SCLK kernel upon startup and creates a new one at the end of its run with one new time correlation record appended to the end and an incremented version number in the filename. The time correlation records in an SCLK kernel must always move forward in time. In other words, the ground time in each time correlation record must be later than that in the one before it. If one runs MMTC with a start time that is earlier than the ground time in the last time correlation record in the SCLK kernel, MMTC will report the error and terminate.
 
@@ -2380,13 +2492,13 @@ This file is produced if the *product.parameterGroupUpdateFile.create* configura
 
 ==== Time History File
 
-The Time History File is a cumulative product that is updated with a single record appended to its end each time the MMTC runs. It is a CSV format text file that contains records of processed time correlations (including inputs and computed values) as well as other information useful in assessing the state of the onboard clock. This file is intended for analysis purposes. Table 8 in Appendix E describes the fields in this file.
+The Time History File is a cumulative product that is updated with a single record appended to its end each time the MMTC runs. It is a CSV format text file that contains records of processed time correlations (including inputs and computed values) as well as other information useful in assessing the state of the onboard clock. This file is intended for analysis purposes. Appendix E describes the fields in this file.
 
 MMTC creates this file upon its first execution, and appends to it with each successful run thereafter.  If this file becomes inconveniently large over the course of a mission, the records created from prior runs may be deleted (possibly having been copied elsewhere for archival purposes.)
 
 ==== Raw Telemetry Table
 
-The Raw Telemetry Table contains the unprocessed data extracted from telemetry used in time correlation. It contains the basic SCLK, ERT, and virtual channel information. The data contained in this table, along with the associated SPICE kernels and configuration parameters, contain the information needed to run the Time Correlation application and, when necessary, to reproduce the results of a previous time correlation and its output products (SCLK kernel, SCLK/SCET file, command uplink file) without having to connect to the telemetry archive again. This is a comma separated value (CSV) formatted text file. It is useful for analysis and for later reprocessing if needed. It contains records of all frames/TK Packets in the sample set and is appended to each time the application runs. The fields in the table are described in Table 9 in the Appendix.
+The Raw Telemetry Table contains the unprocessed data extracted from telemetry used in time correlation. It contains the basic SCLK, ERT, and virtual channel information. The data contained in this table, along with the associated SPICE kernels and configuration parameters, contain the information needed to run the Time Correlation application and, when necessary, to reproduce the results of a previous time correlation and its output products (SCLK kernel, SCLK/SCET file, command uplink file) without having to connect to the telemetry archive again. This is a comma separated value (CSV) formatted text file. It is useful for analysis and for later reprocessing if needed. It contains records of all frames/TK Packets in the sample set and is appended to each time the application runs. The fields in the table are described in Appendix F.
 
 MMTC creates this file upon its first execution, and appends to it with each successful run thereafter.  If this file becomes inconveniently large over the course of a mission, the records created from prior runs may be deleted (possibly having been copied elsewhere for archival purposes.)
 
@@ -2669,9 +2781,9 @@ The *log4j2.xml* file, which is specified in an option to the MMTC Java invocati
 
 NOTE: [.red]#Log messages may contain information that missions or users consider sensitive, such as hostnames, filesystem paths, even database credentials passed through to telemetry sources using the --connection-parms command line option, etc.# If log files are being submitted for MMTC troubleshooting, be sure to first remove any sensitive information before sending to others.
 
-== Web application & graphical user interface
+== Web application
 
-MMTC 1.6.0 introduced a web application that is packaged separately alongside the traditional MMTC CLI application.  It can be used to:
+MMTC 1.6.0 introduced a web application that is packaged separately alongside the traditional MMTC CLI application and which provides an interactive graphical user interface.  It can be used to:
 
 * Plot time correlation telemetry (including SCET error) and correlation triplets (SCLK kernel records) over time
 
@@ -2687,7 +2799,7 @@ This web application is currently intended for use by a single user at a time, t
 The MMTC web application reads the same TimeCorrelationConfigProperties.xml file as the rest of the MMTC codebase, though it uses a few additional keys:
 
 .MMTC Web Application Configuration Parameters
-[[table8, Table 8: Configuration Parameters]]
+[[table10, Table 10: Web App Configuration Parameters]]
 [%autowidth]
 |===
 |Name |Required |Type |Description
@@ -2885,7 +2997,7 @@ CCSD3RE00000$$data$$CCSD3RE00000$$sclk$$
 === D. Sample Uplink Command File
 [[appendix_D, Appendix D: Sample Uplink Command File]]
 
-An example of an Uplink Command File as described in <<Uplink Command File>> created from New Horizons data. The values in order are: (1) SCLK coarse, (2) corresponding ephemeris time (TDB), (3) corresponding ground time in TDT, (4) corresponding ground time in TDT calendar string, (5) clock change rate in TDT seconds/SCLK second. This file will contain only a single record.
+An example of an Uplink Command File as described in <<Uplink Command File>> created from New Horizons data. The values in order are: (1) coarse SCLK value, (2) corresponding ephemeris time (TDB), (3) corresponding ground time in TDT, (4) corresponding ground time in TDT calendar string, (5) clock change rate in TDT seconds/SCLK second. This file will contain only a single record.
 
 ----
 398916214,714492283.860548,714492283.861766,23-AUG-2022-02:04:43.861766,1.00000000922
@@ -2895,11 +3007,11 @@ An example of an Uplink Command File as described in <<Uplink Command File>> cre
 === E. Time History File
 [[appendix_E, Appendix E: Time History File]]
 
-.Time History File Fields
-[[table9, Table 9: Time History File Fields]]
+.Time History File columns
+[[table11, Table 11: Time History File columns]]
 [%autowidth]
 |===
-| Name | Typical Value | Remarks
+| Name | Value | Remarks
 
 |Enc_SCLK
 |Positive integer – the number of SCLK ticks since the epoch for SCLK = 0
@@ -2922,9 +3034,13 @@ An example of an Uplink Command File as described in <<Uplink Command File>> cre
 |Barycentric Dynamical Time (a.k.a. Ephemeris Time) – Ground equivalent. Numeric value in seconds of epoch. Time corresponding to the SCLK measured in Barycentric Dynamical Time (TDB). This is similar to TDT except that it is measured from the Solar System barycenter rather than from Earth.
 NOTE: In the MMTC code, this value is given as “ET” in order to match how it is used in SPICE. The term “ET” is otherwise ambiguous. For the MMTC, ET is always a synonym for TDB.
 
-|ClkChgRate(s/s)
+|Predicted Clk Chg Rate (s/s)
 |X.Y, where X is “0” or “1” and Y is in units of second/second
-|Predicted clock Change Rate in TDT seconds/SCLK seconds. No change would be 1.000.
+|Predicted clock change rate in TDT seconds/SCLK second.
+
+|Interpolated Clk Chg Rate (s/s)
+|X.Y, where X is “0” or “1” and Y is in units of second/second
+|Interpolated clock change rate in TDT seconds/SCLK second.
 
 |Osc_Temp(degC)
 |X.Y in units of ℃
@@ -3058,6 +3174,10 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 |positive integer in units of ms
 |Error warning threshold, in milliseconds, on the magnitude of the TDT(S) error read from configuration parameter.  When exceeded, the time correlation onboard the spacecraft needs to be updated.
 
+|TDT(S) Error Warning Threshold Predicted Violation Time SCET (UTC)
+|Calendar string
+|The predicted time at which the given TDT(S) Error threshold may be violated, assuming at least one prior measurement and recent telemetry exists to trend it.
+
 |SCLK1
 |X.Y, with precision of 10-6 second
 |SCLK1 from spacecraft used to compute TDT(S).
@@ -3083,8 +3203,8 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 === F. Raw Telemetry Table
 [[appendix_F, Appendix F: Raw Telemetry Table]]
 
-.Raw Telemetry Table Fields
-[[table10, Table 10: Raw Telemetry Table Fields]]
+.Raw Telemetry Table columns
+[[table12, Table 12: Raw Telemetry Table columns]]
 [%autowidth]
 |===
 | Name | Typical Value | Remarks
@@ -3147,10 +3267,50 @@ NOTE: In the MMTC code, this value is given as “ET” in order to match how it
 
 |===
 
-=== H. Sample Parameter Group Update File
+=== H. Parameter Group Update File
 [[appendix_H, Appendix H: Sample Parameter Group Update File]]
 
-An example of a Parameter Group Update File as described in <<Parameter Group Update File>> created from New Horizons data.
+.Parameter Group Update File columns
+[[table13, Table 13: Parameter Group Update File columns]]
+[%autowidth]
+|===
+| Name | Value | Remarks
+
+|Run Time
+|UTC timestamp string
+|Captures the invocation time of the MMTC execution that generated the output row
+
+|Run ID
+|Run ID string
+|The MMTC Run ID of the MMTC correlation that generated the output row
+
+|Associated SCLK Kernel Version
+|String
+|The SCLK kernel version produced by the correlation run that generated the output row
+
+|Coarse SCLK
+|Coarse SCLK string
+|Coarse SCLK string related to the correlation
+
+|ET
+|ET value (seconds past J2000 epoch)
+|The corresponding ephemeris time (TDB)
+
+|TDT
+|TDT value (seconds past J2000 epoch)
+|The corresponding TDT time
+
+|TDT Calendar
+|TDT as a calendar string
+|The corresponding TDT time as a calendar string
+
+|Clock Change Rate (s/s)
+|Clock change rate
+|Corresponding clock change rate in TDT seconds/SCLK second
+
+|===
+
+An example of a Parameter Group Update File as described in <<Parameter Group Update File>> created from New Horizons data:
 
 ----
 Run Time,Run ID,Associated SCLK Kernel Version,Coarse SCLK,ET,TDT,TDT Calendar,Clock Change Rate (s/s)

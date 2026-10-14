@@ -1780,7 +1780,7 @@ public class MmtcConfig {
 
     public static class TrendingReportPeriodsConfig {
         public final TrendingReportPeriodPastNConfig pastNDaysConfig;
-        public final TrendingReportPeriodPastNConfig pastNCorrelationsConfig;
+        public final TrendingReportPeriodPastNConfig pastCorrelationConfig;
 
         public TrendingReportPeriodsConfig(MmtcConfig config) {
             if (config.getBoolean(getKey("pastNDays.enabled"), false)) {
@@ -1795,16 +1795,16 @@ public class MmtcConfig {
                 pastNDaysConfig = null;
             }
 
-            if (config.getBoolean(getKey("pastNCorrelations.enabled"), false)) {
-                pastNCorrelationsConfig = new TrendingReportPeriodPastNConfig(
-                        config.getInt(getKey("pastNCorrelations.numCorrelations")),
-                        config.getBoolean(getKey("pastNCorrelations.scetError.trend")),
-                        config.getBoolean(getKey("pastNCorrelations.scetError.plot")),
-                        config.getBoolean(getKey("pastNCorrelations.tdtSError.trend")),
-                        config.getBoolean(getKey("pastNCorrelations.tdtSError.plot"))
+            if (config.getBoolean(getKey("pastCorrelation.enabled"), false)) {
+                pastCorrelationConfig = new TrendingReportPeriodPastNConfig(
+                        1,
+                        config.getBoolean(getKey("pastCorrelation.scetError.trend")),
+                        config.getBoolean(getKey("pastCorrelation.scetError.plot")),
+                        config.getBoolean(getKey("pastCorrelation.tdtSError.trend")),
+                        config.getBoolean(getKey("pastCorrelation.tdtSError.plot"))
                 );
             } else {
-                pastNCorrelationsConfig = null;
+                pastCorrelationConfig = null;
             }
         }
 
@@ -1812,8 +1812,8 @@ public class MmtcConfig {
             return pastNDaysConfig != null;
         }
 
-        public boolean isPastNCorrelationsPeriodEnabled() {
-            return pastNCorrelationsConfig != null;
+        public boolean isPastCorrelationPeriodEnabled() {
+            return pastCorrelationConfig != null;
         }
 
         public String getKey(String suffix) {
